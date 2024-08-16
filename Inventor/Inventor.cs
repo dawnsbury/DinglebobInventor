@@ -28,9 +28,11 @@ using Dawnsbury.Display;
 using Dawnsbury.Display.Illustrations;
 using Dawnsbury.Display.Text;
 using Dawnsbury.Modding;
+using Dawnsbury.ThirdParty.SteamApi;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System;
+using System.Diagnostics;
 using System.Xml.Linq;
 using static Dawnsbury.Core.CharacterBuilder.FeatsDb.TrueFeatDb.BarbarianFeatsDb.AnimalInstinctFeat;
 
@@ -95,11 +97,15 @@ namespace Inventor
             var initialModificationTrait = ModManager.RegisterTrait("Initial Modification");
 
             var armorTrait = ModManager.RegisterTrait("Armor Modification");
+            var constructTrait = ModManager.RegisterTrait("Construct Modification");
             var weaponTrait = ModManager.RegisterTrait("Weapon Modification");
 
             var armorInnovationFeatName = ModManager.RegisterFeatName("ArmorInnovation", "Armor Innovation");
+            var constructInnovationFeatName = ModManager.RegisterFeatName("ConstructInnovation", "Construct Innovation");
             var weaponInnovationFeatName = ModManager.RegisterFeatName("WeaponInnovation", "Weapon Innovation");
 
+            var acceleratedMobilityFeat = ModManager.RegisterFeatName("AcceleratedMobility", "Accelerated Mobility");
+            var flightChassisFeat = ModManager.RegisterFeatName("FlightChassis", "Flight Chassis");
             var hamperingStrikesFeat = ModManager.RegisterFeatName("HamperingStrikes", "Hampering Strikes");
             var harmonicOscillatorFeat = ModManager.RegisterFeatName("HarmonicOscillator", "Harmonic Oscillator");
             var heftyCompositionFeat = ModManager.RegisterFeatName("HeftyComposition", "Hefty Composition");
@@ -107,24 +113,47 @@ namespace Inventor
             var muscularExoskeletonFeat = ModManager.RegisterFeatName("MuscularExoskeleton", "Muscular Exoskeleton");
             var otherworldlyProtectionFeat = ModManager.RegisterFeatName("OtherworldlyProtection", "Otherworldly Protection");
             var phlogistonicRegulatorFeat = ModManager.RegisterFeatName("PhlogistonicRegulator", "Phlogistonic Regulator");
+            var projectileLauncherFeat = ModManager.RegisterFeatName("ProjectileLauncher", "Projectile Launcher");
             var razorProngsFeat = ModManager.RegisterFeatName("RazorProngs", "Razor Prongs");
             var speedBoostersFeat = ModManager.RegisterFeatName("SpeedBoosters", "Speed Boosters");
             var subtleDampenersFeat = ModManager.RegisterFeatName("SubtleDampeners", "Subtle Dampeners");
+            var wonderGearsFeat = ModManager.RegisterFeatName("WonderGears", "Wonder Gears");
 
+            var advancedConstructCompanionFeat = ModManager.RegisterFeatName("AdvancedConstructCompanion", "Advanced Construct Companion");
+            var constructCompanionFeat = ModManager.RegisterFeatName("ConstructCompanion", "Construct Companion");
             var explosiveLeapFeat = ModManager.RegisterFeatName("ExplosiveLeap", "Explosive Leap");
             var flingAcidFeat = ModManager.RegisterFeatName("FlingAcid", "Fling Acid");
             var flyingShieldFeat = ModManager.RegisterFeatName("FlyingShield", "Flying Shield");
             var modifiedShieldFeat = ModManager.RegisterFeatName("ModifiedShield", "Modified Shield");
             var megatonStrikeFeat = ModManager.RegisterFeatName("MegatonStrike", "Megaton Strike");
+            var reactiveShieldFeat = ModManager.RegisterFeatName("ReactiveShieldInventor", "Reactive Shield");
             var searingRestorationFeat = ModManager.RegisterFeatName("SearingRestoration", "Searing Restoration");
             var tamperFeat = ModManager.RegisterFeatName("Tamper", "Tamper");
             var variableCoreFeat = ModManager.RegisterFeatName("VariableCore", "Variable Core");
 
+            var constructCompanionKobotFeat = ModManager.RegisterFeatName("KoBotCompanion", "KoBot");
+            var constructCompanionPangolinBotFeat = ModManager.RegisterFeatName("PangolinBotCompanion", "Pangolin Bot");
+            
+            #region Construct Companion Feats
+
+            var kobotCompanionFeat = CreateConstructCompanionFeat(constructCompanionKobotFeat, ConstructCompanionType.KoBot, "Your construct is a robotic kobold.");
+            yield return kobotCompanionFeat;
+
+            var pangolinBotCompanionFeat = CreateConstructCompanionFeat(constructCompanionPangolinBotFeat, ConstructCompanionType.PangolinBot, "Your construct vaguely resembles a pangolin.");
+            yield return pangolinBotCompanionFeat;
+
+            #endregion
+
             #region Variable Core Feats
 
-            yield return GenerateVariableCoreFeat(DamageKind.Acid);
-            yield return GenerateVariableCoreFeat(DamageKind.Cold);
-            yield return GenerateVariableCoreFeat(DamageKind.Electricity);
+            var veriableCoreAcidFeat = GenerateVariableCoreFeat(DamageKind.Acid);
+            yield return veriableCoreAcidFeat;
+
+            var veriableCoreColdFeat = GenerateVariableCoreFeat(DamageKind.Cold);
+            yield return veriableCoreColdFeat;
+
+            var veriableCoreElectricityFeat = GenerateVariableCoreFeat(DamageKind.Electricity);
+            yield return veriableCoreElectricityFeat;
 
             #endregion
 
@@ -146,17 +175,24 @@ namespace Inventor
 
             #region Innovation Feats
             
-            var armorInnovationFeat =  new Feat(armorInnovationFeatName, "Your innovation is a cutting-edge suit of medium armor with a variety of attached gizmos and devices.", "", new() {  }, null).WithOnSheet(delegate (CalculatedCharacterSheetValues values)
+            var armorInnovationFeat =  new Feat(armorInnovationFeatName, "Your innovation is a cutting-edge suit of medium armor with a variety of attached gizmos and devices.", "", [], null).WithOnSheet(delegate (CalculatedCharacterSheetValues values)
             {
                 values.AddSelectionOption(new SingleFeatSelectionOption("ArmorInitialInnovation", "Initial Armor Innovation", 1, (Feat ft) => ft.HasTrait(armorTrait) && ft.HasTrait(initialModificationTrait)));
             });
 
-            var weaponInnovationFeat = new Feat(weaponInnovationFeatName, "Your innovation is an impossible-looking weapon augmented by numerous unusual mechanisms.", "", new() {  }, null).WithOnSheet(delegate (CalculatedCharacterSheetValues values)
+            var constructInnovationFeat = new Feat(constructInnovationFeatName, "Your innovation is a mechanical creature, such as a clockwork construct made of cogs and gears.", "It's a prototype construct companion, and you can adjust most of its base statistics by taking feats at higher levels, such as Advanced Companion. If you use the Overdrive action, your construct gains the same Overdrive benefits you do, and it also takes the same amount of fire damage on a critical failure.", [], null).WithOnSheet(delegate (CalculatedCharacterSheetValues values)
+            {
+                values.AddSelectionOption(new SingleFeatSelectionOption("ConstructCompanionSelection", "Construct Companion", 1, (Feat ft) => ft.FeatName == constructCompanionFeat));
+                values.AddSelectionOption(new SingleFeatSelectionOption("ConstructInitialInnovation", "Initial Construct Innovation", 1, (Feat ft) => ft.HasTrait(constructTrait) && ft.HasTrait(initialModificationTrait)));
+            });
+
+            var weaponInnovationFeat = new Feat(weaponInnovationFeatName, "Your innovation is an impossible-looking weapon augmented by numerous unusual mechanisms.", "", [], null).WithOnSheet(delegate (CalculatedCharacterSheetValues values)
             {
                 values.AddSelectionOption(new SingleFeatSelectionOption("WeaponInitialInnovation", "Initial Weapon Innovation", 1, (Feat ft) => ft.HasTrait(weaponTrait) && ft.HasTrait(initialModificationTrait)));
             });
 
             ModManager.AddFeat(armorInnovationFeat);
+            ModManager.AddFeat(constructInnovationFeat);
             ModManager.AddFeat(weaponInnovationFeat);
 
             #endregion
@@ -177,6 +213,7 @@ namespace Inventor
             ], 3, abilityString, new List<Feat>
             {
                 armorInnovationFeat,
+                constructInnovationFeat,
                 weaponInnovationFeat
             }).WithOnSheet(delegate (CalculatedCharacterSheetValues sheet)
             {
@@ -244,27 +281,30 @@ namespace Inventor
                         {
                             var result = CommonSpellEffects.RollCheck("Overdrive", new ActiveRollSpecification(Checks.SkillCheck(Skill.Crafting), Checks.FlatDC(GetLevelDC(user.Level))), user, user);
 
+                            var companion = user.HasFeat(constructInnovationFeatName) ? GetConstructCompanion(user) : null;
+
                             if (result == CheckResult.CriticalSuccess)
                             {
                                 user.RemoveAllQEffects((effect) => effect.Name == "Overdrive");
 
-                                user.AddQEffect(new()
+                                var overdriveQEffect = new QEffect()
                                 {
                                     Name = "Critical Overdrive",
                                     Illustration = IllustrationName.Swords,
                                     Description = $"You deal an extra {creature.Abilities.Intelligence + (creature.Level >= 3 ? 1 : 0)} damage with strikes.",
-                                    /*AddExtraStrikeDamage = delegate (CombatAction attack, Creature defender)
-                                    {
-                                        List<DamageKind> list = attack.Item!.DetermineDamageKinds();
-                                        DamageKind item2 = defender.WeaknessAndResistance.WhatDamageKindIsBestAgainstMe(list);
-                                        DiceFormula item3 = DiceFormula.FromText($"{creature.Abilities.Intelligence + (creature.Level >= 3 ? 1 : 0)}", "Overdrive");
-                                        return (item3, item2);
-                                    },*/
                                     YouDealDamageWithStrike = (QEffect effect, CombatAction action, DiceFormula diceFormula, Creature target) =>
                                     {
                                         return diceFormula.Add(DiceFormula.FromText($"{creature.Abilities.Intelligence + (creature.Level >= 3 ? 1 : 0)}", "Overdrive"));
                                     }
-                                });
+                                };
+
+                                user.AddQEffect(overdriveQEffect);
+
+                                if (companion != null)
+                                {
+                                    companion.RemoveAllQEffects((effect) => effect.Name == "Overdrive");
+                                    companion.AddQEffect(overdriveQEffect);
+                                }
 
                                 user.AddQEffect(OverdriveFailed);
                             }
@@ -272,33 +312,54 @@ namespace Inventor
                             {
                                 user.RemoveAllQEffects((effect) => effect.Name == "Overdrive");
 
-                                user.AddQEffect(new()
+                                var overdriveQEffect = new QEffect()
                                 {
                                     Name = "Overdrive",
                                     Illustration = new SideBySideIllustration(IllustrationName.GravityWeapon, IllustrationName.Swords),
                                     Description = $"You deal an extra {creature.Abilities.Intelligence / 2 + (creature.Level >= 3 ? 1 : 0)} damage with strikes.",
-                                    /*AddExtraStrikeDamage = delegate (CombatAction attack, Creature defender)
-                                    {
-                                        List<DamageKind> list = attack.Item!.DetermineDamageKinds();
-                                        DamageKind item2 = defender.WeaknessAndResistance.WhatDamageKindIsBestAgainstMe(list);
-                                        DiceFormula item3 = DiceFormula.FromText($"{creature.Abilities.Intelligence / 2 + (creature.Level >= 3 ? 1 : 0)}", "Overdrive");
-                                        return (item3, item2);
-                                    },*/
                                     YouDealDamageWithStrike = (QEffect effect, CombatAction action, DiceFormula diceFormula, Creature target) =>
                                     {
                                         return diceFormula.Add(DiceFormula.FromText($"{creature.Abilities.Intelligence / 2 + (creature.Level >= 3 ? 1 : 0)}", "Overdrive"));
                                     }
-                                });
+                                };
+
+                                user.AddQEffect(overdriveQEffect);
+
+                                if (companion != null)
+                                {
+                                    companion.RemoveAllQEffects((effect) => effect.Name == "Overdrive");
+                                    companion.AddQEffect(overdriveQEffect);
+                                }
                             }
                             else if (result == CheckResult.CriticalFailure)
                             {
                                 if (!user.QEffects.All((effect) => effect.Name != "Overdrive"))
                                 {
                                     user.RemoveAllQEffects((effect) => effect.Name == "Overdrive");
+
+                                    if (companion != null)
+                                    {
+                                        companion.RemoveAllQEffects((effect) => effect.Name == "Overdrive");
+                                    }
                                 }
                                 else
                                 {
                                     user.AddQEffect(OverdriveFailed);
+                                }
+
+                                var variableCore = user.QEffects.Where((effect) => effect.Id == VariableCoreEffectID).FirstOrDefault();
+                                var damageKind = DamageKind.Fire;
+
+                                if (variableCore != null && variableCore.Tag != null)
+                                {
+                                    damageKind = (DamageKind)variableCore.Tag!;
+                                }
+
+                                await user.DealDirectDamage(overdrive, DiceFormula.FromText($"{user.Level}"), user, CheckResult.CriticalFailure, damageKind);
+
+                                if (companion != null)
+                                {
+                                    await companion.DealDirectDamage(overdrive, DiceFormula.FromText($"{user.Level}"), user, CheckResult.CriticalFailure, damageKind);
                                 }
                             }
                         });
@@ -309,6 +370,22 @@ namespace Inventor
             #endregion
 
             #region Initial Innovations
+
+            yield return new Feat(acceleratedMobilityFeat, "Actuated legs, efficient gears in the wheels or treads, or add-on boosters make your construct faster.", "Your innovation's Speed increases to 40 feet.", new() { modificationTrait, initialModificationTrait, constructTrait }, null).WithOnSheet((CalculatedCharacterSheetValues sheet) =>
+            {
+                sheet.RangerBenefitsToCompanion += (companion, inventor) =>
+                {
+                    companion.BaseSpeed = 8;
+                };
+            });
+
+            yield return new Feat(flightChassisFeat, "You fit your construct with a means of flight, such as adding rotors or rebuilding it with wings and a lightweight construction.", "Your innovation gains a fly Speed of 25 feet.", new() { modificationTrait, initialModificationTrait, constructTrait }, null).WithOnSheet((CalculatedCharacterSheetValues sheet) =>
+            {
+                sheet.RangerBenefitsToCompanion += (companion, inventor) =>
+                {
+                    companion.AddQEffect(QEffect.Flying());
+                };
+            });
 
             yield return new Feat(hamperingStrikesFeat, "You've added long, snagging spikes to your weapon, which you can use to impede your foes' movement.", "The weapon in your left hand at the start of combat gains the disarm and versatile piercing traits.", new() { modificationTrait, initialModificationTrait, weaponTrait }, null).WithOnCreature(delegate (Creature creature)
             {
@@ -381,6 +458,14 @@ namespace Inventor
                 creature.AddQEffect(QEffect.DamageResistance(DamageKind.Fire, creature.Level / 2 + 2));
             });
 
+            yield return new Feat(projectileLauncherFeat, "Your construct has a mounted dart launcher, embedded cannon, or similar armament.", "Your innovation gains a ranged unarmed attack that deals 1d4 bludgeoning damage with the propulsive trait and a range increment of 30 feet.", new() { modificationTrait, initialModificationTrait, constructTrait }, null).WithOnSheet((CalculatedCharacterSheetValues sheet) =>
+            {
+                sheet.RangerBenefitsToCompanion += (companion, inventor) =>
+                {
+                    companion.WithAdditionalUnarmedStrike(new Item(IllustrationName.Bomb, "cannon", Trait.Unarmed, Trait.Ranged, Trait.Propulsive).WithWeaponProperties(new WeaponProperties("1d4", DamageKind.Bludgeoning).WithRangeIncrement(6)));
+                };
+            });
+
             yield return new Feat(razorProngsFeat, "You can knock down and slash your foes with sharp, curved blades added to your weapon.", "The weapon in your left hand at the start of combat gains the trip and versatile slashing traits.", new() { modificationTrait, initialModificationTrait, weaponTrait }, null).WithOnCreature(delegate (Creature creature)
             {
                 creature.AddQEffect(new("Hefty Composition", "The weapon in your left hand at the start of combat gains the trip and versatile slashing traits.")
@@ -415,9 +500,29 @@ namespace Inventor
                 });
             });
 
+            yield return new Feat(wonderGearsFeat, "You map specialized skills into your construct's crude intelligence.", "Your innovation becomes trained in Intimidation, Stealth, and Survival.", new() { modificationTrait, initialModificationTrait, constructTrait }, null).WithOnSheet((CalculatedCharacterSheetValues sheet) =>
+            {
+                sheet.RangerBenefitsToCompanion += (Creature companion, Creature inventor) =>
+                {
+                    companion.Proficiencies.Set(Trait.Intimidation, Proficiency.Trained);
+                    companion.Proficiencies.Set(Trait.Stealth, Proficiency.Trained);
+                    companion.Proficiencies.Set(Trait.Survival, Proficiency.Trained);
+
+                    companion.Skills.Set(Skill.Intimidation, companion.Abilities.Charisma + companion.Proficiencies.Get(Trait.Intimidation).ToNumber(companion.Level));
+                    companion.Skills.Set(Skill.Stealth, companion.Abilities.Dexterity + companion.Proficiencies.Get(Trait.Stealth).ToNumber(companion.Level));
+                    companion.Skills.Set(Skill.Survival, companion.Abilities.Wisdom + companion.Proficiencies.Get(Trait.Survival).ToNumber(companion.Level));
+                };
+            });
+
             #endregion
 
             #region Level 1 Feats
+
+            yield return new TrueFeat(constructCompanionFeat, 1, "You have created a construct companion.", "Choose a construct companion.\r\n\r\nAt the beginning of each encounter, the construct companion begins combat next to you. The construct companion can't take actions on its own but you can spend 1 action once per turn to Command it. This will allow the construct companion to spend 2 actions (you will control how the construct companion spends them).\r\n\r\nIf your construct companion dies, you will repair it during your next long rest or downtime.",[inventorTrait, Trait.ClassFeat], new List<Feat>
+            {
+                kobotCompanionFeat,
+                pangolinBotCompanionFeat
+            });
 
             yield return new TrueFeat(explosiveLeapFeat, 1, "You aim an explosion from your innovation downward to launch yourself into the air.", "You jump up to 30 feet in any direction without touching the ground.", [Trait.Fire, inventorTrait, Trait.Move, unstableTrait, Trait.ClassFeat]).WithActionCost(1).WithOnCreature(delegate (Creature creature)
             {
@@ -496,7 +601,7 @@ namespace Inventor
                 });
             });
 
-            yield return new TrueFeat(FeatName.ReactiveShield, 1, "You can snap your shield into place just as you would take a blow, avoiding the hit at the last second.", "If you'd be hit by a melee Strike, you immediately Raise a Shield as a reaction.", [inventorTrait, Trait.ClassFeat]).WithOnCreature(delegate (Creature creature)
+            yield return new TrueFeat(reactiveShieldFeat, 1, "You can snap your shield into place just as you would take a blow, avoiding the hit at the last second.", "If you'd be hit by a melee Strike, you immediately Raise a Shield as a reaction.", [inventorTrait, Trait.ClassFeat]).WithOnCreature(delegate (Creature creature)
             {
                 creature.AddQEffect(QEffect.ReactiveShield());
             });
@@ -626,10 +731,12 @@ namespace Inventor
                 };
             });
 
-            yield return new TrueFeat(variableCoreFeat, 1, "You adjust your innovation's core, changing the way it explodes.", "When you choose this feat, select acid, cold, or electricity. Your innovation's core runs on that power source. When using the Explode action, or any time your innovation explodes on a critical failure and damages you, change the damage type from fire damage to the type you chose.", [inventorTrait, Trait.ClassFeat]).WithOnSheet(delegate (CalculatedCharacterSheetValues sheet)
-            {
-                sheet.AddSelectionOption(new SingleFeatSelectionOption("VariableCoreElement", "Variable Core Element", 1, (Feat feat) => feat.Name.Contains(" Core") && !feat.Name.Contains("Variable")));
-            });
+            yield return new TrueFeat(variableCoreFeat, 1, "You adjust your innovation's core, changing the way it explodes.", "When you choose this feat, select acid, cold, or electricity. Your innovation's core runs on that power source. When using the Explode action, or any time your innovation explodes on a critical failure and damages you, change the damage type from fire damage to the type you chose.", [inventorTrait, Trait.ClassFeat],
+            [
+                veriableCoreAcidFeat,
+                veriableCoreColdFeat,
+                veriableCoreElectricityFeat
+            ]);
 
             #endregion
 
@@ -736,7 +843,112 @@ namespace Inventor
             #endregion
 
             #region Level 4 Feats
-            
+
+            yield return new TrueFeat(advancedConstructCompanionFeat, 4,
+            "You've upgraded your construct companion's power and decision-making ability.",
+            "The following increases are applied to your construct companion:"
+            + "\n\n- Strength, Dexterity, Constitution, and Wisdom modifiers increase by 1."
+            + "\n- Unarmed attack damage increases from one die to two dice."
+            + "\n- Proficiency rank for Perception and all saving throws increases to expert."
+            + "\n- Proficiency ranks in Intimidation, Stealth, and Survival increase to trained. If the construct is your innovation and it was already trained in those skills from a modification, increase its proficiency rank in those skills to expert."
+            + "\n\nEven if you don't use the Command an Animal action, your animal companion can still use 1 action at the end of your turn.", [inventorTrait, Trait.ClassFeat])
+            .WithPrerequisite((CalculatedCharacterSheetValues values) => values.AllFeatNames.Contains(constructCompanionFeat), "You have created a Construct Companion.")
+            .WithOnSheet((CalculatedCharacterSheetValues sheet) =>
+            {
+                sheet.RangerBenefitsToCompanion += (companion, ranger) =>
+                {
+                    companion.MaxHP += companion.Level;
+                    companion.Abilities.Strength += 1;
+                    companion.Abilities.Dexterity += 1;
+                    companion.Abilities.Constitution += 1;
+                    companion.Abilities.Wisdom += 1;
+                    if (companion.UnarmedStrike.WeaponProperties.DamageDieCount == 1)
+                    {
+                        companion.UnarmedStrike.WeaponProperties.DamageDieCount += 1;
+                    }
+
+
+                    foreach (QEffect qf in companion.QEffects.Where<QEffect>(qf => qf.AdditionalUnarmedStrike != null))
+                    {
+                        if (qf.AdditionalUnarmedStrike.WeaponProperties.DamageDieCount == 1)
+                        {
+                            qf.AdditionalUnarmedStrike.WeaponProperties.DamageDieCount += 1;
+                        }
+                    }
+
+                    companion.Perception += 2;
+                    companion.Proficiencies.Set(Trait.Perception, Proficiency.Expert);
+                    companion.Proficiencies.Set(Trait.Fortitude, Proficiency.Expert);
+                    companion.Proficiencies.Set(Trait.Will, Proficiency.Expert);
+                    companion.Proficiencies.Set(Trait.Reflex, Proficiency.Expert);
+
+                    if (companion.Proficiencies.Get(Trait.Survival) == Proficiency.Trained)
+                    {
+                        sheet.SetProficiency(Trait.Survival, Proficiency.Expert);
+                        companion.Proficiencies.Set(Trait.Survival, Proficiency.Expert);
+                    }
+                    else if (companion.Proficiencies.Get(Trait.Survival) == Proficiency.Untrained)
+                    {
+                        sheet.SetProficiency(Trait.Survival, Proficiency.Trained);
+                        companion.Proficiencies.Set(Trait.Survival, Proficiency.Trained);
+                    }
+
+                    if (companion.Proficiencies.Get(Trait.Intimidation) == Proficiency.Trained)
+                    {
+                        sheet.SetProficiency(Trait.Intimidation, Proficiency.Expert);
+                        companion.Proficiencies.Set(Trait.Intimidation, Proficiency.Expert);
+                    }
+                    else if (companion.Proficiencies.Get(Trait.Intimidation) == Proficiency.Untrained)
+                    {
+                        sheet.SetProficiency(Trait.Intimidation, Proficiency.Trained);
+                        companion.Proficiencies.Set(Trait.Intimidation, Proficiency.Trained);
+                    }
+
+                    if (companion.Proficiencies.Get(Trait.Stealth) == Proficiency.Trained)
+                    {
+                        sheet.SetProficiency(Trait.Stealth, Proficiency.Expert);
+                        companion.Proficiencies.Set(Trait.Stealth, Proficiency.Expert);
+                    }
+                    else if (companion.Proficiencies.Get(Trait.Stealth) == Proficiency.Untrained)
+                    {
+                        sheet.SetProficiency(Trait.Stealth, Proficiency.Trained);
+                        companion.Proficiencies.Set(Trait.Stealth, Proficiency.Trained);
+                    }
+
+                    companion.Skills.Set(Skill.Acrobatics, companion.Abilities.Dexterity + companion.Proficiencies.Get(Trait.Acrobatics).ToNumber(companion.Level));
+                    companion.Skills.Set(Skill.Athletics, companion.Abilities.Strength + companion.Proficiencies.Get(Trait.Athletics).ToNumber(companion.Level));
+                    companion.Skills.Set(Skill.Intimidation, companion.Abilities.Charisma + companion.Proficiencies.Get(Trait.Intimidation).ToNumber(companion.Level));
+                    companion.Skills.Set(Skill.Stealth, companion.Abilities.Dexterity + companion.Proficiencies.Get(Trait.Stealth).ToNumber(companion.Level));
+                    companion.Skills.Set(Skill.Survival, companion.Abilities.Wisdom + companion.Proficiencies.Get(Trait.Survival).ToNumber(companion.Level));
+                };
+            })
+            .WithPermanentQEffect("If you don't command your companion, they will act with 1 action at end of your turn.", qf => qf.EndOfYourTurn = async (qfSelf, you) =>
+            {
+                Creature animalCompanion = you.Battle.AllCreatures.FirstOrDefault((cr => cr.QEffects.Any((qf => qf.Id == QEffectId.RangersCompanion && qf.Source == you)) && cr.Actions.CanTakeActions()));
+
+                if (animalCompanion == null)
+                {
+
+                    return;
+                }
+
+
+                if (!you.Actions.ActionHistoryThisTurn.Any((ac => ac.Name == "Command your Animal Companion" || ac.ActionId == ActionId.Delay)))
+                {
+                    you.Occupies.Overhead("Mature Companion.", Color.Green);
+                    animalCompanion.AddQEffect(new QEffect()
+                    {
+                        ExpiresAt = ExpirationCondition.ExpiresAtEndOfYourTurn,
+                        StartOfYourTurn = (async (effect, creature) =>
+                        {
+                            creature.Actions.UseUpActions(1, ActionDisplayStyle.Summoned);
+                            return;
+                        })
+                    });
+                    await CommonSpellEffects.YourMinionActs(animalCompanion);
+                }
+            });
+
             yield return new TrueFeat(flyingShieldFeat, 4, "You've outfitted your shield with propellers or rockets, allowing it to fly around the battlefield.", "Your shield flies out of your hand to protect an ally within 30 feet, giving them a +2 circumstance bonus to AC. The shield returns to your hand at the start of your next turn, falling at your feet if your hands are occupied.", [inventorTrait, Trait.ClassFeat])
             .WithActionCost(1)
             .WithPrerequisite((CalculatedCharacterSheetValues sheet) => !sheet.AllFeats.All((feat) => feat.FeatName != modifiedShieldFeat), "You must have the Modified Shield feat")
@@ -866,6 +1078,150 @@ namespace Inventor
 
             #endregion
         }
+
+        #region Construct Companion Support Methods
+
+        private enum ConstructCompanionType
+        {
+            KoBot,
+            PangolinBot
+        }
+
+        private static Feat CreateConstructCompanionFeat(FeatName featName, ConstructCompanionType companionType, string flavorText)
+        {
+            Creature creature = CreateConstructCompanion(companionType, 1);
+            creature.RegeneratePossibilities();
+            foreach (QEffect item in creature.QEffects.ToList())
+            {
+                item.StateCheck?.Invoke(item);
+            }
+
+            creature.RecalculateLandSpeed();
+            return new Feat(featName, flavorText, "Your animal companion has the following characteristics at level 1:\n\n" + RulesBlock.CreateCreatureDescription(creature), new List<Trait>(), null).WithIllustration(creature.Illustration).WithOnCreature(delegate (CalculatedCharacterSheetValues sheet, Creature inventor)
+            {
+                Creature inventor2 = inventor;
+                CalculatedCharacterSheetValues sheet2 = sheet;
+                inventor2.AddQEffect(new QEffect
+                {
+                    StartOfCombat = async delegate (QEffect qfinventorTechnical)
+                    {
+                        if (inventor2.PersistentUsedUpResources.AnimalCompanionIsDead)
+                        {
+                            inventor2.Occupies.Overhead("no companion", Color.Green, inventor2?.ToString() + "'s construct companion is destroyed. You will repair it during your next long rest or downtime.");
+                        }
+                        else
+                        {
+                            Creature creature2 = CreateConstructCompanion(companionType, inventor2.Level);
+                            creature2.MainName = qfinventorTechnical.Owner.Name + "'s " + creature2.MainName;
+                            creature2.AddQEffect(new QEffect
+                            {
+                                Id = QEffectId.RangersCompanion,
+                                Source = inventor2,
+                                WhenMonsterDies = delegate
+                                {
+                                    inventor2.PersistentUsedUpResources.AnimalCompanionIsDead = true;
+                                }
+                            });
+                            sheet2.RangerBenefitsToCompanion?.Invoke(creature2, inventor2);
+                            inventor2.Battle.SpawnCreature(creature2, inventor2.OwningFaction, inventor2.Occupies);
+                        }
+                    },
+                    EndOfYourTurn = async delegate (QEffect qfinventor, Creature self)
+                    {
+                        if (!qfinventor.UsedThisTurn)
+                        {
+                            Creature animalCompanion2 = GetConstructCompanion(qfinventor.Owner);
+                            if (animalCompanion2 != null)
+                            {
+                                await animalCompanion2.Battle.GameLoop.EndOfTurn(animalCompanion2);
+                            }
+                        }
+                    },
+                    ProvideMainAction = delegate (QEffect qfinventor)
+                    {
+                        QEffect qfinventor2 = qfinventor;
+                        Creature animalCompanion = GetConstructCompanion(qfinventor2.Owner);
+                        return (animalCompanion != null && animalCompanion.Actions.CanTakeActions()) ? ((ActionPossibility)new CombatAction(qfinventor2.Owner, creature.Illustration, "Command your Construct Companion", [Trait.Auditory], "Take 2 actions as your construct companion.\n\nYou can only command your construct companion once per turn.", Target.Self().WithAdditionalRestriction((Creature self) => qfinventor2.UsedThisTurn ? "You already commanded your construct companion this turn." : null))
+                        {
+                            ShortDescription = "Take 2 actions as your construct companion."
+                        }.WithEffectOnSelf((Func<Creature, Task>)async delegate
+                        {
+                            qfinventor2.UsedThisTurn = true;
+                            await CommonSpellEffects.YourMinionActs(animalCompanion);
+                        })) : null;
+                    }
+                });
+            });
+        }
+
+        public static Creature? GetConstructCompanion(Creature inventor)
+        {
+            Creature inventor2 = inventor;
+            return inventor2.Battle.AllCreatures.FirstOrDefault((Creature cr) => cr.QEffects.Any((QEffect qf) => qf.Id == QEffectId.RangersCompanion && qf.Source == inventor2));
+        }
+
+        private static Creature CreateConstructCompanion(ConstructCompanionType companionType, int level)
+        {
+            Creature creature2 = companionType switch
+            {
+                ConstructCompanionType.KoBot => CreateConstructCompanionBase(IllustrationName.KoboldWarrior256, "KoBot", level).WithUnarmedStrike(new Item(IllustrationName.Club, "club", Trait.Unarmed).WithWeaponProperties(new WeaponProperties("1d8", DamageKind.Bludgeoning))).WithAdditionalUnarmedStrike(CommonItems.CreateNaturalWeapon(IllustrationName.Jaws, "jaws", "1d6", DamageKind.Piercing, Trait.Agile, Trait.Finesse)),
+                ConstructCompanionType.PangolinBot => CreateConstructCompanionBase(IllustrationName.Pangolin256, "Pangolin Bot", level).WithUnarmedStrike(new Item(IllustrationName.Slam, "body", Trait.Unarmed).WithWeaponProperties(new WeaponProperties("1d8", DamageKind.Bludgeoning))).WithAdditionalUnarmedStrike(CommonItems.CreateNaturalWeapon(IllustrationName.DragonClaws, "claw", "1d6", DamageKind.Slashing, Trait.Agile, Trait.Finesse)),
+                _ => throw new Exception("Unknown construct companion."),
+            };
+            creature2.PostConstructorInitialization(TBattle.Pseudobattle);
+            return creature2;
+        }
+
+        private static Creature CreateConstructCompanionBase(IllustrationName illustration, string name, int level)
+        {
+            var strength = 3;
+            var dexterity = 3;
+            var constitution = 2;
+            var intelligence = -4;
+            var wisdom = 1;
+            var charisma = 0;
+            var proficiency = 2 + level;
+
+            var ancestryHp = 10;
+            var speed = 5;
+
+            Abilities abilities = new Abilities(strength, dexterity, constitution, intelligence, wisdom, charisma);
+            Skills skills = new Skills(dexterity + proficiency, 0, strength + proficiency);
+            //skills.Set(trainedSkill, abilities.Get(Skills.GetSkillAbility(trainedSkill)) + level + 2);
+            return new Creature(illustration, name, new List<Trait>
+        {
+            Trait.Construct,
+            Trait.Minion,
+            Trait.AnimalCompanion
+        }, level, wisdom + proficiency, speed, new Defenses(10 + dexterity + proficiency, constitution + proficiency, dexterity + proficiency, wisdom + proficiency), ancestryHp + (6 + constitution) * level, abilities, skills).WithProficiency(Trait.Unarmed, Proficiency.Trained).WithEntersInitiativeOrder(entersInitiativeOrder: false).WithProficiency(Trait.UnarmoredDefense, Proficiency.Trained).WithProficiency(Trait.Acrobatics, Proficiency.Trained).WithProficiency(Trait.Athletics, Proficiency.Trained)
+                .AddQEffect(new QEffect
+                {
+                    StateCheck = delegate (QEffect sc)
+                    {
+                        if (!sc.Owner.HasEffect(QEffectId.Dying) && sc.Owner.Battle.InitiativeOrder.Contains(sc.Owner))
+                        {
+                            Creature owner = sc.Owner;
+                            int num6 = owner.Battle.InitiativeOrder.IndexOf(owner);
+                            int index = (num6 + 1) % owner.Battle.InitiativeOrder.Count;
+                            Creature creature = owner.Battle.InitiativeOrder[index];
+                            owner.Actions.HasDelayedYieldingTo = creature;
+                            if (owner.Battle.CreatureControllingInitiative == owner)
+                            {
+                                owner.Battle.CreatureControllingInitiative = creature;
+                            }
+
+                            owner.Battle.InitiativeOrder.Remove(sc.Owner);
+                        }
+                    }
+                });
+        }
+
+        private static Creature? GetInventor(Creature companion)
+        {
+            return companion.QEffects.FirstOrDefault((QEffect qf) => qf.Id == QEffectId.RangersCompanion)?.Source;
+        }
+
+        #endregion
 
         public static int GetLevelDC(int level)
         {
