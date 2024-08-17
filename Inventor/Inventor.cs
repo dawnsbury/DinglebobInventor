@@ -129,6 +129,7 @@ namespace Inventor
             var megatonStrikeFeat = ModManager.RegisterFeatName("MegatonStrike", "Megaton Strike");
             var reactiveShieldFeat = ModManager.RegisterFeatName("ReactiveShieldInventor", "Reactive Shield");
             var searingRestorationFeat = ModManager.RegisterFeatName("SearingRestoration", "Searing Restoration");
+            var soaringArmorFeat = ModManager.RegisterFeatName("SoaringArmor", "Soaring Armor");
             var tamperFeat = ModManager.RegisterFeatName("Tamper", "Tamper");
             var variableCoreFeat = ModManager.RegisterFeatName("VariableCore", "Variable Core");
 
@@ -1105,6 +1106,13 @@ namespace Inventor
                 };
             });
 
+            yield return new TrueFeat(soaringArmorFeat, 4, "Whether through a release of jets of flame, propeller blades, sonic bursts, streamlined aerodynamic structure, electromagnetic fields, or some combination of the above, you've managed to free your innovation from the bonds of gravity!", "You gain a fly Speed equal to your land Speed.", [inventorTrait, Trait.ClassFeat])
+            .WithPrerequisite((sheet) => sheet.HasFeat(armorInnovationFeatName), "You must have an armor innovation.")
+            .WithOnCreature(delegate (Creature creature)
+            {
+                creature.AddQEffect(QEffect.Flying().WithExpirationNever());
+            });
+
             #endregion
         }
 
@@ -1190,7 +1198,7 @@ namespace Inventor
                                 {
                                     Possibilities =
                                     {
-                                        (ActionPossibility)new CombatAction(user, IllustrationName.Action, "Command your Construct Companion", [Trait.Auditory], "Take 2 actions as your construct companion.\n\nYou can only command your construct companion once per turn.", Target.Self().WithAdditionalRestriction((Creature self) => commandQEffect.UsedThisTurn ? "You already commanded your construct companion this turn." : null))
+                                        (ActionPossibility)new CombatAction(user, IllustrationName.Action, "Command your Construct Companion", [Trait.Auditory, Trait.Basic], "Take 2 actions as your construct companion.\n\nYou can only command your construct companion once per turn.", Target.Self().WithAdditionalRestriction((Creature self) => commandQEffect.UsedThisTurn ? "You already commanded your construct companion this turn." : null))
                                         {
                                             ShortDescription = "Take 2 actions as your construct companion."
                                         }
@@ -1200,7 +1208,7 @@ namespace Inventor
                                             commandQEffect.UsedThisTurn = true;
                                             await CommonSpellEffects.YourMinionActs(animalCompanion);
                                         }),
-                                        (ActionPossibility)new CombatAction(user, IllustrationName.TwoActions, "Command your Construct Companion", [Trait.Auditory], "Take 3 actions as your construct companion.\n\nYou can only command your construct companion once per turn.", Target.Self().WithAdditionalRestriction((Creature self) => commandQEffect.UsedThisTurn ? "You already commanded your construct companion this turn." : null))
+                                        (ActionPossibility)new CombatAction(user, IllustrationName.TwoActions, "Command your Construct Companion", [Trait.Auditory, Trait.Basic], "Take 3 actions as your construct companion.\n\nYou can only command your construct companion once per turn.", Target.Self().WithAdditionalRestriction((Creature self) => commandQEffect.UsedThisTurn ? "You already commanded your construct companion this turn." : null))
                                         {
                                             ShortDescription = "Take 2 actions as your construct companion."
                                         }
