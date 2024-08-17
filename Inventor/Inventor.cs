@@ -1,4 +1,5 @@
 ﻿using Dawnsbury.Core;
+using Dawnsbury.Core.Animations;
 using Dawnsbury.Core.Animations.Movement;
 using Dawnsbury.Core.CharacterBuilder;
 using Dawnsbury.Core.CharacterBuilder.AbilityScores;
@@ -182,7 +183,7 @@ namespace Inventor
                 values.AddSelectionOption(new SingleFeatSelectionOption("ArmorInitialInnovation", "Initial Armor Innovation", 1, (Feat ft) => ft.HasTrait(armorTrait) && ft.HasTrait(initialModificationTrait)));
             });
 
-            var constructInnovationFeat = new Feat(constructInnovationFeatName, "Your innovation is a mechanical creature, such as a clockwork construct made of cogs and gears.", "It's a prototype construct companion, and you can adjust most of its base statistics by taking feats at higher levels, such as Advanced Companion. If you use the Overdrive action, your construct gains the same Overdrive benefits you do, and it also takes the same amount of fire damage on a critical failure.", [], null).WithOnSheet(delegate (CalculatedCharacterSheetValues values)
+            var constructInnovationFeat = new Feat(constructInnovationFeatName, "Your innovation is a mechanical creature, such as a clockwork construct made of cogs and gears.", "It's a prototype construct companion, and you can adjust most of its base statistics by taking feats at higher levels, such as Advanced Companion. If you use the Overdrive action, your construct gains the same Overdrive benefits you do, and it also takes the same amount of fire damage on a critical failure. When you Explode, the emanation is centered on your companion instead of you.", [], null).WithOnSheet(delegate (CalculatedCharacterSheetValues values)
             {
                 values.AddSelectionOption(new SingleFeatSelectionOption("ConstructCompanionSelection", "Construct Companion", 1, (Feat ft) => ft.FeatName == constructCompanionFeat));
                 values.AddSelectionOption(new SingleFeatSelectionOption("ConstructInitialInnovation", "Initial Construct Innovation", 1, (Feat ft) => ft.HasTrait(constructTrait) && ft.HasTrait(initialModificationTrait)));
@@ -243,19 +244,54 @@ namespace Inventor
                             return null;
                         }
 
-                        return ((ActionPossibility)new CombatAction(user, IllustrationName.BurningHands, "Explode", [Trait.Fire, inventorTrait, Trait.Manipulate, unstableTrait], $"You intentionally take your innovation beyond normal safety limits, making it explode and damage nearby creatures without damaging the innovation... hopefully. The explosion deals {(user.Level == 1 ? "2" : user.Level)}d6 fire damage with a basic Reflex save to all creatures in a 5-foot emanation.", Target.SelfExcludingEmanation(1)) { ShortDescription = $"Deal {(user.Level == 1 ? "2" : user.Level)}d6 fire damage with a basic Reflex save to all creatures inin a 5-foot emanation." }
+                        var variableCore = user.QEffects.Where((effect) => effect.Id == VariableCoreEffectID).FirstOrDefault();
+                        var damageKind = DamageKind.Fire;
+
+                        if (variableCore != null && variableCore.Tag != null)
+                        {
+                            damageKind = (DamageKind)variableCore.Tag!;
+                        }
+
+                        if (user.HasFeat(constructInnovationFeatName))
+                        {
+                            return ((ActionPossibility)new CombatAction(user, IllustrationName.BurningHands, "Explode", [damageKind == DamageKind.Acid ? Trait.Acid : damageKind == DamageKind.Cold ? Trait.Cold : damageKind == DamageKind.Electricity ? Trait.Electricity : Trait.Fire, inventorTrait, Trait.Manipulate, unstableTrait], $"You intentionally take your innovation beyond normal safety limits, making it explode and damage nearby creatures without damaging the innovation... hopefully. The explosion deals {(user.Level == 1 ? "2" : user.Level)}d6 {damageKind.ToString().ToLower()} damage with a basic Reflex save to all creatures in a 5-foot emanation around your construct companion.", Target.RangedCreature(100).WithAdditionalConditionOnTargetCreature((user, target) => target.Name == GetConstructCompanion(user).Name ? Usability.Usable : Usability.NotUsableOnThisCreature("Not Companion"))) { ShortDescription = $"Deal {(user.Level == 1 ? "2" : user.Level)}d6 {damageKind.ToString().ToLower()} damage with a basic Reflex save to all creatures inin a 5-foot emanation." }
+                            .WithActionCost(2)
+                            .WithSoundEffect(Dawnsbury.Audio.SfxName.Fireball)
+                            .WithEffectOnEachTarget(async delegate (CombatAction explode, Creature user, Creature target, CheckResult result)
+                            {
+                                var explodeEffect = new List<Tile>();
+                                foreach (Edge item in target.Occupies.Neighbours.ToList())
+                                {
+                                    explodeEffect.Add(item.Tile);
+                                }
+
+                                await CommonAnimations.CreateConeAnimation(target.Battle, target.Occupies.ToCenterVector(), explodeEffect, 25, ProjectileKind.Cone, explode.Illustration);
+
+                                foreach (Creature target2 in target.Battle.AllCreatures.Where(cr => cr.DistanceTo(target) <= 1 && cr != target).ToList<Creature>())
+                                {
+                                    CheckResult checkResult = CommonSpellEffects.RollSavingThrow(target2, explode, Defense.Reflex, (creature) => user.ProficiencyLevel + user.Abilities.Intelligence + 12);
+                                    await CommonSpellEffects.DealBasicDamage(explode, user, target2, checkResult, user.Level == 1 ? "2d6" : user.Level + "d6", damageKind);
+
+                                }
+                            })
+                            .WithEffectOnSelf(async delegate (CombatAction unstable, Creature user)
+                            {
+                                await MakeUnstableCheck(unstable, user);
+                            })).WithPossibilityGroup("Unstable");
+                        }
+
+                        return ((ActionPossibility)new CombatAction(user, IllustrationName.BurningHands, "Explode", [damageKind == DamageKind.Acid ? Trait.Acid : damageKind == DamageKind.Cold ? Trait.Cold : damageKind == DamageKind.Electricity ? Trait.Electricity : Trait.Fire, inventorTrait, Trait.Manipulate, unstableTrait], $"You intentionally take your innovation beyond normal safety limits, making it explode and damage nearby creatures without damaging the innovation... hopefully. The explosion deals {(user.Level == 1 ? "2" : user.Level)}d6 {damageKind.ToString().ToLower()} damage with a basic Reflex save to all creatures in a 5-foot emanation.", Target.SelfExcludingEmanation(1)) { ShortDescription = $"Deal {(user.Level == 1 ? "2" : user.Level)}d6 {damageKind.ToString().ToLower()} damage with a basic Reflex save to all creatures inin a 5-foot emanation." }
                         .WithActionCost(2)
                         .WithSoundEffect(Dawnsbury.Audio.SfxName.Fireball)
                         .WithSavingThrow(new SavingThrow(Defense.Reflex, (Creature? explodeUser) => explodeUser!.ProficiencyLevel + explodeUser!.Abilities.Intelligence + 12))
                         .WithEffectOnEachTarget(async delegate (CombatAction explode, Creature user, Creature target, CheckResult result)
                         {
-                            var variableCore = user.QEffects.Where((effect) => effect.Id == VariableCoreEffectID).FirstOrDefault();
-                            var damageKind = DamageKind.Fire;
-
-                            if (variableCore != null && variableCore.Tag != null)
+                            var explodeEffect = new List<Tile>();
+                            foreach (Edge item in user.Occupies.Neighbours.ToList())
                             {
-                                damageKind = (DamageKind)variableCore.Tag!;
+                                explodeEffect.Add(item.Tile);
                             }
+                            await CommonAnimations.CreateConeAnimation(user.Battle, user.Occupies.ToCenterVector(), explodeEffect, 25, ProjectileKind.Cone, explode.Illustration);
 
                             await CommonSpellEffects.DealBasicDamage(explode, user, target, result, user.Level == 1 ? "2d6" : user.Level + "d6", damageKind);
                         })
