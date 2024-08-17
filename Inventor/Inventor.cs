@@ -1210,19 +1210,37 @@ namespace Inventor
                                         }),
                                         (ActionPossibility)new CombatAction(user, IllustrationName.TwoActions, "Command your Construct Companion", [Trait.Auditory, Trait.Basic], "Take 3 actions as your construct companion.\n\nYou can only command your construct companion once per turn.", Target.Self().WithAdditionalRestriction((Creature self) => commandQEffect.UsedThisTurn ? "You already commanded your construct companion this turn." : null))
                                         {
-                                            ShortDescription = "Take 2 actions as your construct companion."
+                                            ShortDescription = "Take 2 actions as your construct companion.",
+                                            EffectOnChosenTargets = async (combatAction, creautre, task) =>
+                                            {
+                                                commandQEffect.UsedThisTurn = true;
+
+                                                //animalCompanion.AddQEffect(QEffect.Quickened((action) => true).WithExpirationAtEndOfOwnerTurn());
+
+                                                animalCompanion.AddQEffect(new QEffect()
+                                                {
+                                                  StartOfYourTurn = async (qf, self) => {
+                                                    self.Actions.RevertExpendingOfResources(1, combatAction);
+                                                    qf.ExpiresAt = ExpirationCondition.Immediately;
+                                                  }
+                                                });
+
+                                                Creature oldActiveCreature = animalCompanion.Battle.ActiveCreature;
+                                                await animalCompanion.Battle.GameLoop.Turn(animalCompanion, minion: true);
+                                                animalCompanion.Battle.ActiveCreature = oldActiveCreature;
+                                            }
                                         }
                                         .WithActionCost(2)
-                                        .WithEffectOnSelf((Func<Creature, Task>)async delegate
+                                        /*.WithEffectOnSelf((Func<Creature, Task>)async delegate
                                         {
                                             commandQEffect.UsedThisTurn = true;
 
-                                            animalCompanion.AddQEffect(QEffect.Quickened((action) => true).WithExpirationAtEndOfOwnerTurn());
-                                            
+                                            //animalCompanion.AddQEffect(QEffect.Quickened((action) => true).WithExpirationAtEndOfOwnerTurn());
+
                                             Creature oldActiveCreature = animalCompanion.Battle.ActiveCreature;
                                             await animalCompanion.Battle.GameLoop.Turn(animalCompanion, minion: true);
                                             animalCompanion.Battle.ActiveCreature = oldActiveCreature;
-                                        })
+                                        })*/
                                     }
                                 }
                             }
