@@ -1071,12 +1071,12 @@ namespace Inventor
                                 {
                                     if (creature.HasFreeHand)
                                     {
-                                        creature.Battle.CombatLog.Add(new(2, $"{creature.Name}'s shield returns to its hand.", "Flying Shield", null));
+                                        creature.Battle.CombatLog.Add(new(2, $"{creature.Name}'s shield returns to {creature.Name}'s hand.", "Flying Shield", null));
                                         creature.HeldItems.Add(shield);
                                     }
                                     else
                                     {
-                                        creature.Battle.CombatLog.Add(new(2, $"{creature.Name}'s shield returns to the ground at its feet.", "Flying Shield", null));
+                                        creature.Battle.CombatLog.Add(new(2, $"{creature.Name}'s shield returns to the ground at {creature.Name}'s feet.", "Flying Shield", null));
                                         creature.Occupies.DropItem(shield);
                                     }
 
