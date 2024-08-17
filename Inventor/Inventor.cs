@@ -137,10 +137,10 @@ namespace Inventor
             
             #region Construct Companion Feats
 
-            var kobotCompanionFeat = CreateConstructCompanionFeat(constructCompanionKobotFeat, ConstructCompanionType.KoBot, "Your construct is a robotic kobold.");
+            var kobotCompanionFeat = CreateConstructCompanionFeat(constructCompanionKobotFeat, ConstructCompanionType.KoBot, "Your construct is a robotic kobold.", constructInnovationFeatName);
             yield return kobotCompanionFeat;
 
-            var pangolinBotCompanionFeat = CreateConstructCompanionFeat(constructCompanionPangolinBotFeat, ConstructCompanionType.PangolinBot, "Your construct vaguely resembles a pangolin.");
+            var pangolinBotCompanionFeat = CreateConstructCompanionFeat(constructCompanionPangolinBotFeat, ConstructCompanionType.PangolinBot, "Your construct vaguely resembles a pangolin.", constructInnovationFeatName);
             yield return pangolinBotCompanionFeat;
 
             #endregion
@@ -1116,7 +1116,7 @@ namespace Inventor
             PangolinBot
         }
 
-        private static Feat CreateConstructCompanionFeat(FeatName featName, ConstructCompanionType companionType, string flavorText)
+        private static Feat CreateConstructCompanionFeat(FeatName featName, ConstructCompanionType companionType, string flavorText, FeatName constructInnovationFeat)
         {
             Creature creature = CreateConstructCompanion(companionType, 1);
             creature.RegeneratePossibilities();
@@ -1166,8 +1166,67 @@ namespace Inventor
                             }
                         }
                     },
+                    ProvideActionIntoPossibilitySection = delegate (QEffect commandQEffect, PossibilitySection section)
+                    {
+                        var user = commandQEffect.Owner;
+
+                        if (section.PossibilitySectionId != PossibilitySectionId.MainActions || !user.HasFeat(constructInnovationFeat))
+                        {
+                            return null;
+                        }
+
+                        var animalCompanion = GetConstructCompanion(user);
+
+                        if (animalCompanion == null)
+                        {
+                            return null;
+                        }
+
+                        return new SubmenuPossibility(animalCompanion.Illustration, "Command your Construct Companion")
+                        {
+                            Subsections =
+                            {
+                                new PossibilitySection("Command your Construct Companion")
+                                {
+                                    Possibilities =
+                                    {
+                                        (ActionPossibility)new CombatAction(user, IllustrationName.Action, "Command your Construct Companion", [Trait.Auditory], "Take 2 actions as your construct companion.\n\nYou can only command your construct companion once per turn.", Target.Self().WithAdditionalRestriction((Creature self) => commandQEffect.UsedThisTurn ? "You already commanded your construct companion this turn." : null))
+                                        {
+                                            ShortDescription = "Take 2 actions as your construct companion."
+                                        }
+                                        .WithActionCost(1)
+                                        .WithEffectOnSelf((Func<Creature, Task>)async delegate
+                                        {
+                                            commandQEffect.UsedThisTurn = true;
+                                            await CommonSpellEffects.YourMinionActs(animalCompanion);
+                                        }),
+                                        (ActionPossibility)new CombatAction(user, IllustrationName.TwoActions, "Command your Construct Companion", [Trait.Auditory], "Take 3 actions as your construct companion.\n\nYou can only command your construct companion once per turn.", Target.Self().WithAdditionalRestriction((Creature self) => commandQEffect.UsedThisTurn ? "You already commanded your construct companion this turn." : null))
+                                        {
+                                            ShortDescription = "Take 2 actions as your construct companion."
+                                        }
+                                        .WithActionCost(2)
+                                        .WithEffectOnSelf((Func<Creature, Task>)async delegate
+                                        {
+                                            commandQEffect.UsedThisTurn = true;
+
+                                            animalCompanion.AddQEffect(QEffect.Quickened((action) => true).WithExpirationAtEndOfOwnerTurn());
+                                            
+                                            Creature oldActiveCreature = animalCompanion.Battle.ActiveCreature;
+                                            await animalCompanion.Battle.GameLoop.Turn(animalCompanion, minion: true);
+                                            animalCompanion.Battle.ActiveCreature = oldActiveCreature;
+                                        })
+                                    }
+                                }
+                            }
+                        };
+                    },
                     ProvideMainAction = delegate (QEffect qfinventor)
                     {
+                        if (qfinventor.Owner.HasFeat(constructInnovationFeat))
+                        {
+                            return null;
+                        }
+
                         QEffect qfinventor2 = qfinventor;
                         Creature animalCompanion = GetConstructCompanion(qfinventor2.Owner);
                         return (animalCompanion != null && animalCompanion.Actions.CanTakeActions()) ? ((ActionPossibility)new CombatAction(qfinventor2.Owner, creature.Illustration, "Command your Construct Companion", [Trait.Auditory], "Take 2 actions as your construct companion.\n\nYou can only command your construct companion once per turn.", Target.Self().WithAdditionalRestriction((Creature self) => qfinventor2.UsedThisTurn ? "You already commanded your construct companion this turn." : null))
