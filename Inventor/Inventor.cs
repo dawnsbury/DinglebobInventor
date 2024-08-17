@@ -1231,16 +1231,6 @@ namespace Inventor
                                             }
                                         }
                                         .WithActionCost(2)
-                                        /*.WithEffectOnSelf((Func<Creature, Task>)async delegate
-                                        {
-                                            commandQEffect.UsedThisTurn = true;
-
-                                            //animalCompanion.AddQEffect(QEffect.Quickened((action) => true).WithExpirationAtEndOfOwnerTurn());
-
-                                            Creature oldActiveCreature = animalCompanion.Battle.ActiveCreature;
-                                            await animalCompanion.Battle.GameLoop.Turn(animalCompanion, minion: true);
-                                            animalCompanion.Battle.ActiveCreature = oldActiveCreature;
-                                        })*/
                                     }
                                 }
                             }
