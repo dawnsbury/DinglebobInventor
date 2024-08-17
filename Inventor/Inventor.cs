@@ -105,6 +105,7 @@ namespace Inventor
             var weaponInnovationFeatName = ModManager.RegisterFeatName("WeaponInnovation", "Weapon Innovation");
 
             var acceleratedMobilityFeat = ModManager.RegisterFeatName("AcceleratedMobility", "Accelerated Mobility");
+            var advancedRangefinderFeat = ModManager.RegisterFeatName("AdvancedRangefinder", "Advanced Rangefinder");
             var flightChassisFeat = ModManager.RegisterFeatName("FlightChassis", "Flight Chassis");
             var hamperingStrikesFeat = ModManager.RegisterFeatName("HamperingStrikes", "Hampering Strikes");
             var harmonicOscillatorFeat = ModManager.RegisterFeatName("HarmonicOscillator", "Harmonic Oscillator");
@@ -292,6 +293,7 @@ namespace Inventor
                                     Name = "Critical Overdrive",
                                     Illustration = IllustrationName.Swords,
                                     Description = $"You deal an extra {creature.Abilities.Intelligence + (creature.Level >= 3 ? 1 : 0)} damage with strikes.",
+                                    Id = OverdrivedID,
                                     YouDealDamageWithStrike = (QEffect effect, CombatAction action, DiceFormula diceFormula, Creature target) =>
                                     {
                                         return diceFormula.Add(DiceFormula.FromText($"{creature.Abilities.Intelligence + (creature.Level >= 3 ? 1 : 0)}", "Overdrive"));
@@ -317,6 +319,7 @@ namespace Inventor
                                     Name = "Overdrive",
                                     Illustration = new SideBySideIllustration(IllustrationName.GravityWeapon, IllustrationName.Swords),
                                     Description = $"You deal an extra {creature.Abilities.Intelligence / 2 + (creature.Level >= 3 ? 1 : 0)} damage with strikes.",
+                                    Id = OverdrivedID,
                                     YouDealDamageWithStrike = (QEffect effect, CombatAction action, DiceFormula diceFormula, Creature target) =>
                                     {
                                         return diceFormula.Add(DiceFormula.FromText($"{creature.Abilities.Intelligence / 2 + (creature.Level >= 3 ? 1 : 0)}", "Overdrive"));
@@ -379,6 +382,26 @@ namespace Inventor
                 };
             });
 
+            yield return new Feat(advancedRangefinderFeat, "A carefully tuned scope or targeting device makes your weapon especially good at hitting weak points.", "The ranged weapon in your left hand gains the backstabber trait and its range increment increases by 10 feet.", new() { modificationTrait, initialModificationTrait, weaponTrait }, null).WithOnCreature(delegate (Creature creature)
+            {
+                creature.AddQEffect(new("Advanced Rangefinder", "The ranged weapon in your left hand gains the backstabber trait and its range increment increases by 10 feet.")
+                {
+                    StartOfCombat = async delegate (QEffect effect)
+                    {
+                        var user = effect.Owner;
+                        var primaryWeapon = GetRealPrimaryWeapon(user);
+
+                        if (primaryWeapon is null || primaryWeapon.HasTrait(Trait.Unarmed) || !primaryWeapon.HasTrait(Trait.Ranged))
+                        {
+                            return;
+                        }
+
+                        primaryWeapon.Traits.Add(Trait.Backstabber);
+                        primaryWeapon.WeaponProperties = primaryWeapon.WeaponProperties.WithRangeIncrement(primaryWeapon.WeaponProperties.RangeIncrement + 2);
+                    }
+                });
+            });
+
             yield return new Feat(flightChassisFeat, "You fit your construct with a means of flight, such as adding rotors or rebuilding it with wings and a lightweight construction.", "Your innovation gains a fly Speed of 25 feet.", new() { modificationTrait, initialModificationTrait, constructTrait }, null).WithOnSheet((CalculatedCharacterSheetValues sheet) =>
             {
                 sheet.RangerBenefitsToCompanion += (companion, inventor) =>
@@ -387,15 +410,15 @@ namespace Inventor
                 };
             });
 
-            yield return new Feat(hamperingStrikesFeat, "You've added long, snagging spikes to your weapon, which you can use to impede your foes' movement.", "The weapon in your left hand at the start of combat gains the disarm and versatile piercing traits.", new() { modificationTrait, initialModificationTrait, weaponTrait }, null).WithOnCreature(delegate (Creature creature)
+            yield return new Feat(hamperingStrikesFeat, "You've added long, snagging spikes to your weapon, which you can use to impede your foes' movement.", "The melee weapon in your left hand at the start of combat gains the disarm and versatile piercing traits.", new() { modificationTrait, initialModificationTrait, weaponTrait }, null).WithOnCreature(delegate (Creature creature)
             {
-                creature.AddQEffect(new("Hampering Strikes", "The weapon in your left hand at the start of combat gains the disarm and versatile piercing traits.")
+                creature.AddQEffect(new("Hampering Strikes", "The melee weapon in your left hand at the start of combat gains the disarm and versatile piercing traits.")
                 {
                     StartOfCombat = async delegate (QEffect effect)
                     {
                         var user = effect.Owner;
 
-                        if (user.PrimaryWeapon is null || user.PrimaryWeapon.HasTrait(Trait.Unarmed))
+                        if (user.PrimaryWeapon is null || user.PrimaryWeapon.HasTrait(Trait.Unarmed) || !user.PrimaryWeapon.HasTrait(Trait.Melee))
                         {
                             return;
                         }
@@ -411,15 +434,15 @@ namespace Inventor
                 creature.AddQEffect(QEffect.DamageResistance(DamageKind.Sonic, creature.Level / 2 + 5));
             });
 
-            yield return new Feat(heftyCompositionFeat, "Blunt surfaces and sturdy construction make your weapon hefty and mace-like.", "The weapon in your left hand at the start of combat gains the shove and thrown 20 feet traits.", new() { modificationTrait, initialModificationTrait, weaponTrait }, null).WithOnCreature(delegate (Creature creature)
+            yield return new Feat(heftyCompositionFeat, "Blunt surfaces and sturdy construction make your weapon hefty and mace-like.", "The melee weapon in your left hand at the start of combat gains the shove and thrown 20 feet traits.", new() { modificationTrait, initialModificationTrait, weaponTrait }, null).WithOnCreature(delegate (Creature creature)
             {
-                creature.AddQEffect(new("Hefty Composition", "The weapon in your left hand at the start of combat gains the shove and thrown 20 feet traits.")
+                creature.AddQEffect(new("Hefty Composition", "The melee weapon in your left hand at the start of combat gains the shove and thrown 20 feet traits.")
                 {
                     StartOfCombat = async delegate (QEffect effect)
                     {
                         var user = effect.Owner;
 
-                        if (user.PrimaryWeapon is null || user.PrimaryWeapon.HasTrait(Trait.Unarmed))
+                        if (user.PrimaryWeapon is null || user.PrimaryWeapon.HasTrait(Trait.Unarmed) || !user.PrimaryWeapon.HasTrait(Trait.Melee))
                         {
                             return;
                         }
@@ -429,17 +452,17 @@ namespace Inventor
                 });
             });
 
-            yield return new Feat(metallicReactanceFeat, "The metals in your armor are carefully alloyed to ground electricity and protect from acidic chemical reactions.", "You gain resistance equal to 5 + half your level to acid and electricity damage.", new() { modificationTrait, initialModificationTrait, armorTrait }, null).WithOnCreature(delegate (Creature creature)
+            yield return new Feat(metallicReactanceFeat, "The metals in your armor are carefully alloyed to ground electricity and protect from acidic chemical reactions.", "You gain resistance equal to 3 + half your level to acid and electricity damage.", new() { modificationTrait, initialModificationTrait, armorTrait }, null).WithOnCreature(delegate (Creature creature)
             {
                 creature.AddQEffect(QEffect.DamageResistance(DamageKind.Acid, creature.Level / 2 + 5));
                 creature.AddQEffect(QEffect.DamageResistance(DamageKind.Electricity, creature.Level / 2 + 5));
             });
 
-            yield return new Feat(muscularExoskeletonFeat, "Your armor supports your muscles with a carefully crafted exoskeleton, which supplements your feats of athletics.", "You gain a +1 circumstance bonus to athletics checks.", new() { modificationTrait, initialModificationTrait, armorTrait }, null).WithOnCreature(delegate (Creature creature)
+            yield return new Feat(muscularExoskeletonFeat, "Your armor supports your muscles with a carefully crafted exoskeleton, which supplements your feats of athletics.", "When under the effects of Overdrive, you gain a +1 circumstance bonus to Athletics checks.", new() { modificationTrait, initialModificationTrait, armorTrait }, null).WithOnCreature(delegate (Creature creature)
             {
                 creature.AddQEffect(new()
                 {
-                    BonusToSkills = (Skill skill) => skill == Skill.Athletics ? new Bonus(1, BonusType.Circumstance, "Muscular Exoskeleton", true) : null
+                    BonusToSkills = (Skill skill) => skill == Skill.Athletics && creature.HasEffect(OverdrivedID) ? new Bonus(1, BonusType.Circumstance, "Muscular Exoskeleton", true) : null
                 });
             });
 
@@ -448,11 +471,11 @@ namespace Inventor
                 creature.AddQEffect(QEffect.DamageResistance(DamageKind.Negative, creature.Level / 2 + 3));
                 creature.AddQEffect(QEffect.DamageResistance(DamageKind.Good, creature.Level / 2 + 3));
                 creature.AddQEffect(QEffect.DamageResistance(DamageKind.Evil, creature.Level / 2 + 3));
-                creature.AddQEffect(QEffect.DamageResistance(DamageKind.Lawful, creature.Level / 2 + 3));
-                creature.AddQEffect(QEffect.DamageResistance(DamageKind.Chaotic, creature.Level / 2 + 3));
+                creature.AddQEffect(QEffect.DamageResistance(DamageKind.Lawful, creature.Level / 2 + 5));
+                creature.AddQEffect(QEffect.DamageResistance(DamageKind.Chaotic, creature.Level / 2 + 5));
             });
 
-            yield return new Feat(phlogistonicRegulatorFeat, "A layer of insulation in your armor protects you from rapid temperature fluctuations.", "You gain resistance equal to 2 + half your level to cold and fire damage.", new() { modificationTrait, initialModificationTrait, armorTrait }, null).WithOnCreature(delegate (Creature creature)
+            yield return new Feat(phlogistonicRegulatorFeat, "A layer of insulation in your armor protects you from rapid temperature fluctuations.", "You gain resistance equal to  half your level to cold and fire damage.", new() { modificationTrait, initialModificationTrait, armorTrait }, null).WithOnCreature(delegate (Creature creature)
             {
                 creature.AddQEffect(QEffect.DamageResistance(DamageKind.Cold, creature.Level / 2 + 2));
                 creature.AddQEffect(QEffect.DamageResistance(DamageKind.Fire, creature.Level / 2 + 2));
@@ -466,15 +489,15 @@ namespace Inventor
                 };
             });
 
-            yield return new Feat(razorProngsFeat, "You can knock down and slash your foes with sharp, curved blades added to your weapon.", "The weapon in your left hand at the start of combat gains the trip and versatile slashing traits.", new() { modificationTrait, initialModificationTrait, weaponTrait }, null).WithOnCreature(delegate (Creature creature)
+            yield return new Feat(razorProngsFeat, "You can knock down and slash your foes with sharp, curved blades added to your weapon.", "The melee weapon in your left hand at the start of combat gains the trip and versatile slashing traits.", new() { modificationTrait, initialModificationTrait, weaponTrait }, null).WithOnCreature(delegate (Creature creature)
             {
-                creature.AddQEffect(new("Hefty Composition", "The weapon in your left hand at the start of combat gains the trip and versatile slashing traits.")
+                creature.AddQEffect(new("Hefty Composition", "The melee weapon in your left hand at the start of combat gains the trip and versatile slashing traits.")
                 {
                     StartOfCombat = async delegate (QEffect effect)
                     {
                         var user = effect.Owner;
 
-                        if (user.PrimaryWeapon is null || user.PrimaryWeapon.HasTrait(Trait.Unarmed))
+                        if (user.PrimaryWeapon is null || user.PrimaryWeapon.HasTrait(Trait.Unarmed) || !user.PrimaryWeapon.HasTrait(Trait.Melee))
                         {
                             return;
                         }
@@ -484,19 +507,19 @@ namespace Inventor
                 });
             });
 
-            yield return new Feat(speedBoostersFeat, "You have boosters in your armor that increase your Speed.", "You gain a +10-foot status bonus to your speed.", new() { modificationTrait, initialModificationTrait, armorTrait }, null).WithOnCreature(delegate (Creature creature)
+            yield return new Feat(speedBoostersFeat, "You have boosters in your armor that increase your Speed.", "You gain a +5-foot status bonus to your Speed, which increases to a +10-foot status bonus when under the effects of Overdrive.", new() { modificationTrait, initialModificationTrait, armorTrait }, null).WithOnCreature(delegate (Creature creature)
             {
                 creature.AddQEffect(new()
                 {
-                    BonusToAllSpeeds = (QEffect effect) => new(2, BonusType.Status, "Speed Boosters", true)
+                    BonusToAllSpeeds = (QEffect effect) => new(creature.HasEffect(OverdrivedID) ? 2 : 1, BonusType.Status, "Speed Boosters", true)
                 });
             });
 
-            yield return new Feat(subtleDampenersFeat, "You've designed your armor to help you blend in and dampen noise slightly.", "You gain a +1 circumstance bonus to stealth checks.", new() { modificationTrait, initialModificationTrait, armorTrait }, null).WithOnCreature(delegate (Creature creature)
+            yield return new Feat(subtleDampenersFeat, "You've designed your armor to help you blend in and dampen noise slightly.", "When under the effects of Overdrive, you gain a +1 circumstance bonus to Stealth checks", new() { modificationTrait, initialModificationTrait, armorTrait }, null).WithOnCreature(delegate (Creature creature)
             {
                 creature.AddQEffect(new()
                 {
-                    BonusToSkills = (Skill skill) => skill == Skill.Stealth ? new Bonus(1, BonusType.Circumstance, "Muscular Exoskeleton", true) : null
+                    BonusToSkills = (Skill skill) => skill == Skill.Stealth && creature.HasEffect(OverdrivedID) ? new Bonus(1, BonusType.Circumstance, "Muscular Exoskeleton", true) : null
                 });
             });
 
@@ -1232,6 +1255,35 @@ namespace Inventor
         public static int GetLevelDC(int level)
         {
             return 14 + level + (level / 3);
+        }
+
+        private static Item? GetRealPrimaryWeapon(Creature creature)
+        {
+            Item? primaryItem = creature.PrimaryItem;
+            if (primaryItem != null && primaryItem.HasTrait(Trait.Weapon))
+            {
+                return creature.PrimaryItem;
+            }
+
+            Item? primaryItem2 = creature.PrimaryItem;
+            if (primaryItem2 != null && primaryItem2.HasTrait(Trait.TwoHanded))
+            {
+                return null;
+            }
+
+            Item? secondaryItem = creature.SecondaryItem;
+            if (secondaryItem != null && secondaryItem.HasTrait(Trait.Weapon))
+            {
+                return creature.SecondaryItem;
+            }
+
+            Item? secondaryItem2 = creature.SecondaryItem;
+            if (secondaryItem2 != null && secondaryItem2.HasTrait(Trait.TwoHanded))
+            {
+                return null;
+            }
+
+            return null;
         }
 
         //Borrowed from https://github.com/AurixVirlym/DawnniExpanded/blob/main/Spells/Spell.RousingSplash.cs
