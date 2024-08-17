@@ -6,11 +6,7 @@ using Dawnsbury.Core.CharacterBuilder.AbilityScores;
 using Dawnsbury.Core.CharacterBuilder.Feats;
 using Dawnsbury.Core.CharacterBuilder.FeatsDb;
 using Dawnsbury.Core.CharacterBuilder.FeatsDb.Common;
-using Dawnsbury.Core.CharacterBuilder.FeatsDb.Spellbook;
-using Dawnsbury.Core.CharacterBuilder.FeatsDb.TrueFeatDb;
-using Dawnsbury.Core.CharacterBuilder.FeatsDb.TrueFeatDb.Specific;
 using Dawnsbury.Core.CharacterBuilder.Selections.Options;
-using Dawnsbury.Core.CharacterBuilder.Spellcasting;
 using Dawnsbury.Core.CombatActions;
 using Dawnsbury.Core.Creatures;
 using Dawnsbury.Core.Creatures.Parts;
@@ -29,13 +25,7 @@ using Dawnsbury.Display;
 using Dawnsbury.Display.Illustrations;
 using Dawnsbury.Display.Text;
 using Dawnsbury.Modding;
-using Dawnsbury.ThirdParty.SteamApi;
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
-using System;
-using System.Diagnostics;
-using System.Xml.Linq;
-using static Dawnsbury.Core.CharacterBuilder.FeatsDb.TrueFeatDb.BarbarianFeatsDb.AnimalInstinctFeat;
 
 namespace Inventor
 {
@@ -134,16 +124,16 @@ namespace Inventor
             var tamperFeat = ModManager.RegisterFeatName("Tamper", "Tamper");
             var variableCoreFeat = ModManager.RegisterFeatName("VariableCore", "Variable Core");
 
-            var constructCompanionKobotFeat = ModManager.RegisterFeatName("KoBotCompanion", "KoBot");
-            var constructCompanionPangolinBotFeat = ModManager.RegisterFeatName("PangolinBotCompanion", "Pangolin Bot");
+            var constructCompanionFusionAutomotonFeat = ModManager.RegisterFeatName("FusionAutomotonCompanion", "Fusion Automoton");
+            var constructCompanionTrainingDummyFeat = ModManager.RegisterFeatName("TrainingDummyCompanion", "Training Dummy");
             
             #region Construct Companion Feats
 
-            var kobotCompanionFeat = CreateConstructCompanionFeat(constructCompanionKobotFeat, ConstructCompanionType.KoBot, "Your construct is a robotic kobold.", constructInnovationFeatName);
-            yield return kobotCompanionFeat;
+            var fusionAutomotonCompanionFeat = CreateConstructCompanionFeat(constructCompanionFusionAutomotonFeat, ConstructCompanionType.FusionAutomoton, "You've designed a robot unlike anything this world has ever seen.", constructInnovationFeatName);
+            yield return fusionAutomotonCompanionFeat;
 
-            var pangolinBotCompanionFeat = CreateConstructCompanionFeat(constructCompanionPangolinBotFeat, ConstructCompanionType.PangolinBot, "Your construct vaguely resembles a pangolin.", constructInnovationFeatName);
-            yield return pangolinBotCompanionFeat;
+            var trainingDummyCompanionFeat = CreateConstructCompanionFeat(constructCompanionTrainingDummyFeat, ConstructCompanionType.TrainingDummy, "You've outfitted a training dummy with mechanical joints and given it the ability to use weapons.", constructInnovationFeatName);
+            yield return trainingDummyCompanionFeat;
 
             #endregion
 
@@ -512,7 +502,7 @@ namespace Inventor
                 creature.AddQEffect(QEffect.DamageResistance(DamageKind.Chaotic, creature.Level / 2 + 5));
             });
 
-            yield return new Feat(phlogistonicRegulatorFeat, "A layer of insulation in your armor protects you from rapid temperature fluctuations.", "You gain resistance equal to  half your level to cold and fire damage.", new() { modificationTrait, initialModificationTrait, armorTrait }, null).WithOnCreature(delegate (Creature creature)
+            yield return new Feat(phlogistonicRegulatorFeat, "A layer of insulation in your armor protects you from rapid temperature fluctuations.", "You gain resistance equal to 2 + half your level to cold and fire damage.", new() { modificationTrait, initialModificationTrait, armorTrait }, null).WithOnCreature(delegate (Creature creature)
             {
                 creature.AddQEffect(QEffect.DamageResistance(DamageKind.Cold, creature.Level / 2 + 2));
                 creature.AddQEffect(QEffect.DamageResistance(DamageKind.Fire, creature.Level / 2 + 2));
@@ -580,8 +570,8 @@ namespace Inventor
 
             yield return new TrueFeat(constructCompanionFeat, 1, "You have created a construct companion.", "Choose a construct companion.\r\n\r\nAt the beginning of each encounter, the construct companion begins combat next to you. The construct companion can't take actions on its own but you can spend 1 action once per turn to Command it. This will allow the construct companion to spend 2 actions (you will control how the construct companion spends them).\r\n\r\nIf your construct companion dies, you will repair it during your next long rest or downtime.",[inventorTrait, Trait.ClassFeat], new List<Feat>
             {
-                kobotCompanionFeat,
-                pangolinBotCompanionFeat
+                fusionAutomotonCompanionFeat,
+                trainingDummyCompanionFeat
             });
 
             yield return new TrueFeat(explosiveLeapFeat, 1, "You aim an explosion from your innovation downward to launch yourself into the air.", "You jump up to 30 feet in any direction without touching the ground.", [Trait.Fire, inventorTrait, Trait.Move, unstableTrait, Trait.ClassFeat]).WithActionCost(1).WithOnCreature(delegate (Creature creature)
@@ -911,7 +901,7 @@ namespace Inventor
             + "\n- Unarmed attack damage increases from one die to two dice."
             + "\n- Proficiency rank for Perception and all saving throws increases to expert."
             + "\n- Proficiency ranks in Intimidation, Stealth, and Survival increase to trained. If the construct is your innovation and it was already trained in those skills from a modification, increase its proficiency rank in those skills to expert."
-            + "\n\nEven if you don't use the Command an Animal action, your animal companion can still use 1 action at the end of your turn.", [inventorTrait, Trait.ClassFeat])
+            + "\n\nEven if you don't use the Command a Construct Companion action, your construct companion can still use 1 action at the end of your turn.", [inventorTrait, Trait.ClassFeat])
             .WithPrerequisite((CalculatedCharacterSheetValues values) => values.AllFeatNames.Contains(constructCompanionFeat), "You have created a Construct Companion.")
             .WithOnSheet((CalculatedCharacterSheetValues sheet) =>
             {
@@ -1156,8 +1146,8 @@ namespace Inventor
 
         private enum ConstructCompanionType
         {
-            KoBot,
-            PangolinBot
+            FusionAutomoton,
+            TrainingDummy
         }
 
         private static Feat CreateConstructCompanionFeat(FeatName featName, ConstructCompanionType companionType, string flavorText, FeatName constructInnovationFeat)
@@ -1170,7 +1160,7 @@ namespace Inventor
             }
 
             creature.RecalculateLandSpeed();
-            return new Feat(featName, flavorText, "Your animal companion has the following characteristics at level 1:\n\n" + RulesBlock.CreateCreatureDescription(creature), new List<Trait>(), null).WithIllustration(creature.Illustration).WithOnCreature(delegate (CalculatedCharacterSheetValues sheet, Creature inventor)
+            return new Feat(featName, flavorText, "Your construct companion has the following characteristics at level 1:\n\n" + RulesBlock.CreateCreatureDescription(creature), new List<Trait>(), null).WithIllustration(creature.Illustration).WithOnCreature(delegate (CalculatedCharacterSheetValues sheet, Creature inventor)
             {
                 Creature inventor2 = inventor;
                 CalculatedCharacterSheetValues sheet2 = sheet;
@@ -1251,8 +1241,6 @@ namespace Inventor
                                             {
                                                 commandQEffect.UsedThisTurn = true;
 
-                                                //animalCompanion.AddQEffect(QEffect.Quickened((action) => true).WithExpirationAtEndOfOwnerTurn());
-
                                                 animalCompanion.AddQEffect(new QEffect()
                                                 {
                                                   StartOfYourTurn = async (qf, self) => {
@@ -1304,8 +1292,9 @@ namespace Inventor
         {
             Creature creature2 = companionType switch
             {
-                ConstructCompanionType.KoBot => CreateConstructCompanionBase(IllustrationName.KoboldWarrior256, "KoBot", level).WithUnarmedStrike(new Item(IllustrationName.Club, "club", Trait.Unarmed).WithWeaponProperties(new WeaponProperties("1d8", DamageKind.Bludgeoning))).WithAdditionalUnarmedStrike(CommonItems.CreateNaturalWeapon(IllustrationName.Jaws, "jaws", "1d6", DamageKind.Piercing, Trait.Agile, Trait.Finesse)),
-                ConstructCompanionType.PangolinBot => CreateConstructCompanionBase(IllustrationName.Pangolin256, "Pangolin Bot", level).WithUnarmedStrike(new Item(IllustrationName.Slam, "body", Trait.Unarmed).WithWeaponProperties(new WeaponProperties("1d8", DamageKind.Bludgeoning))).WithAdditionalUnarmedStrike(CommonItems.CreateNaturalWeapon(IllustrationName.DragonClaws, "claw", "1d6", DamageKind.Slashing, Trait.Agile, Trait.Finesse)),
+
+                ConstructCompanionType.FusionAutomoton => CreateConstructCompanionBase(IllustrationName.ArchibaldsConstruct256, "Fusion Robot", level).WithUnarmedStrike(new Item(IllustrationName.Fist, "magnetron fist", Trait.Unarmed).WithWeaponProperties(new WeaponProperties("1d8", DamageKind.Bludgeoning))).WithAdditionalUnarmedStrike(CommonItems.CreateNaturalWeapon(IllustrationName.Shortsword, "vibroblade", "1d6", DamageKind.Slashing, Trait.Agile, Trait.Finesse)),
+                ConstructCompanionType.TrainingDummy => CreateConstructCompanionBase(IllustrationName.TrainingDummy256, "Training Dummy", level).WithUnarmedStrike(new Item(IllustrationName.Club, "club", Trait.Unarmed).WithWeaponProperties(new WeaponProperties("1d8", DamageKind.Bludgeoning))).WithAdditionalUnarmedStrike(CommonItems.CreateNaturalWeapon(IllustrationName.Spear, "splinters", "1d6", DamageKind.Piercing, Trait.Agile, Trait.Finesse)),
                 _ => throw new Exception("Unknown construct companion."),
             };
             creature2.PostConstructorInitialization(TBattle.Pseudobattle);
