@@ -962,9 +962,9 @@ namespace Inventor
                 }
 
 
-                if (!you.Actions.ActionHistoryThisTurn.Any((ac => ac.Name == "Command your Animal Companion" || ac.ActionId == ActionId.Delay)))
+                if (!you.Actions.ActionHistoryThisTurn.Any((ac => ac.Name == "Command your Construct Companion" || ac.ActionId == ActionId.Delay)))
                 {
-                    you.Occupies.Overhead("Mature Companion.", Color.Green);
+                    you.Occupies.Overhead("Advanced Companion.", Color.Green);
                     animalCompanion.AddQEffect(new QEffect()
                     {
                         ExpiresAt = ExpirationCondition.ExpiresAtEndOfYourTurn,
