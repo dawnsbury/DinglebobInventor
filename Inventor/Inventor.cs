@@ -792,7 +792,7 @@ namespace Inventor
 
             #region Level 2 Feats
 
-            yield return new TrueFeat(flingAcidFeat, 2, "Your innovation generates an acidic goo.", "You fling acidic goo at an enemy in 30 feet. The target takes 2d6 acid damage plus 2d6 bludgeoning damage, with a basic Reflex save. Enemies that fail take 1d4 persistent acid damage. The initial acid and bludgeoning damage each increase by 1d6 at 3rd level and every odd level thereafter.", [Trait.Acid, inventorTrait, Trait.Manipulate, unstableTrait, Trait.ClassFeat]).WithOnCreature(delegate (Creature creature)
+            yield return new TrueFeat(flingAcidFeat, 2, "Your innovation generates an acidic goo.", "You fling acidic goo at an enemy in 30 feet. The target takes 1d6 acid damage plus 1d6 bludgeoning damage, with a basic Reflex save. Enemies that fail take 1d4 persistent acid damage. The initial acid and bludgeoning damage each increase by 1d6 at 3rd level and every odd level thereafter.", [Trait.Acid, inventorTrait, Trait.Manipulate, unstableTrait, Trait.ClassFeat]).WithOnCreature(delegate (Creature creature)
             {
                 creature.AddQEffect(new()
                 {
@@ -1322,7 +1322,7 @@ namespace Inventor
             Trait.Construct,
             Trait.Minion,
             Trait.AnimalCompanion
-        }, level, wisdom + proficiency, speed, new Defenses(10 + dexterity + proficiency, constitution + proficiency, dexterity + proficiency, wisdom + proficiency), ancestryHp + (6 + constitution) * level, abilities, skills).AddQEffect(QEffect.TraitImmunity(Trait.Mental)).WithProficiency(Trait.Unarmed, Proficiency.Trained).WithEntersInitiativeOrder(entersInitiativeOrder: false).WithProficiency(Trait.UnarmoredDefense, Proficiency.Trained).WithProficiency(Trait.Acrobatics, Proficiency.Trained).WithProficiency(Trait.Athletics, Proficiency.Trained)
+        }, level, wisdom + proficiency, speed, new Defenses(10 + dexterity + proficiency, constitution + proficiency, dexterity + proficiency, wisdom + proficiency), ancestryHp + (6 + constitution) * level, abilities, skills).AddQEffect(QEffect.TraitImmunity(Trait.Mental)).AddQEffect(QEffect.TraitImmunity(Trait.Poison)).WithProficiency(Trait.Unarmed, Proficiency.Trained).WithEntersInitiativeOrder(entersInitiativeOrder: false).WithProficiency(Trait.UnarmoredDefense, Proficiency.Trained).WithProficiency(Trait.Acrobatics, Proficiency.Trained).WithProficiency(Trait.Athletics, Proficiency.Trained)
                 .AddQEffect(new QEffect
                 {
                     StateCheck = delegate (QEffect sc)
