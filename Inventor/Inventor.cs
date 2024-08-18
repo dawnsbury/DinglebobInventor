@@ -1322,7 +1322,8 @@ namespace Inventor
             Trait.Construct,
             Trait.Minion,
             Trait.AnimalCompanion
-        }, level, wisdom + proficiency, speed, new Defenses(10 + dexterity + proficiency, constitution + proficiency, dexterity + proficiency, wisdom + proficiency), ancestryHp + (6 + constitution) * level, abilities, skills).AddQEffect(QEffect.TraitImmunity(Trait.Mental)).AddQEffect(QEffect.TraitImmunity(Trait.Poison)).WithProficiency(Trait.Unarmed, Proficiency.Trained).WithEntersInitiativeOrder(entersInitiativeOrder: false).WithProficiency(Trait.UnarmoredDefense, Proficiency.Trained).WithProficiency(Trait.Acrobatics, Proficiency.Trained).WithProficiency(Trait.Athletics, Proficiency.Trained)
+        }, level, wisdom + proficiency, speed, new Defenses(10 + dexterity + proficiency, constitution + proficiency, dexterity + proficiency, wisdom + proficiency), ancestryHp + (6 + constitution) * level, abilities, skills).AddQEffect(QEffect.TraitImmunity(Trait.Mental)).AddQEffect(QEffect.TraitImmunity(Trait.Poison)).AddQEffect(QEffect.TraitImmunity(Trait.Necromancy)).AddQEffect(QEffect.ImmunityToCondition(QEffectId.Sickened)).AddQEffect(QEffect.ImmunityToCondition(QEffectId.Drained)).AddQEffect(QEffect.ImmunityToCondition(QEffectId.Fatigued)).AddQEffect(QEffect.ImmunityToCondition(QEffectId.Paralyzed)).AddQEffect(QEffect.DamageImmunity(DamageKind.Bleed))
+                .WithProficiency(Trait.Unarmed, Proficiency.Trained).WithEntersInitiativeOrder(entersInitiativeOrder: false).WithProficiency(Trait.UnarmoredDefense, Proficiency.Trained).WithProficiency(Trait.Acrobatics, Proficiency.Trained).WithProficiency(Trait.Athletics, Proficiency.Trained)
                 .AddQEffect(new QEffect
                 {
                     StateCheck = delegate (QEffect sc)
