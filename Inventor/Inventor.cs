@@ -1211,7 +1211,7 @@ namespace Inventor
 
                         var animalCompanion = GetConstructCompanion(user);
 
-                        if (animalCompanion == null)
+                        if (animalCompanion == null || GetConstructCompanion(user) == null || GetConstructCompanion(user).HP <= 0)
                         {
                             return null;
                         }
@@ -1262,7 +1262,7 @@ namespace Inventor
                     },
                     ProvideMainAction = delegate (QEffect qfinventor)
                     {
-                        if (qfinventor.Owner.HasFeat(constructInnovationFeat))
+                        if (qfinventor.Owner.HasFeat(constructInnovationFeat) || GetConstructCompanion(qfinventor.Owner) == null || GetConstructCompanion(qfinventor.Owner).HP <= 0)
                         {
                             return null;
                         }
@@ -1322,7 +1322,7 @@ namespace Inventor
             Trait.Construct,
             Trait.Minion,
             Trait.AnimalCompanion
-        }, level, wisdom + proficiency, speed, new Defenses(10 + dexterity + proficiency, constitution + proficiency, dexterity + proficiency, wisdom + proficiency), ancestryHp + (6 + constitution) * level, abilities, skills).WithProficiency(Trait.Unarmed, Proficiency.Trained).WithEntersInitiativeOrder(entersInitiativeOrder: false).WithProficiency(Trait.UnarmoredDefense, Proficiency.Trained).WithProficiency(Trait.Acrobatics, Proficiency.Trained).WithProficiency(Trait.Athletics, Proficiency.Trained)
+        }, level, wisdom + proficiency, speed, new Defenses(10 + dexterity + proficiency, constitution + proficiency, dexterity + proficiency, wisdom + proficiency), ancestryHp + (6 + constitution) * level, abilities, skills).AddQEffect(QEffect.TraitImmunity(Trait.Mental)).WithProficiency(Trait.Unarmed, Proficiency.Trained).WithEntersInitiativeOrder(entersInitiativeOrder: false).WithProficiency(Trait.UnarmoredDefense, Proficiency.Trained).WithProficiency(Trait.Acrobatics, Proficiency.Trained).WithProficiency(Trait.Athletics, Proficiency.Trained)
                 .AddQEffect(new QEffect
                 {
                     StateCheck = delegate (QEffect sc)
