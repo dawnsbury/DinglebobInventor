@@ -154,7 +154,7 @@ namespace Inventor
 
             var abilityString = "{b}1. Innovation.{/b} You choose to innovate on either your armor or your weapon. You get an initial modification associated with the type you chose.\n\n" +
                 "{b}2. Overdrive {icon:Action}.{/b} Temporarily cranking the gizmos on your body into overdrive, you try to add greater power to your attacks. Once per turn you can attempt a Crafting check that has a standard DC for your level to add additional damage to your sStrikes for the rest of the combat.\n\n" +
-                "{b}3. Explode {icon:Action}{icon:Action}.{/b} You intentionally take your innovation beyond normal safety limits, making it explode and damage nearby creatures without damaging the innovation... hopefully. The explosion deals 2d6 fire damage with a basic Reflex save to all creatures in a 5-foot emanation.\n\nAt 3rd level, and every level thereafter, increase your explosion's damage by 1d6.\n\n" +
+                "{b}3. Explode {icon:TwoActions}.{/b} You intentionally take your innovation beyond normal safety limits, making it explode and damage nearby creatures without damaging the innovation... hopefully. The explosion deals 2d6 fire damage with a basic Reflex save to all creatures in a 5-foot emanation.\n\nAt 3rd level, and every level thereafter, increase your explosion's damage by 1d6.\n\n" +
                 "{b}4 Unstable Actions.{/b} Some actions, like Explode, have the unstable trait. When you use an unstable action, make a DC 15 flat check. On a failure you can't take any more unstable actions this combat. On a critical failure you also take fire damage equal to your level.\n\n" +
                 "{b}5. Shield block {icon:Reaction}.{/b}You can use your shield to reduce damage you take.\n\n" +
                 "{b}At higher levels:{/b}\n" +
@@ -792,7 +792,7 @@ namespace Inventor
 
             #region Level 2 Feats
 
-            yield return new TrueFeat(flingAcidFeat, 2, "Your innovation generates an acidic goo.", "You fling acidic goo at an enemy in 30 feet. The target takes 1d6 acid damage plus 1d6 bludgeoning damage, with a basic Reflex save. Enemies that fail take 1d4 persistent acid damage. The initial acid and bludgeoning damage each increase by 1d6 at 3rd level and every odd level thereafter.", [Trait.Acid, inventorTrait, Trait.Manipulate, unstableTrait, Trait.ClassFeat]).WithOnCreature(delegate (Creature creature)
+            yield return new TrueFeat(flingAcidFeat, 2, "Your innovation generates an acidic goo.", "You fling acidic goo at an enemy in 30 feet. The target takes 1d6 acid damage plus 1d6 bludgeoning damage, with a basic Reflex save. Enemies that fail take 1d4 persistent acid damage. The initial acid and bludgeoning damage each increase by 1d6 at 3rd level and every odd level thereafter.", [Trait.Acid, inventorTrait, Trait.Manipulate, unstableTrait, Trait.ClassFeat]).WithActionCost(2).WithOnCreature(delegate (Creature creature)
             {
                 creature.AddQEffect(new()
                 {
