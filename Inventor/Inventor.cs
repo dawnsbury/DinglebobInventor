@@ -6,6 +6,7 @@ using Dawnsbury.Core.CharacterBuilder.AbilityScores;
 using Dawnsbury.Core.CharacterBuilder.Feats;
 using Dawnsbury.Core.CharacterBuilder.FeatsDb;
 using Dawnsbury.Core.CharacterBuilder.FeatsDb.Common;
+using Dawnsbury.Core.CharacterBuilder.FeatsDb.TrueFeatDb;
 using Dawnsbury.Core.CharacterBuilder.Selections.Options;
 using Dawnsbury.Core.CombatActions;
 using Dawnsbury.Core.Creatures;
@@ -43,13 +44,17 @@ namespace Inventor
 
         public static QEffect Overdrived = new() { Id = OverdrivedID };
 
+        public static QEffectId TurretConfigurationID = ModManager.RegisterEnumMember<QEffectId>("TurretConfigurationEffect");
+
         public static QEffectId VariableCoreEffectID = ModManager.RegisterEnumMember<QEffectId>("VariableCoreEffect");
 
         //The crafting feats here were taken from DawnniExpanded, for integration. It's duplicated here so that that mod is not required.
         //https://github.com/AurixVirlym/DawnniExpanded/blob/main/Misc/Skills.cs
         public static Feat Crafting = new SkillSelectionFeat(FeatName.CustomFeat, Skill.Crafting, Trait.Crafting).WithCustomName("Crafting");
 
-        public static Feat ExpertCrafting = new SkillIncreaseFeat(FeatName.CustomFeat, Skill.Crafting, Trait.Crafting).WithCustomName("Expert in Crafting");
+        public static Feat ExpertCrafting = new SkillIncreaseFeat(FeatName.CustomFeat, Skill.Crafting, Trait.Crafting, Proficiency.Expert).WithCustomName("Expert in Crafting");
+
+        public static Feat MasterCrafting = new SkillIncreaseFeat(FeatName.CustomFeat, Skill.Crafting, Trait.Crafting, Proficiency.Master).WithCustomName("Master in Crafting");
 
         public static IEnumerable<Feat> LoadAll()
         {
@@ -80,12 +85,26 @@ namespace Inventor
                 }
             }
 
+            if (AllFeats.All.All((Feat feat) => feat.CustomName != "Master in Crafting"))
+            {
+                ModManager.AddFeat(MasterCrafting);
+            }
+            else
+            {
+                var craftingFeat = AllFeats.All.Find((Feat feat) => feat.Name == "Master in Crafting");
+                if (craftingFeat != null)
+                {
+                    MasterCrafting = craftingFeat;
+                }
+            }
+
             var inventorTrait = ModManager.RegisterTrait("Inventor");
             var inventorFeat = ModManager.RegisterFeatName("InventorFeat", "Inventor");
             var unstableTrait = ModManager.RegisterTrait("Unstable");
 
             var modificationTrait = ModManager.RegisterTrait("Modification");
             var initialModificationTrait = ModManager.RegisterTrait("Initial Modification");
+            var breakthroughModificationTrait = ModManager.RegisterTrait("Breakthrough Modification");
 
             var armorTrait = ModManager.RegisterTrait("Armor Modification");
             var constructTrait = ModManager.RegisterTrait("Construct Modification");
@@ -110,6 +129,20 @@ namespace Inventor
             var speedBoostersFeat = ModManager.RegisterFeatName("SpeedBoosters", "Speed Boosters");
             var subtleDampenersFeat = ModManager.RegisterFeatName("SubtleDampeners", "Subtle Dampeners");
             var wonderGearsFeat = ModManager.RegisterFeatName("WonderGears", "Wonder Gears");
+
+            var aerodynamicConstructionFeat = ModManager.RegisterFeatName("AerodynamicConstruction", "Aerodynamic Construction");
+            var antimagicConstructionFeat = ModManager.RegisterFeatName("AntimagicConstruction", "Antimagic Construction");
+            var antimagicPlatingFeat = ModManager.RegisterFeatName("AntimagicPlating", "Antimagic Plating");
+            var densePlatingFeat = ModManager.RegisterFeatName("DensePlating", "Dense Plating");
+            var durableConstructionFeat = ModManager.RegisterFeatName("DurableConstruction", "Durable Construction");
+            //var enhancedResistanceFeat = ModManager.RegisterFeatName("EnhancedResistance", "Enhanced Resistance");
+            var hyperBoostersFeat = ModManager.RegisterFeatName("HyperBoosters", "Hyper Boosters");
+            var inconspicuousAppearanceFeat = ModManager.RegisterFeatName("InconspicuousAppearance", "Inconspicuous Appearance");
+            var layeredMeshFeat = ModManager.RegisterFeatName("LayeredMesh", "Layered Mesh");
+            var marvelousGearsFeat = ModManager.RegisterFeatName("MarvelousGears", "Marvelous Gears");
+            var omnirangeStabilizersFeat = ModManager.RegisterFeatName("OmnirangeStabilizers", "Omnirange Stabilizers");
+            var tensileAbsorptionFeat = ModManager.RegisterFeatName("TensileAbsorption", "Tensile Absorption");
+            var turretConfigurationFeat = ModManager.RegisterFeatName("TurretConfiguration", "Turret Configuration");
 
             var advancedConstructCompanionFeat = ModManager.RegisterFeatName("AdvancedConstructCompanion", "Advanced Construct Companion");
             var constructCompanionFeat = ModManager.RegisterFeatName("ConstructCompanion", "Construct Companion");
@@ -187,7 +220,7 @@ namespace Inventor
             ModManager.AddFeat(armorInnovationFeat);
             ModManager.AddFeat(constructInnovationFeat);
             ModManager.AddFeat(weaponInnovationFeat);
-
+            
             #endregion
 
             yield return new ClassSelectionFeat(inventorFeat, "Any tinkerer can follow a diagram to make a device, but you invent the impossible! Every strange contraption you dream up is a unique experiment pushing the edge of possibility, a mysterious machine that seems to work for only you. You're always on the verge of the next great breakthrough, and every trial and tribulation is another opportunity to test and tune. If you can dream it, you can build it.", inventorTrait, new EnforcedAbilityBoost(Ability.Intelligence), 8,
@@ -215,7 +248,33 @@ namespace Inventor
                 sheet.AddSelectionOption(new SingleFeatSelectionOption("InventorFeat1", "Inventor feat", 1, (Feat ft) => ft.HasTrait(inventorTrait) && !ft.HasTrait(modificationTrait)));
                 sheet.AddAtLevel(3, delegate (CalculatedCharacterSheetValues values)
                 {
-                    sheet.AddFeat(ExpertCrafting, null);
+                    values.AddFeat(ExpertCrafting, null);
+                });
+                sheet.AddAtLevel(5, delegate (CalculatedCharacterSheetValues values)
+                {
+                    values.SetProficiency(Trait.Simple, Proficiency.Expert);
+                    values.SetProficiency(Trait.Martial, Proficiency.Expert);
+                });
+                sheet.AddAtLevel(5, delegate (CalculatedCharacterSheetValues values)
+                {
+                    values.SetProficiency(Trait.Reflex, Proficiency.Expert);
+                });
+                sheet.AddAtLevel(7, delegate (CalculatedCharacterSheetValues values)
+                {
+                    values.AddFeat(MasterCrafting, null);
+
+                    if (values.HasFeat(armorInnovationFeat))
+                    {
+                        values.AddSelectionOption(new SingleFeatSelectionOption("ArmorBreakthroughInnovation", "Breakthrough Armor Innovation", 7, (Feat ft) => ft.HasTrait(armorTrait) && ft.HasTrait(breakthroughModificationTrait)));
+                    }
+                    else if (values.HasFeat(constructInnovationFeat))
+                    {
+                        values.AddSelectionOption(new SingleFeatSelectionOption("ConstructBreakthroughInnovation", "Breakthrough Construct Innovation", 7, (Feat ft) => ft.HasTrait(constructTrait) && ft.HasTrait(breakthroughModificationTrait)));
+                    }
+                    else if (values.HasFeat(weaponInnovationFeat))
+                    {
+                        values.AddSelectionOption(new SingleFeatSelectionOption("WeaponBreakthroughInnovation", "Breakthrough Weapon Innovation", 7, (Feat ft) => ft.HasTrait(weaponTrait) && ft.HasTrait(breakthroughModificationTrait)));
+                    }
                 });
             }).WithOnCreature(delegate (Creature creature)
             {
@@ -242,55 +301,215 @@ namespace Inventor
                             damageKind = (DamageKind)variableCore.Tag!;
                         }
 
+                        var possibilities = new List<Possibility>();
+
                         if (user.HasFeat(constructInnovationFeatName))
                         {
-                            return ((ActionPossibility)new CombatAction(user, IllustrationName.BurningHands, "Explode", [damageKind == DamageKind.Acid ? Trait.Acid : damageKind == DamageKind.Cold ? Trait.Cold : damageKind == DamageKind.Electricity ? Trait.Electricity : Trait.Fire, inventorTrait, Trait.Manipulate, unstableTrait], $"You intentionally take your innovation beyond normal safety limits, making it explode and damage nearby creatures without damaging the innovation... hopefully. The explosion deals {(user.Level == 1 ? "2" : user.Level)}d6 {damageKind.ToString().ToLower()} damage with a basic Reflex save to all creatures in a 5-foot emanation around your construct companion.", Target.RangedCreature(100).WithAdditionalConditionOnTargetCreature((user, target) => target.Name == GetConstructCompanion(user).Name ? Usability.Usable : Usability.NotUsableOnThisCreature("Not Companion"))) { ShortDescription = $"Deal {(user.Level == 1 ? "2" : user.Level)}d6 {damageKind.ToString().ToLower()} damage with a basic Reflex save to all creatures inin a 5-foot emanation." }
-                            .WithActionCost(2)
-                            .WithSoundEffect(Dawnsbury.Audio.SfxName.Fireball)
-                            .WithEffectOnEachTarget(async delegate (CombatAction explode, Creature user, Creature target, CheckResult result)
+                            if (creature.Level < 7)
                             {
-                                var explodeEffect = new List<Tile>();
-                                foreach (Edge item in target.Occupies.Neighbours.ToList())
+                                return ((ActionPossibility)new CombatAction(user, IllustrationName.BurningHands, "Explode", [damageKind == DamageKind.Acid ? Trait.Acid : damageKind == DamageKind.Cold ? Trait.Cold : damageKind == DamageKind.Electricity ? Trait.Electricity : Trait.Fire, inventorTrait, Trait.Manipulate, unstableTrait], $"You intentionally take your innovation beyond normal safety limits, making it explode and damage nearby creatures without damaging the innovation... hopefully. The explosion deals {(user.Level == 1 ? "2" : user.Level)}d6 {damageKind.ToString().ToLower()} damage with a basic Reflex save to all creatures in a 5-foot emanation around your construct companion.", Target.RangedCreature(100).WithAdditionalConditionOnTargetCreature((user, target) => target.Name == GetConstructCompanion(user).Name ? Usability.Usable : Usability.NotUsableOnThisCreature("Not Companion"))) { ShortDescription = $"Deal {(user.Level == 1 ? "2" : user.Level)}d6 {damageKind.ToString().ToLower()} damage with a basic Reflex save to all creatures inin a 5-foot emanation around your construct." }
+                                .WithActionCost(2)
+                                .WithSoundEffect(Dawnsbury.Audio.SfxName.Fireball)
+                                .WithEffectOnEachTarget(async delegate (CombatAction explode, Creature user, Creature target, CheckResult result)
                                 {
-                                    explodeEffect.Add(item.Tile);
-                                }
+                                    var explodeEffect = new List<Tile>();
+                                    foreach (Edge item in target.Occupies.Neighbours.ToList())
+                                    {
+                                        explodeEffect.Add(item.Tile);
+                                    }
 
-                                await CommonAnimations.CreateConeAnimation(target.Battle, target.Occupies.ToCenterVector(), explodeEffect, 25, ProjectileKind.Cone, explode.Illustration);
+                                    await CommonAnimations.CreateConeAnimation(target.Battle, target.Occupies.ToCenterVector(), explodeEffect, 25, ProjectileKind.Cone, explode.Illustration);
 
-                                foreach (Creature target2 in target.Battle.AllCreatures.Where(cr => cr.DistanceTo(target) <= 1 && cr != target).ToList<Creature>())
+                                    foreach (Creature target2 in target.Battle.AllCreatures.Where(cr => cr.DistanceTo(target) <= 1 && cr != target).ToList<Creature>())
+                                    {
+                                        CheckResult checkResult = CommonSpellEffects.RollSavingThrow(target2, explode, Defense.Reflex, (creature) => user.ProficiencyLevel + user.Abilities.Intelligence + 12);
+                                        await CommonSpellEffects.DealBasicDamage(explode, user, target2, checkResult, user.Level == 1 ? "2d6" : user.Level + "d6", damageKind);
+                                    }
+                                })
+                                .WithEffectOnSelf(async delegate (CombatAction unstable, Creature user)
                                 {
-                                    CheckResult checkResult = CommonSpellEffects.RollSavingThrow(target2, explode, Defense.Reflex, (creature) => user.ProficiencyLevel + user.Abilities.Intelligence + 12);
-                                    await CommonSpellEffects.DealBasicDamage(explode, user, target2, checkResult, user.Level == 1 ? "2d6" : user.Level + "d6", damageKind);
-
-                                }
-                            })
-                            .WithEffectOnSelf(async delegate (CombatAction unstable, Creature user)
-                            {
-                                await MakeUnstableCheck(unstable, user);
-                            })).WithPossibilityGroup("Unstable");
-                        }
-
-                        return ((ActionPossibility)new CombatAction(user, IllustrationName.BurningHands, "Explode", [damageKind == DamageKind.Acid ? Trait.Acid : damageKind == DamageKind.Cold ? Trait.Cold : damageKind == DamageKind.Electricity ? Trait.Electricity : Trait.Fire, inventorTrait, Trait.Manipulate, unstableTrait], $"You intentionally take your innovation beyond normal safety limits, making it explode and damage nearby creatures without damaging the innovation... hopefully. The explosion deals {(user.Level == 1 ? "2" : user.Level)}d6 {damageKind.ToString().ToLower()} damage with a basic Reflex save to all creatures in a 5-foot emanation.", Target.SelfExcludingEmanation(1)) { ShortDescription = $"Deal {(user.Level == 1 ? "2" : user.Level)}d6 {damageKind.ToString().ToLower()} damage with a basic Reflex save to all creatures inin a 5-foot emanation." }
-                        .WithActionCost(2)
-                        .WithSoundEffect(Dawnsbury.Audio.SfxName.Fireball)
-                        .WithSavingThrow(new SavingThrow(Defense.Reflex, (Creature? explodeUser) => explodeUser!.ProficiencyLevel + explodeUser!.Abilities.Intelligence + 12))
-                        .WithEffectOnEachTarget(async delegate (CombatAction explode, Creature user, Creature target, CheckResult result)
-                        {
-                            var explodeEffect = new List<Tile>();
-                            foreach (Edge item in user.Occupies.Neighbours.ToList())
-                            {
-                                explodeEffect.Add(item.Tile);
+                                    await MakeUnstableCheck(unstable, user);
+                                })).WithPossibilityGroup("Unstable");
                             }
-                            await CommonAnimations.CreateConeAnimation(user.Battle, user.Occupies.ToCenterVector(), explodeEffect, 25, ProjectileKind.Cone, explode.Illustration);
 
-                            await CommonSpellEffects.DealBasicDamage(explode, user, target, result, user.Level == 1 ? "2d6" : user.Level + "d6", damageKind);
-                        })
-                        .WithEffectOnSelf(async delegate (CombatAction unstable, Creature user)
+
+                            possibilities.Add((ActionPossibility)new CombatAction(user, IllustrationName.BurningHands, "5-Foot Explode", [damageKind == DamageKind.Acid ? Trait.Acid : damageKind == DamageKind.Cold ? Trait.Cold : damageKind == DamageKind.Electricity ? Trait.Electricity : Trait.Fire, inventorTrait, Trait.Manipulate, unstableTrait], $"You intentionally take your innovation beyond normal safety limits, making it explode and damage nearby creatures without damaging the innovation... hopefully. The explosion deals {(user.Level == 1 ? "2" : user.Level)}d6 {damageKind.ToString().ToLower()} damage with a basic Reflex save to all creatures in a 5-foot emanation.", Target.RangedCreature(100).WithAdditionalConditionOnTargetCreature((user, target) => target.Name == GetConstructCompanion(user).Name ? Usability.Usable : Usability.NotUsableOnThisCreature("Not Companion"))) { ShortDescription = $"Deal {(user.Level == 1 ? "2" : user.Level)}d6 {damageKind.ToString().ToLower()} damage with a basic Reflex save to all creatures in a 5-foot emanation around your construct." }
+                                .WithActionCost(2)
+                                .WithSoundEffect(Dawnsbury.Audio.SfxName.Fireball)
+                                .WithSavingThrow(new SavingThrow(Defense.Reflex, (Creature? explodeUser) => explodeUser!.ProficiencyLevel + explodeUser!.Abilities.Intelligence + 12))
+                                .WithEffectOnEachTarget(async delegate (CombatAction explode, Creature user, Creature target, CheckResult result)
+                                {
+                                    var explodeEffect = new List<Tile>();
+                                    foreach (Edge item in target.Occupies.Neighbours.ToList())
+                                    {
+                                        explodeEffect.Add(item.Tile);
+                                    }
+
+                                    await CommonAnimations.CreateConeAnimation(target.Battle, target.Occupies.ToCenterVector(), explodeEffect, 25, ProjectileKind.Cone, explode.Illustration);
+
+                                    foreach (Creature target2 in target.Battle.AllCreatures.Where(cr => cr.DistanceTo(target) <= 1 && cr != target).ToList<Creature>())
+                                    {
+                                        CheckResult checkResult = CommonSpellEffects.RollSavingThrow(target2, explode, Defense.Reflex, (creature) => user.ProficiencyLevel + user.Abilities.Intelligence + 12);
+                                        await CommonSpellEffects.DealBasicDamage(explode, user, target2, checkResult, user.Level == 1 ? "2d6" : user.Level + "d6", damageKind);
+                                    }
+                                })
+                                .WithEffectOnSelf(async delegate (CombatAction unstable, Creature user)
+                                {
+                                    await MakeUnstableCheck(unstable, user);
+                                }));
+                            possibilities.Add((ActionPossibility)new CombatAction(user, IllustrationName.BurningHands, "10-Foot Explode", [damageKind == DamageKind.Acid ? Trait.Acid : damageKind == DamageKind.Cold ? Trait.Cold : damageKind == DamageKind.Electricity ? Trait.Electricity : Trait.Fire, inventorTrait, Trait.Manipulate, unstableTrait], $"You intentionally take your innovation beyond normal safety limits, making it explode and damage nearby creatures without damaging the innovation... hopefully. The explosion deals {(user.Level == 1 ? "2" : user.Level)}d6 {damageKind.ToString().ToLower()} damage with a basic Reflex save to all creatures in a 10-foot emanation.", Target.RangedCreature(100).WithAdditionalConditionOnTargetCreature((user, target) => target.Name == GetConstructCompanion(user).Name ? Usability.Usable : Usability.NotUsableOnThisCreature("Not Companion"))) { ShortDescription = $"Deal {(user.Level == 1 ? "2" : user.Level)}d6 {damageKind.ToString().ToLower()} damage with a basic Reflex save to all creatures inin a 10-foot emanation around your construct." }
+                                .WithActionCost(2)
+                                .WithSoundEffect(Dawnsbury.Audio.SfxName.Fireball)
+                                .WithSavingThrow(new SavingThrow(Defense.Reflex, (Creature? explodeUser) => explodeUser!.ProficiencyLevel + explodeUser!.Abilities.Intelligence + 12))
+                                .WithEffectOnEachTarget(async delegate (CombatAction explode, Creature user, Creature target, CheckResult result)
+                                {
+                                    var explodeEffect = new List<Tile>();
+                                    foreach (Edge item in target.Occupies.Neighbours.ToList())
+                                    {
+                                        explodeEffect.Add(item.Tile);
+                                    }
+
+                                    await CommonAnimations.CreateConeAnimation(target.Battle, target.Occupies.ToCenterVector(), explodeEffect, 25, ProjectileKind.Cone, explode.Illustration);
+
+                                    foreach (Creature target2 in target.Battle.AllCreatures.Where(cr => cr.DistanceTo(target) <= 2 && cr != target).ToList<Creature>())
+                                    {
+                                        CheckResult checkResult = CommonSpellEffects.RollSavingThrow(target2, explode, Defense.Reflex, (creature) => user.ProficiencyLevel + user.Abilities.Intelligence + 12);
+                                        await CommonSpellEffects.DealBasicDamage(explode, user, target2, checkResult, user.Level == 1 ? "2d6" : user.Level + "d6", damageKind);
+                                    }
+                                })
+                                .WithEffectOnSelf(async delegate (CombatAction unstable, Creature user)
+                                {
+                                    await MakeUnstableCheck(unstable, user);
+                                }));
+
+                            if (creature.Level >= 15)
+                            {
+                                possibilities.Add((ActionPossibility)new CombatAction(user, IllustrationName.BurningHands, "15-Foot Explode", [damageKind == DamageKind.Acid ? Trait.Acid : damageKind == DamageKind.Cold ? Trait.Cold : damageKind == DamageKind.Electricity ? Trait.Electricity : Trait.Fire, inventorTrait, Trait.Manipulate, unstableTrait], $"You intentionally take your innovation beyond normal safety limits, making it explode and damage nearby creatures without damaging the innovation... hopefully. The explosion deals {(user.Level == 1 ? "2" : user.Level)}d6 {damageKind.ToString().ToLower()} damage with a basic Reflex save to all creatures in a 15-foot emanation.", Target.RangedCreature(100).WithAdditionalConditionOnTargetCreature((user, target) => target.Name == GetConstructCompanion(user).Name ? Usability.Usable : Usability.NotUsableOnThisCreature("Not Companion"))) { ShortDescription = $"Deal {(user.Level == 1 ? "2" : user.Level)}d6 {damageKind.ToString().ToLower()} damage with a basic Reflex save to all creatures inin a 15-foot emanation around your construct." }
+                                    .WithActionCost(2)
+                                    .WithSoundEffect(Dawnsbury.Audio.SfxName.Fireball)
+                                    .WithSavingThrow(new SavingThrow(Defense.Reflex, (Creature? explodeUser) => explodeUser!.ProficiencyLevel + explodeUser!.Abilities.Intelligence + 12))
+                                    .WithEffectOnEachTarget(async delegate (CombatAction explode, Creature user, Creature target, CheckResult result)
+                                    {
+                                        var explodeEffect = new List<Tile>();
+                                        foreach (Edge item in target.Occupies.Neighbours.ToList())
+                                        {
+                                            explodeEffect.Add(item.Tile);
+                                        }
+
+                                        await CommonAnimations.CreateConeAnimation(target.Battle, target.Occupies.ToCenterVector(), explodeEffect, 25, ProjectileKind.Cone, explode.Illustration);
+
+                                        foreach (Creature target2 in target.Battle.AllCreatures.Where(cr => cr.DistanceTo(target) <= 3 && cr != target).ToList<Creature>())
+                                        {
+                                            CheckResult checkResult = CommonSpellEffects.RollSavingThrow(target2, explode, Defense.Reflex, (creature) => user.ProficiencyLevel + user.Abilities.Intelligence + 12);
+                                            await CommonSpellEffects.DealBasicDamage(explode, user, target2, checkResult, user.Level == 1 ? "2d6" : user.Level + "d6", damageKind);
+                                        }
+                                    })
+                                    .WithEffectOnSelf(async delegate (CombatAction unstable, Creature user)
+                                    {
+                                        await MakeUnstableCheck(unstable, user);
+                                    }));
+                            }
+                        }
+                        else
                         {
-                            await MakeUnstableCheck(unstable, user);
-                        })).WithPossibilityGroup("Unstable");
+                            if (creature.Level < 7)
+                            {
+                                return ((ActionPossibility)new CombatAction(user, IllustrationName.BurningHands, "Explode", [damageKind == DamageKind.Acid ? Trait.Acid : damageKind == DamageKind.Cold ? Trait.Cold : damageKind == DamageKind.Electricity ? Trait.Electricity : Trait.Fire, inventorTrait, Trait.Manipulate, unstableTrait], $"You intentionally take your innovation beyond normal safety limits, making it explode and damage nearby creatures without damaging the innovation... hopefully. The explosion deals {(user.Level == 1 ? "2" : user.Level)}d6 {damageKind.ToString().ToLower()} damage with a basic Reflex save to all creatures in a 5-foot emanation.", Target.SelfExcludingEmanation(1)) { ShortDescription = $"Deal {(user.Level == 1 ? "2" : user.Level)}d6 {damageKind.ToString().ToLower()} damage with a basic Reflex save to all creatures in a 5-foot emanation." }
+                                .WithActionCost(2)
+                                .WithSoundEffect(Dawnsbury.Audio.SfxName.Fireball)
+                                .WithSavingThrow(new SavingThrow(Defense.Reflex, (Creature? explodeUser) => explodeUser!.ProficiencyLevel + explodeUser!.Abilities.Intelligence + 12))
+                                .WithEffectOnEachTarget(async delegate (CombatAction explode, Creature user, Creature target, CheckResult result)
+                                {
+                                    var explodeEffect = new List<Tile>();
+                                    foreach (Edge item in user.Occupies.Neighbours.ToList())
+                                    {
+                                        explodeEffect.Add(item.Tile);
+                                    }
+                                    await CommonAnimations.CreateConeAnimation(user.Battle, user.Occupies.ToCenterVector(), explodeEffect, 25, ProjectileKind.Cone, explode.Illustration);
+
+                                    await CommonSpellEffects.DealBasicDamage(explode, user, target, result, user.Level == 1 ? "2d6" : user.Level + "d6", damageKind);
+                                })
+                                .WithEffectOnSelf(async delegate (CombatAction unstable, Creature user)
+                                {
+                                    await MakeUnstableCheck(unstable, user);
+                                })).WithPossibilityGroup("Unstable");
+                            }
+
+                            possibilities.Add((ActionPossibility)new CombatAction(user, IllustrationName.BurningHands, "5-Foot Explode", [damageKind == DamageKind.Acid ? Trait.Acid : damageKind == DamageKind.Cold ? Trait.Cold : damageKind == DamageKind.Electricity ? Trait.Electricity : Trait.Fire, inventorTrait, Trait.Manipulate, unstableTrait], $"You intentionally take your innovation beyond normal safety limits, making it explode and damage nearby creatures without damaging the innovation... hopefully. The explosion deals {(user.Level == 1 ? "2" : user.Level)}d6 {damageKind.ToString().ToLower()} damage with a basic Reflex save to all creatures in a 5-foot emanation.", Target.SelfExcludingEmanation(1)) { ShortDescription = $"Deal {(user.Level == 1 ? "2" : user.Level)}d6 {damageKind.ToString().ToLower()} damage with a basic Reflex save to all creatures in an emanation." }
+                                .WithActionCost(2)
+                                .WithSoundEffect(Dawnsbury.Audio.SfxName.Fireball)
+                                .WithSavingThrow(new SavingThrow(Defense.Reflex, (Creature? explodeUser) => explodeUser!.ProficiencyLevel + explodeUser!.Abilities.Intelligence + 12))
+                                .WithEffectOnEachTarget(async delegate (CombatAction explode, Creature user, Creature target, CheckResult result)
+                                {
+                                    var explodeEffect = new List<Tile>();
+                                    foreach (Edge item in user.Occupies.Neighbours.ToList())
+                                    {
+                                        explodeEffect.Add(item.Tile);
+                                    }
+                                    await CommonAnimations.CreateConeAnimation(user.Battle, user.Occupies.ToCenterVector(), explodeEffect, 25, ProjectileKind.Cone, explode.Illustration);
+
+                                    await CommonSpellEffects.DealBasicDamage(explode, user, target, result, user.Level == 1 ? "2d6" : user.Level + "d6", damageKind);
+                                })
+                                .WithEffectOnSelf(async delegate (CombatAction unstable, Creature user)
+                                {
+                                    await MakeUnstableCheck(unstable, user);
+                                }));
+                            possibilities.Add((ActionPossibility)new CombatAction(user, IllustrationName.BurningHands, "10-Foot Explode", [damageKind == DamageKind.Acid ? Trait.Acid : damageKind == DamageKind.Cold ? Trait.Cold : damageKind == DamageKind.Electricity ? Trait.Electricity : Trait.Fire, inventorTrait, Trait.Manipulate, unstableTrait], $"You intentionally take your innovation beyond normal safety limits, making it explode and damage nearby creatures without damaging the innovation... hopefully. The explosion deals {(user.Level == 1 ? "2" : user.Level)}d6 {damageKind.ToString().ToLower()} damage with a basic Reflex save to all creatures in a 10-foot emanation.", Target.SelfExcludingEmanation(2)) { ShortDescription = $"Deal {(user.Level == 1 ? "2" : user.Level)}d6 {damageKind.ToString().ToLower()} damage with a basic Reflex save to all creatures inin a 10-foot emanation." }
+                                .WithActionCost(2)
+                                .WithSoundEffect(Dawnsbury.Audio.SfxName.Fireball)
+                                .WithSavingThrow(new SavingThrow(Defense.Reflex, (Creature? explodeUser) => explodeUser!.ProficiencyLevel + explodeUser!.Abilities.Intelligence + 12))
+                                .WithEffectOnEachTarget(async delegate (CombatAction explode, Creature user, Creature target, CheckResult result)
+                                {
+                                    var explodeEffect = new List<Tile>();
+                                    foreach (Edge item in user.Occupies.Neighbours.ToList())
+                                    {
+                                        explodeEffect.Add(item.Tile);
+                                    }
+                                    await CommonAnimations.CreateConeAnimation(user.Battle, user.Occupies.ToCenterVector(), explodeEffect, 25, ProjectileKind.Cone, explode.Illustration);
+
+                                    await CommonSpellEffects.DealBasicDamage(explode, user, target, result, user.Level == 1 ? "2d6" : user.Level + "d6", damageKind);
+                                })
+                                .WithEffectOnSelf(async delegate (CombatAction unstable, Creature user)
+                                {
+                                    await MakeUnstableCheck(unstable, user);
+                                }));
+
+                            if (creature.Level >= 15)
+                            {
+                                possibilities.Add((ActionPossibility)new CombatAction(user, IllustrationName.BurningHands, "15-Foot Explode", [damageKind == DamageKind.Acid ? Trait.Acid : damageKind == DamageKind.Cold ? Trait.Cold : damageKind == DamageKind.Electricity ? Trait.Electricity : Trait.Fire, inventorTrait, Trait.Manipulate, unstableTrait], $"You intentionally take your innovation beyond normal safety limits, making it explode and damage nearby creatures without damaging the innovation... hopefully. The explosion deals {(user.Level == 1 ? "2" : user.Level)}d6 {damageKind.ToString().ToLower()} damage with a basic Reflex save to all creatures in a 15-foot emanation.", Target.SelfExcludingEmanation(3)) { ShortDescription = $"Deal {(user.Level == 1 ? "2" : user.Level)}d6 {damageKind.ToString().ToLower()} damage with a basic Reflex save to all creatures inin a 15-foot emanation." }
+                                    .WithActionCost(2)
+                                    .WithSoundEffect(Dawnsbury.Audio.SfxName.Fireball)
+                                    .WithSavingThrow(new SavingThrow(Defense.Reflex, (Creature? explodeUser) => explodeUser!.ProficiencyLevel + explodeUser!.Abilities.Intelligence + 12))
+                                    .WithEffectOnEachTarget(async delegate (CombatAction explode, Creature user, Creature target, CheckResult result)
+                                    {
+                                        var explodeEffect = new List<Tile>();
+                                        foreach (Edge item in user.Occupies.Neighbours.ToList())
+                                        {
+                                            explodeEffect.Add(item.Tile);
+                                        }
+                                        await CommonAnimations.CreateConeAnimation(user.Battle, user.Occupies.ToCenterVector(), explodeEffect, 25, ProjectileKind.Cone, explode.Illustration);
+
+                                        await CommonSpellEffects.DealBasicDamage(explode, user, target, result, user.Level == 1 ? "2d6" : user.Level + "d6", damageKind);
+                                    })
+                                    .WithEffectOnSelf(async delegate (CombatAction unstable, Creature user)
+                                    {
+                                        await MakeUnstableCheck(unstable, user);
+                                    }));
+                            }
+                        }
+                        return new SubmenuPossibility(IllustrationName.BurningHands, "Explode")
+                        {
+                            Subsections =
+                            {
+                                new PossibilitySection("Explode")
+                                {
+                                    Possibilities = possibilities
+                                }
+                            }
+                        }.WithPossibilityGroup("Unstable");
                     }
                 });
+
                 var overdriveAction = 
                 creature.AddQEffect(new()
                 {
@@ -302,7 +521,7 @@ namespace Inventor
                             return null;
                         }
 
-                        return (ActionPossibility)new CombatAction(user, IllustrationName.Swords, "Overdrive", [inventorTrait, Trait.Manipulate], "Temporarily cranking the gizmos on your body into overdrive, you try to add greater power to your attacks. Attempt a Crafting check that has a standard DC for your level." + S.FourDegreesOfSuccess("You deal an extra " + (creature.Abilities.Intelligence + (creature.Level >= 3 ? 1 : 0)) + " damage with strikes.", "You deal an extra " + (creature.Abilities.Intelligence / 2 + (creature.Level >= 3 ? 1 : 0)) + " damage with strikes.", null, "You can't attempt to Overdrive again this combat."), Target.Self()) { ShortDescription = "Attempt a Crafting check to add extra damage to your attacks for the combat." }
+                        return (ActionPossibility)new CombatAction(user, IllustrationName.Swords, "Overdrive", [inventorTrait, Trait.Manipulate], "Temporarily cranking the gizmos on your body into overdrive, you try to add greater power to your attacks. Attempt a Crafting check that has a standard DC for your level." + S.FourDegreesOfSuccess("You deal an extra " + (creature.Abilities.Intelligence + (creature.Level >= 3 ? creature.Level >= 7 ? 2 : 1 : 0)) + " damage with strikes.", "You deal an extra " + (creature.Abilities.Intelligence / 2 + (creature.Level >= 3 ? creature.Level >= 7 ? 2 : 1 : 0)) + " damage with strikes.", null, "You can't attempt to Overdrive again this combat."), Target.Self()) { ShortDescription = "Attempt a Crafting check to add extra damage to your attacks for the combat." }
                         .WithActionCost(1)
                         .WithSoundEffect(Dawnsbury.Audio.SfxName.ElectricBlast)
                         .WithEffectOnSelf(async delegate (CombatAction overdrive, Creature user)
@@ -319,11 +538,11 @@ namespace Inventor
                                 {
                                     Name = "Critical Overdrive",
                                     Illustration = IllustrationName.Swords,
-                                    Description = $"You deal an extra {creature.Abilities.Intelligence + (creature.Level >= 3 ? 1 : 0)} damage with strikes.",
+                                    Description = $"You deal an extra {creature.Abilities.Intelligence + (creature.Level >= 3 ? creature.Level >= 7 ? 2 : 1 : 0)} damage with strikes.",
                                     Id = OverdrivedID,
                                     YouDealDamageWithStrike = (QEffect effect, CombatAction action, DiceFormula diceFormula, Creature target) =>
                                     {
-                                        return diceFormula.Add(DiceFormula.FromText($"{creature.Abilities.Intelligence + (creature.Level >= 3 ? 1 : 0)}", "Overdrive"));
+                                        return diceFormula.Add(DiceFormula.FromText($"{creature.Abilities.Intelligence + (creature.Level >= 3 ? creature.Level >= 7 ? 2 : 1 : 0)}", "Overdrive"));
                                     }
                                 };
 
@@ -345,11 +564,11 @@ namespace Inventor
                                 {
                                     Name = "Overdrive",
                                     Illustration = new SideBySideIllustration(IllustrationName.GravityWeapon, IllustrationName.Swords),
-                                    Description = $"You deal an extra {creature.Abilities.Intelligence / 2 + (creature.Level >= 3 ? 1 : 0)} damage with strikes.",
+                                    Description = $"You deal an extra {creature.Abilities.Intelligence / 2 + (creature.Level >= 3 ? creature.Level >= 7 ? 2 : 1 : 0)} damage with strikes.",
                                     Id = OverdrivedID,
                                     YouDealDamageWithStrike = (QEffect effect, CombatAction action, DiceFormula diceFormula, Creature target) =>
                                     {
-                                        return diceFormula.Add(DiceFormula.FromText($"{creature.Abilities.Intelligence / 2 + (creature.Level >= 3 ? 1 : 0)}", "Overdrive"));
+                                        return diceFormula.Add(DiceFormula.FromText($"{creature.Abilities.Intelligence / 2 + (creature.Level >= 3 ? creature.Level >= 7 ? 2 : 1 : 0)}", "Overdrive"));
                                     }
                                 };
 
@@ -395,6 +614,11 @@ namespace Inventor
                         });
                     }
                 });
+
+                if (creature.Level >= 7)
+                {
+                    creature.AddQEffect(QEffect.WeaponSpecialization());
+                }
             });
 
             #endregion
@@ -563,6 +787,201 @@ namespace Inventor
                     companion.Skills.Set(Skill.Survival, companion.Abilities.Wisdom + companion.Proficiencies.Get(Trait.Survival).ToNumber(companion.Level));
                 };
             });
+
+            #endregion
+
+            #region Breakthrough Innovations
+
+            yield return new Feat(aerodynamicConstructionFeat, "You carefully engineer the shape of your weapon to maintain its momentum in attacks against successive targets.", "The melee weapon in your left hand at the start of combat gains the sweep and versatile slashing traits.", new() { modificationTrait, breakthroughModificationTrait, weaponTrait }, null).WithOnCreature(delegate (Creature creature)
+            {
+                creature.AddQEffect(new("Aerodynamic Construction", "The melee weapon in your left hand at the start of combat gains the sweep and versatile slashing traits.")
+                {
+                    StartOfCombat = async delegate (QEffect effect)
+                    {
+                        var user = effect.Owner;
+
+                        if (user.PrimaryWeapon is null || user.PrimaryWeapon.HasTrait(Trait.Unarmed) || !user.PrimaryWeapon.HasTrait(Trait.Melee))
+                        {
+                            return;
+                        }
+
+                        user.PrimaryWeapon.Traits.AddRange([Trait.Sweep, Trait.VersatileS]);
+                    }
+                });
+            });
+
+            yield return new Feat(antimagicConstructionFeat, "Whether you used some clever adaptation of a magic-negating metal or created magical protections entirely of your own devising, you've made your innovation highly resilient to spells.", "Your construct innovation gains a +2 circumstance bonus to all saving throws and AC against spells.", new() { modificationTrait, breakthroughModificationTrait, constructTrait }, null).WithOnSheet((CalculatedCharacterSheetValues sheet) =>
+            {
+                sheet.RangerBenefitsToCompanion += (companion, inventor) =>
+                {
+                    companion.AddQEffect(new("Antimagic Construction", "Your construct innovation gains a +2 circumstance bonus to all saving throws and AC against spells.")
+                    {
+                        BonusToDefenses = (QEffect qf, CombatAction? combatAction, Defense defense) => combatAction != null && combatAction.HasTrait(Trait.Spell) && (defense == Defense.AC || defense == Defense.Fortitude || defense == Defense.Reflex || defense == Defense.Will) ? new Bonus(2, BonusType.Circumstance, "Antimagic Construction", true) : null
+                    });
+                };
+            });
+
+            yield return new Feat(antimagicPlatingFeat, "Whether you used some clever adaptation of the magic-negating skymetal known as noqual or created magical protections of your own design, you've strengthened your armor against magic.", "You gain a +1 circumstance bonus to all saving throws against spells and to AC against spells.", new() { modificationTrait, breakthroughModificationTrait, armorTrait }, null).WithOnCreature(delegate (Creature creature)
+            {
+                creature.AddQEffect(new("Antimagic Plating", "You gain a +1 circumstance bonus to all saving throws against spells and to AC against spells.")
+                {
+                    BonusToDefenses = (QEffect qf, CombatAction? combatAction, Defense defense) => combatAction != null && combatAction.HasTrait(Trait.Spell) && (defense == Defense.AC || defense == Defense.Fortitude || defense == Defense.Reflex || defense == Defense.Will) ? new Bonus(1, BonusType.Circumstance, "Antimagic Plating", true) : null
+                });
+            });
+
+            yield return new Feat(densePlatingFeat, "You have encased your armor in robust plating.", "You gain resistance to slashing damage equal to half your level.", new() { modificationTrait, breakthroughModificationTrait, armorTrait }, null).WithOnCreature(delegate (Creature creature)
+            {
+                creature.AddQEffect(QEffect.DamageResistance(DamageKind.Slashing, creature.Level / 2));
+            });
+
+            yield return new Feat(durableConstructionFeat, "Your innovation is solidly built; it can take significant punishment before being destroyed.", "Increase your construct innovation's maximum HP by your level.", new() { modificationTrait, breakthroughModificationTrait, constructTrait }, null).WithOnSheet((CalculatedCharacterSheetValues sheet) =>
+            {
+                sheet.RangerBenefitsToCompanion += (companion, inventor) =>
+                {
+                    companion.MaxHP += inventor.Level;
+                };
+            });
+
+            yield return new Feat(hyperBoostersFeat, "You've improved your speed boosters' power through a breakthrough that significantly increases the energy flow without risking exploding.", "You gain a +10-foot status bonus to your Speed, which increases to a +20-foot status bonus when under the effects of Overdrive.", new() { modificationTrait, breakthroughModificationTrait, armorTrait }, null).WithOnCreature(delegate (Creature creature)
+            {
+                creature.AddQEffect(new()
+                {
+                    BonusToAllSpeeds = (QEffect effect) => new(creature.HasEffect(OverdrivedID) ? 4 : 2, BonusType.Status, "Hyper Boosters", true)
+                });
+            }).WithPrerequisite((CalculatedCharacterSheetValues values) => values.AllFeatNames.Contains(speedBoostersFeat), "You must have the Speed Boosters modification.");
+
+            yield return new Feat(inconspicuousAppearanceFeat, "Your innovation is built for easy concealment and surprise attacks.", "The melee weapon in your left hand at the start of combat gains the backstabber and versatile piercing traits.", new() { modificationTrait, breakthroughModificationTrait, weaponTrait }, null).WithOnCreature(delegate (Creature creature)
+            {
+                creature.AddQEffect(new("Inconspicuous Appearance", "The melee weapon in your left hand at the start of combat gains the backstabber and versatile piercing traits.")
+                {
+                    StartOfCombat = async delegate (QEffect effect)
+                    {
+                        var user = effect.Owner;
+
+                        if (user.PrimaryWeapon is null || user.PrimaryWeapon.HasTrait(Trait.Unarmed) || !user.PrimaryWeapon.HasTrait(Trait.Melee))
+                        {
+                            return;
+                        }
+
+                        user.PrimaryWeapon.Traits.AddRange([Trait.Backstabber, Trait.VersatileP]);
+                    }
+                });
+            });
+
+            yield return new Feat(layeredMeshFeat, "You've woven an incredibly powerful network of interlocking mesh around your armor, which catches piercing attacks and diffuses them.", "You gain resistance to piercing damage equal to half your level.", new() { modificationTrait, breakthroughModificationTrait, armorTrait }, null).WithOnCreature(delegate (Creature creature)
+            {
+                creature.AddQEffect(QEffect.DamageResistance(DamageKind.Piercing, creature.Level / 2));
+            });
+
+            yield return new Feat(marvelousGearsFeat, "You've upgraded your innovation's memory matrix.", "Your innovation gains expert proficiency in Intimidation, Stealth, and Survival. For any of these skills in which it was already an expert (because of being an advanced construct companion, for example), it gains master proficiency instead.", new() { modificationTrait, breakthroughModificationTrait, constructTrait }, null).WithOnSheet((CalculatedCharacterSheetValues sheet) =>
+            {
+                sheet.RangerBenefitsToCompanion += (Creature companion, Creature inventor) =>
+                {
+                    if (companion.Proficiencies.AllProficiencies[Trait.Intimidation] == Proficiency.Expert)
+                    {
+                        companion.Proficiencies.Set(Trait.Intimidation, Proficiency.Master);
+                    }
+                    else
+                    {
+                        companion.Proficiencies.Set(Trait.Intimidation, Proficiency.Expert);
+                    }
+
+                    if (companion.Proficiencies.AllProficiencies[Trait.Stealth] == Proficiency.Expert)
+                    {
+                        companion.Proficiencies.Set(Trait.Stealth, Proficiency.Master);
+                    }
+                    else
+                    {
+                        companion.Proficiencies.Set(Trait.Stealth, Proficiency.Expert);
+                    }
+
+                    if (companion.Proficiencies.AllProficiencies[Trait.Survival] == Proficiency.Expert)
+                    {
+                        companion.Proficiencies.Set(Trait.Survival, Proficiency.Master);
+                    }
+                    else
+                    {
+                        companion.Proficiencies.Set(Trait.Survival, Proficiency.Expert);
+                    }
+
+                    companion.Skills.Set(Skill.Intimidation, companion.Abilities.Charisma + companion.Proficiencies.Get(Trait.Intimidation).ToNumber(companion.Level));
+                    companion.Skills.Set(Skill.Stealth, companion.Abilities.Dexterity + companion.Proficiencies.Get(Trait.Stealth).ToNumber(companion.Level));
+                    companion.Skills.Set(Skill.Survival, companion.Abilities.Wisdom + companion.Proficiencies.Get(Trait.Survival).ToNumber(companion.Level));
+                };
+            }).WithPrerequisite((CalculatedCharacterSheetValues values) => values.AllFeatNames.Contains(wonderGearsFeat), "You must have the Wonder Gears modification.");
+
+            yield return new Feat(omnirangeStabilizersFeat, "You've modified your innovation to be dangerous and effective at any range.", "The ranged weapon in your left hand loses the volley trait and its range increment increases by 50 feet.", new() { modificationTrait, breakthroughModificationTrait, weaponTrait }, null).WithOnCreature(delegate (Creature creature)
+            {
+                creature.AddQEffect(new("Omnirange Stabilizers", "The ranged weapon in your left hand loses the volley trait and its range increment increases by 50 feet.")
+                {
+                    StartOfCombat = async delegate (QEffect effect)
+                    {
+                        var user = effect.Owner;
+                        var primaryWeapon = GetRealPrimaryWeapon(user);
+
+                        if (primaryWeapon is null || primaryWeapon.HasTrait(Trait.Unarmed) || !primaryWeapon.HasTrait(Trait.Ranged))
+                        {
+                            return;
+                        }
+
+                        primaryWeapon.Traits.Remove(Trait.Volley30Feet);
+                        primaryWeapon.WeaponProperties = primaryWeapon.WeaponProperties.WithRangeIncrement(primaryWeapon.WeaponProperties.RangeIncrement + 10);
+                    }
+                });
+            });
+
+            yield return new Feat(tensileAbsorptionFeat, "You've enhanced the tensile capabilities of your armor, enabling it to bend with bludgeoning attacks.", "You gain resistance to bludgeoning damage equal to half your level.", new() { modificationTrait, breakthroughModificationTrait, armorTrait }, null).WithOnCreature(delegate (Creature creature)
+            {
+                creature.AddQEffect(QEffect.DamageResistance(DamageKind.Bludgeoning, creature.Level / 2));
+            });
+
+            yield return new Feat(turretConfigurationFeat, "Your innovation can transform from a mobile construct to a stationary turret.", "Your construct companion can transform as a single action, which has the manipulate trait, turning into a turret in its space (or transforming back from a turret into its normal configuration). While it's a turret, your innovation is immobilized, but the damage die from its projectile launcher increases to 1d6 and the range increment increases to 60 feet.", new() { modificationTrait, breakthroughModificationTrait, constructTrait }, null).WithOnSheet((CalculatedCharacterSheetValues sheet) =>
+            {
+                sheet.RangerBenefitsToCompanion += (companion, inventor) =>
+                {
+                    companion.AddQEffect(new()
+                    {
+                        ProvideMainAction = delegate (QEffect turretConfigurationQEffect)
+                        {
+                            var user = turretConfigurationQEffect.Owner;
+
+                            if (!user.HasEffect(TurretConfigurationID))
+                            {
+                                return (ActionPossibility)new CombatAction(user, new SideBySideIllustration(IllustrationName.Camp, IllustrationName.Bomb), "Turret Configuration", [inventorTrait], "You transform into a turret, becoming immobilized but improving your projectile's damage die by one step and increasing its range increment to 60 feet.", Target.Self()) { ShortDescription = "You turn into a turret." }
+                                .WithActionCost(1)
+                                .WithSoundEffect(Dawnsbury.Audio.SfxName.AuraExpansion)
+                                .WithEffectOnSelf(async delegate (CombatAction transform, Creature user)
+                                {
+                                    companion.RemoveAllQEffects((effect) => effect.AdditionalUnarmedStrike != null && effect.AdditionalUnarmedStrike.Name == "cannon");
+                                    companion.WithAdditionalUnarmedStrike(new Item(IllustrationName.Bomb, "cannon", Trait.Unarmed, Trait.Ranged, Trait.Propulsive).WithWeaponProperties(new WeaponProperties($"{user.UnarmedStrike.WeaponProperties.DamageDieCount}d6", DamageKind.Bludgeoning).WithRangeIncrement(12)));
+                                    
+                                    user.AddQEffect(new()
+                                    {
+                                        Name = "Turret",
+                                        Id = TurretConfigurationID,
+                                        Illustration = new SideBySideIllustration(IllustrationName.GaleBlast, IllustrationName.Bomb),
+                                        Owner = user,
+                                        Source = user,
+                                        Description = "You're in your turret configuration.",
+                                        PreventTakingAction = (CombatAction ca) => (!ca.HasTrait(Trait.Move)) ? null : "You're immobilized.",
+                                    });
+                                });
+                            }
+
+                            return (ActionPossibility)new CombatAction(user, new SideBySideIllustration(IllustrationName.Walk, IllustrationName.Bomb), "Turret Configuration", [inventorTrait], "You transform into a turret, becoming immobilized but improving your projectile's damage die by one step and increasing its range increment to 60 feet.", Target.Self()) { ShortDescription = "You turn into a turret." }
+                            .WithActionCost(1)
+                            .WithSoundEffect(Dawnsbury.Audio.SfxName.AuraExpansion)
+                            .WithEffectOnSelf(async delegate (CombatAction transform, Creature user)
+                            {
+                                user.RemoveAllQEffects((effect) => effect.AdditionalUnarmedStrike != null && effect.AdditionalUnarmedStrike.Name == "cannon");
+                                user.WithAdditionalUnarmedStrike(new Item(IllustrationName.Bomb, "cannon", Trait.Unarmed, Trait.Ranged, Trait.Propulsive).WithWeaponProperties(new WeaponProperties($"{user.UnarmedStrike.WeaponProperties.DamageDieCount}d4", DamageKind.Bludgeoning).WithRangeIncrement(6)));
+
+                                user.RemoveAllQEffects((effect) => effect.Id == TurretConfigurationID);
+                            });
+                        }
+                    });
+                };
+            }).WithPrerequisite((CalculatedCharacterSheetValues values) => values.AllFeatNames.Contains(projectileLauncherFeat), "You must have the Projectile Launcher modification.");
 
             #endregion
 
@@ -1020,7 +1439,7 @@ namespace Inventor
                             return null;
                         }
 
-                        return ((ActionPossibility)new CombatAction(user, new SideBySideIllustration(IllustrationName.Bird256, IllustrationName.SteelShield), "Flying Shield", [inventorTrait], "You've outfitted your shield with propellers or rockets, allowing it to fly around the battlefield.", Target.RangedFriend(6).WithAdditionalConditionOnTargetCreature((Creature user, Creature target) => user.HeldItems.All((item) => !item.HasTrait(Trait.Shield)) ? Usability.CommonReasons.NotUsableForComplexReason : Usability.Usable)) { ShortDescription = "Your shield flies out of your hand to give an ally within 30 feet a +2 circumstance bonus to AC until your next turn." }
+                        return (ActionPossibility)new CombatAction(user, new SideBySideIllustration(IllustrationName.Bird256, IllustrationName.SteelShield), "Flying Shield", [inventorTrait], "You've outfitted your shield with propellers or rockets, allowing it to fly around the battlefield.", Target.RangedFriend(6).WithAdditionalConditionOnTargetCreature((Creature user, Creature target) => user.HeldItems.All((item) => !item.HasTrait(Trait.Shield)) ? Usability.CommonReasons.NotUsableForComplexReason : Usability.Usable)) { ShortDescription = "Your shield flies out of your hand to give an ally within 30 feet a +2 circumstance bonus to AC until your next turn." }
                         .WithActionCost(1)
                         .WithSoundEffect(Dawnsbury.Audio.SfxName.AerialBoomerang)
                         .WithEffectOnEachTarget(async delegate (CombatAction flyingShield, Creature user, Creature target, CheckResult result)
@@ -1073,7 +1492,7 @@ namespace Inventor
                                     creature.RemoveAllQEffects((effectToRemove) => effectToRemove == effect);
                                 }
                             });
-                        }));
+                        });
                     }
                 });
             });
@@ -1159,7 +1578,7 @@ namespace Inventor
                 item.StateCheck?.Invoke(item);
             }
 
-            creature.RecalculateLandSpeed();
+            creature.RecalculateLandSpeedAndInitiative();
             return new Feat(featName, flavorText, "Your construct companion has the following characteristics at level 1:\n\n" + RulesBlock.CreateCreatureDescription(creature), new List<Trait>(), null).WithIllustration(creature.Illustration).WithOnCreature(delegate (CalculatedCharacterSheetValues sheet, Creature inventor)
             {
                 Creature inventor2 = inventor;
