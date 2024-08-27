@@ -173,6 +173,7 @@ namespace Shifter
             ], 3, abilityString, null)
             .WithOnSheet(delegate (CalculatedCharacterSheetValues sheet)
             {
+                sheet.AddSelectionOption(new SingleFeatSelectionOption("ShifterFeat1", "Shifter feat", 1, (Feat ft) => ft.HasTrait(ShifterTrait) && ft.HasTrait(Trait.ClassFeat)));
                 sheet.SetProficiency(Trait.Nature, Proficiency.Trained);
                 sheet.AddSelectionOption(new SingleFeatSelectionOption("AnimalInfluence", "Animal influence", 1, (Feat ft) => ft.HasTrait(influenceTrait)));
                 sheet.AddSelectionOption(new MultipleFeatSelectionOption("ShifterForms1", "Shifter forms", 1, (Feat ft) => ft.HasTrait(FormTrait) && !ft.HasTrait(Trait.Dragon), 2));
@@ -331,7 +332,7 @@ namespace Shifter
                 .WithRulesBlockForCombatAction(creature => BreathWeapon(creature, DamageKind.Fire))
                 .WithOnSheet(sheet =>
                 {
-                    sheet.AddSelectionOptionRightNow(new SingleFeatSelectionOption("DragonFormType", "Dragon Form Type", 1, feat => feat.HasTrait(Trait.Dragon)));
+                    sheet.AddSelectionOptionRightNow(new SingleFeatSelectionOption("DragonFormType", "Dragon Form Type", 1, feat => feat.HasTrait(FormTrait) && feat.HasTrait(Trait.Dragon)));
                 });
             
             yield return new TrueFeat(frogFormFeat, 1, "Your legs become strong and springy and your tongue grows to impossible lengths.", "You can Shift into frog form. While in frog form, you gain the following benefits:\n\n    1. You can make ranged tongue unarmed attacks that deal 1d6 bludgeoning damage and have the backswing trait. Tongue attacks add your full strength to damage rolls and have a maximum range of 15 feet.\n\n    2. You have a +1 circumstance bonus on saving throws against Poison effects.\n\n    3. You gain the Frog Slam apex action.", [FormTrait]) { }
