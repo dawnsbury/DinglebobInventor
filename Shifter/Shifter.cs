@@ -175,10 +175,10 @@ namespace Shifter
             ], 3, abilityString, null)
             .WithOnSheet(delegate (CalculatedCharacterSheetValues sheet)
             {
-                sheet.AddSelectionOption(new SingleFeatSelectionOption("ShifterFeat1", "Shifter feat", 1, (Feat ft) => ft.HasTrait(ShifterTrait) && ft.HasTrait(Trait.ClassFeat)));
                 sheet.SetProficiency(Trait.Nature, Proficiency.Trained);
                 sheet.AddSelectionOption(new SingleFeatSelectionOption("AnimalInfluence", "Animal influence", 1, (Feat ft) => ft.HasTrait(influenceTrait)));
                 sheet.AddSelectionOption(new MultipleFeatSelectionOption("ShifterForms1", "Shifter forms", 1, (Feat ft) => ft.HasTrait(FormTrait) && !ft.HasTrait(Trait.Dragon), 2));
+                sheet.AddSelectionOption(new SingleFeatSelectionOption("ShifterFeat1", "Shifter feat", 1, (Feat ft) => ft.HasTrait(ShifterTrait) && ft.HasTrait(Trait.ClassFeat)));
                 sheet.AddAtLevel(3, delegate (CalculatedCharacterSheetValues values)
                 {
                     values.SetProficiency(Trait.Will, Proficiency.Expert);
