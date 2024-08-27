@@ -84,6 +84,7 @@ namespace Shifter
                 "{b}3 Animal Influence.{/b} You've spent so much time around animals that you've picked up some of their traits. You gain an animal influence, which has an effect when you Shift.\n\n" +
                 "{b}4 Bestial Instincts.{/b} When you Shift, you briefly succumb to the instincts of your new form. Your unarmed attacks deal an additional 1d4 damage until your next turn.\n\n" +
                 "{b}5. Apex Actions.{/b} Some actions, like those granted by your forms, have the Apex trait. You must be in a form to use an Apex action, and you lose your form after that action. \n\n" +
+                "{b}6. Shifter Feat.{/b} \n\n" +
                 "{b}At higher levels:{/b}\n" +
                 "{b}Level 2:{/b} Shifter feat\n" +
                 "{b}Level 3:{/b} General feat, skill increase, animal senses ({i}you become an expert in Perception and you gain the Incredible Initiative feat){/i}\n" +
