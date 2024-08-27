@@ -68,12 +68,14 @@ namespace Shifter
             var animalFriendshipFeat = ModManager.RegisterFeatName("AnimalFriendship", "Animal Friendship");
             var animalRetributionFeat = ModManager.RegisterFeatName("ShifterAnimalRetribution", "Animal Retribution");
             var crushingGrabFeat = ModManager.RegisterFeatName("ShifterCrushingGrab", "Crushing Grab");
+            var ferocityFeat = ModManager.RegisterFeatName("ShifterFerocity", "Ferocity");
             var instictiveShiftFeat = ModManager.RegisterFeatName("InstictiveShift", "Instictive Shift");
             var knitFleshFeat = ModManager.RegisterFeatName("ShifterKnitFlesh", "Knit Flesh");
             var smokeyShiftFeat = ModManager.RegisterFeatName("ShifterSmokeyShift", "Smokey Shift");
             var quickShiftFeat = ModManager.RegisterFeatName("ShifterQuickShift", "Quick Shift");
             var selectPreyFeat = ModManager.RegisterFeatName("ShifterSelectPrey", "Select Prey");
             var suddenChargeFeat = ModManager.RegisterFeatName("ShifterSuddenCharge", "Sudden Charge");
+            var thickHideFeat = ModManager.RegisterFeatName("ShifterThickHide", "Thick Hide");
 
             #region Class Description Strings
 
@@ -91,10 +93,10 @@ namespace Shifter
 
             #region Influences
 
-            var trueDurableInfluenceFeat = new Feat(durableInfluenceFeat, "Your animal influence allows you to endure more pain than a normal adventurer.", "When you Shift, you gain 2 temporary Hit Points. You gain an additional 1 temporary Hit Point at level 3 and every odd level thereafter.", [influenceTrait], null)
+            var trueDurableInfluenceFeat = new Feat(durableInfluenceFeat, "Your animal influence allows you to endure more pain than a normal adventurer.", "When you Shift, you gain 2 temporary Hit Points. You gain an additional 1 temporary Hit Point at level 3 and every level thereafter.", [influenceTrait], null)
                 .WithOnCreature((Creature featUser) =>
                 {
-                    featUser.AddQEffect(new("Durable Influence", $"When you Shift, you gain {(featUser.Level + 1) / 2 + 1} temporary Hit Points.")
+                    featUser.AddQEffect(new("Durable Influence", $"When you Shift, you gain " + (featUser.Level > 1 ? featUser.Level : 2) + " temporary Hit Points.")
                     {
                         AfterYouTakeAction = async delegate (QEffect effect, CombatAction action)
                         {
@@ -104,7 +106,7 @@ namespace Shifter
                             }
 
                             var user = effect.Owner;
-                            user.GainTemporaryHP((user.Level + 1) / 2 + 1);
+                            user.GainTemporaryHP(featUser.Level > 1 ? featUser.Level : 2);
                         }
                     });
                 });
@@ -585,6 +587,42 @@ namespace Shifter
                     };
                 });
 
+            yield return new TrueFeat(ferocityFeat, 1, "You're able to remain fighting through sheer adrenaline.", "Once per combat, if you would be reduced to 0 Hit Points, you can use your reaction to instead increase your wounded condition by 1 and regain a number of Hit Points equal to 3 times your level plus your Constitution modifier. This reaction has the Apex trait, so you must be in a form to use it and you lose your form immediately after.", [ShifterTrait, ApexTrait, Trait.ClassFeat])
+                .WithActionCost(-2)
+                .WithPermanentQEffect("Once per combat, you can increase your wounded condition and heal yourself instead of being reduced to 0 Hit Points.", delegate (QEffect ferocityEffect)
+                {
+                    ferocityEffect.YouAreDealtLethalDamage = async delegate (QEffect qEffect, Creature attacker, DamageStuff damageStuff, Creature you)
+                    {
+                        if (!qEffect.Owner.QEffects.Any(effect => effect.Id == FormID || effect.Name == "Ferocity Immunity"))
+                        {
+                            return null;
+                        }
+
+                        int num = you.QEffects.FirstOrDefault((QEffect qf) => qf.Id == QEffectId.Wounded)?.Value ?? 0;
+                        bool flag = damageStuff.Amount >= you.HP;
+                        if (flag)
+                        {
+                            flag = await attacker.Battle.AskToUseReaction(you, "You would be reduced to 0 HP.\nDo you want to use {b}ferocity{/b} to instead remain at " + (qEffect.Owner.Level * 3 + qEffect.Owner.Abilities.Constitution) + " HP and become wounded " + (num + 1) + "?");
+                        }
+
+                        if (flag)
+                        {
+                            you.Occupies.Overhead("ferocity!!", Color.Red, you?.ToString() + " resists dying through ferocity!");
+                            int targetNumber = you.HP - (qEffect.Owner.Level * 3 + qEffect.Owner.Abilities.Constitution);
+                            you.IncreaseWounded();
+                            qEffect.ExpiresAt = ExpirationCondition.Immediately;
+
+                            qEffect.Owner.RemoveAllQEffects(effect => effect.Id == FormID);
+
+                            qEffect.Owner.AddQEffect(new("Ferocity Immunity", "You can't use Ferocity again this combat."));
+
+                            return new SetToTargetNumberModification(targetNumber, "Ferocity!!");
+                        }
+
+                        return null;
+                    };
+                });
+
             yield return new TrueFeat(suddenChargeFeat, 1, "With a quick sprint, you dash up to your foe and swing.", "Stride twice. If you end your movement within melee reach of at least one enemy, you can make a melee Strike against that enemy.", [ShifterTrait, Trait.Flourish, Trait.Open, Trait.ClassFeat])
                 .WithActionCost(2)
                 .WithPermanentQEffect("Stride twice, then make a melee Strike.", delegate (QEffect qf)
@@ -606,6 +644,23 @@ namespace Shifter
                             await CommonCombatActions.StrikeAdjacentCreature(self);
                         }
                     }));
+                });
+            
+            yield return new TrueFeat(thickHideFeat, 1, "You skin is thick and leathery, providing you protection against attacks", "When you're unarmored, your hide gives you a +1 item bonus to AC with a Dexterity cap of +2. The item bonus to AC from Thick Hide is cumulative with armor potency runes on your explorer's clothing, mage armor, and bracers of armor.", [ShifterTrait, Trait.ClassFeat])
+                .WithPermanentQEffect("When you're unarmored, your hide gives you a +1 item bonus to AC with a Dexterity cap of +2.", delegate (QEffect thickHideQEffect)
+                {
+                    thickHideQEffect.StateCheck = effect =>
+                    {
+                        if (effect.Owner.BaseArmor == null && (effect.Owner.Armor.Item == null || effect.Owner.Armor.Item.Name != "Thick Hide"))
+                        {
+                            effect.Owner.AddQEffect(new()
+                            {
+                                ProvidesArmor = new Item(IllustrationName.LeatherArmor, "Thick Hide", Trait.Armor, Trait.UnarmoredDefense).WithArmorProperties(new(1, 2, 0, 0, -1))
+                            });
+
+                            effect.Owner.RecalculateArmor();
+                        }
+                    };
                 });
 
             #endregion
