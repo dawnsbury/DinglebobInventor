@@ -1179,7 +1179,7 @@ namespace Shifter
                         Steam.VerifyUndetection(self2.Battle);
                     });
 
-                    var tile = await GetSneakTile(user, sneak, user.Speed / 2);
+                    var tile = await GetSneakTile(user, user.Speed / 2);
 
                     if (tile != null)
                     {
@@ -1274,30 +1274,23 @@ namespace Shifter
             }
         }
 
-        public static async Task<Tile?> GetSneakTile(Creature user, CombatAction combatAction, int distance)
+        public static async Task<Tile?> GetSneakTile(Creature user, int distance)
         {
             List<Tile> tiles = user.Battle.Map.AllTiles.Where(tile => user.Occupies.DistanceTo(tile) <= distance && tile.IsFree).ToList();
-            List<Option> leapOptions = new List<Option>();
-            Dictionary<Option, Tile> selectedTileMapping = new Dictionary<Option?, Tile>();
-            combatAction.Traits.Remove(Trait.Move);
+            List<Option> options = new List<Option>();
+
             foreach (Tile tile in tiles)
             {
-                Option tileOption = combatAction.CreateUseOptionOn(tile).WithIllustration(IllustrationName.Sneak64);
-                tileOption.NoConfirmation = true;
-                if (tileOption != null)
-                {
-                    leapOptions.Add(tileOption);
-                    selectedTileMapping.Add(tileOption, tile);
-                }
+                options.Add(new TileOption(tile, "Tile (" + tile.X + "," + tile.Y + ")", async () => { }, (AIUsefulness)int.MinValue, true));
             }
-            combatAction.Traits.Add(Trait.Move);
-
-            Option? selectedOption = (await user.Battle.SendRequest(new AdvancedRequest(user, "Select tile to Sneak to", leapOptions)
+            
+            Option selectedOption = (await user.Battle.SendRequest(new AdvancedRequest(user, "Select tile to Sneak to", options)
             {
                 IsMainTurn = false,
                 IsStandardMovementRequest = false,
-                TopBarIcon = IllustrationName.WarpStep,
+                TopBarIcon = IllustrationName.Sneak64,
                 TopBarText = "Select tile to Sneak to"
+
             })).ChosenOption;
 
             if (selectedOption != null)
@@ -1307,10 +1300,7 @@ namespace Shifter
                     return null;
                 }
 
-                if (selectedTileMapping.ContainsKey(selectedOption))
-                {
-                    return selectedTileMapping[selectedOption];
-                }
+                return ((TileOption)selectedOption).Tile;
             }
 
             return null;
