@@ -270,7 +270,7 @@ namespace Shifter
                     });
                 });
 
-            yield return new TrueFeat(catFormFeat, 1, "You become lithe and nimble, like a cat.", "You can Shift into cat form. While in cat form, you gain the following benefits:\n\n    1. You can make claw unarmed attacks that deal 1d6 slashing damage and have the backstabber and agile traits.\n\n    2. You have a +1 circumstance bonus on Stealth checks. This bonus is cumulative with Skilled Influnce.\n\n    3. You gain the Into The Shadows apex action.", [FormTrait]) { }
+            yield return new TrueFeat(catFormFeat, 1, "You become lithe and nimble, like a cat.", "You can Shift into cat form. While in cat form, you gain the following benefits:\n\n    1. You can make claw unarmed attacks that deal 1d6 slashing damage and have the agile, backstabber, and finesse traits.\n\n    2. You have a +1 circumstance bonus on Stealth checks. This bonus is cumulative with Skilled Influnce.\n\n    3. You gain the Into The Shadows apex action.", [FormTrait]) { }
                 .WithIllustration(IllustrationName.AnimalFormCat)
                 .WithRulesBlockForCombatAction(IntoTheShadows)
                 .WithOnCreature((Creature featUser) =>
@@ -284,7 +284,7 @@ namespace Shifter
                                 return null;
                             }
                             
-                            return ((ActionPossibility)new CombatAction(qEffect.Owner, IllustrationName.AnimalFormCat, "Cat Form", [ShifterTrait, Trait.Morph, ShiftTrait], "You Shift into cat form. While in cat form, you gain the following benefits:\n\n    1. You can make claw unarmed attacks that deal 1d6 slashing damage and have the backstabber and agile traits.\n\n    2. You have a +1 circumstance bonus on Stealth checks. This bonus is cumulative with Skilled Influnce.\n\n    3. You gain the Into The Shadows apex action.", Target.Self())
+                            return ((ActionPossibility)new CombatAction(qEffect.Owner, IllustrationName.AnimalFormCat, "Cat Form", [ShifterTrait, Trait.Morph, ShiftTrait], "You Shift into cat form. While in cat form, you gain the following benefits:\n\n    1. You can make claw unarmed attacks that deal 1d6 slashing damage and have the agile, backstabber, and finesse traits.\n\n    2. You have a +1 circumstance bonus on Stealth checks. This bonus is cumulative with Skilled Influnce.\n\n    3. You gain the Into The Shadows apex action.", Target.Self())
                                 { ShortDescription = "You become lithe and nimble, like a cat." }
                                 .WithActionCost(1)
                                 .WithSoundEffect(Dawnsbury.Audio.SfxName.AuraExpansion)
@@ -295,7 +295,7 @@ namespace Shifter
                                     user.AddQEffect(new("Cat Form", "Form of the cat", ExpirationCondition.Never, user, IllustrationName.AnimalFormCat)
                                     {
                                         Id = FormID,
-                                        AdditionalUnarmedStrike = new Item(IllustrationName.DragonClaws, "claw", Trait.Unarmed, Trait.Backstabber, Trait.Agile).WithWeaponProperties(new WeaponProperties("1d6", DamageKind.Slashing)),
+                                        AdditionalUnarmedStrike = new Item(IllustrationName.DragonClaws, "claw", Trait.Unarmed, Trait.Agile, Trait.Backstabber, Trait.Finesse).WithWeaponProperties(new WeaponProperties("1d6", DamageKind.Slashing)),
                                         BonusToSkillChecks = (Skill skill, CombatAction combatAction, Creature? target) =>
                                         {
                                             if (skill != Skill.Stealth)
