@@ -113,20 +113,24 @@ namespace Shifter
                 });
             yield return trueDurableInfluenceFeat;
 
-            var trueMobileInfluenceFeat = new Feat(mobileInfluenceFeat, "Your animal influence makes you jumpy and energetic.", "When you Shift, you can Stride up to half your speed.", [influenceTrait], null)
+            var trueMobileInfluenceFeat = new Feat(mobileInfluenceFeat, "Your animal influence makes you jumpy and energetic.", "When you Shift for the first time each turn, you can Stride up to half your speed.", [influenceTrait], null)
                 .WithOnCreature((Creature featUser) =>
                 {
-                    featUser.AddQEffect(new("Mobile Influence", "When you Shift, you can Stride up to half your speed.")
+                    featUser.AddQEffect(new("Mobile Influence", "When you Shift for the first time each turn, you can Stride up to half your speed.")
                     {
                         AfterYouTakeAction = async delegate (QEffect effect, CombatAction action)
                         {
-                            if (action.ActionId != ShiftID)
+                            var user = effect.Owner;
+
+                            if (action.ActionId != ShiftID || !user.QEffects.All(qEffect => qEffect.Name != "Mobile Influence Immunity"))
                             {
                                 return;
                             }
 
-                            var user = effect.Owner;
-                            await user.StrideAsync("Stride up to half your speed.", allowCancel:true, maximumHalfSpeed:true);
+                            if (await user.StrideAsync("Stride up to half your speed.", allowCancel:true, allowPass: true, maximumHalfSpeed:true))
+                            {
+                                user.AddQEffect(new QEffect("Mobile Influence Immunity", "You can only use mobile influce once per round.") { Owner = user }.WithExpirationAtStartOfOwnerTurn());
+                            }
                         }
                     });
                 });
@@ -616,6 +620,11 @@ namespace Shifter
                             qEffect.Owner.RemoveAllQEffects(effect => effect.Id == FormID);
 
                             qEffect.Owner.AddQEffect(new("Ferocity Immunity", "You can't use Ferocity again this combat."));
+
+                            if (targetNumber < 0)
+                            {
+                                you.Heal($"{-targetNumber}", null);
+                            }
 
                             return new SetToTargetNumberModification(targetNumber, "Ferocity!!");
                         }
