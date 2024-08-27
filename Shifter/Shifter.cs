@@ -645,6 +645,7 @@ namespace Shifter
             #region Level 4 Feats
 
             yield return new TrueFeat(animalRetributionFeat, 4, "When enemies hurt you, you intictively respond in kind.", "When you are critically hit by an adjacent creature, you can use your reaction to make an unarmed Strike against that creature.", [ShifterTrait, Trait.ClassFeat])
+                .WithActionCost(-2)
                 .WithPermanentQEffect("When you are critically hit by an adjacent creature, you can use your reaction to make an unarmed Strike against that creature.", delegate (QEffect animalRetributionQEffect)
                 {
                     animalRetributionQEffect.AfterYouTakeDamage = async delegate (QEffect qEffect, int amount, DamageKind kind, CombatAction? combatAction, bool critical)
@@ -703,7 +704,7 @@ namespace Shifter
                     sheet.AddFocusSpellAndFocusPoint(ShifterTrait, Ability.Wisdom, knitFleshSpell);
                 }).WithRulesBlockForSpell(knitFleshSpell, ShifterTrait).WithIllustration(IllustrationName.Heal);
 
-            yield return new TrueFeat(smokeyShiftFeat, 4, "You can transform in a dramatic cloud of smoke.", "When you Shift, you can choose to release a cloud of smoke, which fills up all squares in a  5-foot emanation. All creatures within the smoke become concealed, and all creatures outside the smoke become concealed to creatures within it. The smoke remains for 3 rounds, during which time you can't Smokey Shift again.", [ShifterTrait, Trait.ClassFeat])
+            yield return new TrueFeat(smokeyShiftFeat, 4, "You can transform in a dramatic cloud of smoke.", "When you Shift, you can choose to release a cloud of smoke, which fills up all squares in a 5-foot emanation. All creatures within the smoke become concealed, and all creatures outside the smoke become concealed to creatures within it. The smoke remains for 3 rounds, during which time you can't Smokey Shift again.", [ShifterTrait, Trait.ClassFeat])
               .WithOnCreature((sheet, creature) =>
               {
                   creature.AddQEffect(new()
@@ -766,6 +767,7 @@ namespace Shifter
               });
 
             yield return new TrueFeat(selectPreyFeat, 4, "You single out an enemy to focus all of your attention on.", "Select one foe as your prey, which lasts until they are defeated, flee, or the encounter ends. \n\nAny time you hit that enemy with a weapon or unarmed attack, you gain a circumstance bonus to the Strike's damage equal to the number of damage dice your weapon or unarmed attack deals.\n\nIf you attack a creature other than your prey opponent, you take a circumstance penalty to damage equal to the number of damage dice your weapon or unarmed attack deals.", [ShifterTrait, Trait.ClassFeat])
+              .WithActionCost(1)
               .WithOnCreature((sheet, creature) =>
               {
                   creature.AddQEffect(new QEffect()
