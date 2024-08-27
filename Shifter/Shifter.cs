@@ -266,7 +266,7 @@ namespace Shifter
                     });
                 });
 
-            /*yield return new TrueFeat(catFormFeat, 1, "You become lithe and nimble, like a cat.", "You can Shift into cat form. While in cat form, you gain the following benefits:\n\n    1. You can make claw unarmed attacks that deal 1d6 slashing damage and have the backstabber and agile traits.\n\n    2. You have a +1 circumstance bonus on Stealth checks. This bonus is cumulative with Skilled Influnce.\n\n    3. You gain the Into The Shadows apex action.", [FormTrait]) { }
+            yield return new TrueFeat(catFormFeat, 1, "You become lithe and nimble, like a cat.", "You can Shift into cat form. While in cat form, you gain the following benefits:\n\n    1. You can make claw unarmed attacks that deal 1d6 slashing damage and have the backstabber and agile traits.\n\n    2. You have a +1 circumstance bonus on Stealth checks. This bonus is cumulative with Skilled Influnce.\n\n    3. You gain the Into The Shadows apex action.", [FormTrait]) { }
                 .WithIllustration(IllustrationName.AnimalFormCat)
                 .WithRulesBlockForCombatAction(IntoTheShadows)
                 .WithOnCreature((Creature featUser) =>
@@ -315,7 +315,7 @@ namespace Shifter
                                 })).WithPossibilityGroup("Shift");
                         }
                     });
-                });*/
+                });
 
             var coldDragonFormFeat = GenerateDragonFormFeat(DamageKind.Cold);
             yield return coldDragonFormFeat;
@@ -723,18 +723,19 @@ namespace Shifter
 
                           List<TileQEffect> effects = new List<TileQEffect>();
 
+                          var tile = effect.Owner.Occupies;
                           var currentTileEffect = new TileQEffect(effect.Owner.Occupies)
                           {
                               StateCheck = delegate
                               {
-                                  effect.Owner.Occupies.FoggyTerrain = true;
+                                  tile.FoggyTerrain = true;
                               },
                               Illustration = IllustrationName.Fog,
                               ExpiresAt = ExpirationCondition.Never
                           };
 
                           effects.Add(currentTileEffect);
-                          effect.Owner.Occupies.QEffects.Add(currentTileEffect);
+                          tile.QEffects.Add(currentTileEffect);
 
                           foreach (var edge in effect.Owner.Occupies.Neighbours)
                           {
@@ -881,7 +882,7 @@ namespace Shifter
             #endregion
         }
 
-        #region Apex Combat Actiond
+        #region Apex Combat Actions
 
         private static CombatAction BreathWeapon(Creature user, DamageKind damageKind)
         {
@@ -1099,6 +1100,7 @@ namespace Shifter
                 .WithEffectOnEachTarget(async delegate (CombatAction combatAction, Creature user, Creature target, CheckResult result)
                 {
                     await user.StrideAsync("Choose where to Stride with Into the Shadows.", allowPass: true);
+                    await user.Battle.GameLoop.StateCheck();
 
                     //Hide
                     int roll3 = R.NextD20();
@@ -1182,7 +1184,7 @@ namespace Shifter
                     {
                         await CombatActionExecution.Execute(sneak);
 
-                        await user.MoveToUsingEarlierFloodfill(tile, sneak, new MovementStyle
+                        await user.MoveTo(tile, sneak, new MovementStyle
                         {
                             MaximumSquares = user.Speed / 2
                         });
@@ -1193,6 +1195,7 @@ namespace Shifter
                     user.RemoveAllQEffects(effect => effect.Id == FormID);
                 });
         }
+
 
         private static CombatAction LogRoll(Creature user)
         {
@@ -1275,22 +1278,25 @@ namespace Shifter
             List<Tile> tiles = user.Battle.Map.AllTiles.Where(tile => user.Occupies.DistanceTo(tile) <= distance && tile.IsFree).ToList();
             List<Option> leapOptions = new List<Option>();
             Dictionary<Option, Tile> selectedTileMapping = new Dictionary<Option?, Tile>();
+            combatAction.Traits.Remove(Trait.Move);
             foreach (Tile tile in tiles)
             {
                 Option tileOption = combatAction.CreateUseOptionOn(tile).WithIllustration(IllustrationName.Sneak64);
+                tileOption.NoConfirmation = true;
                 if (tileOption != null)
                 {
                     leapOptions.Add(tileOption);
                     selectedTileMapping.Add(tileOption, tile);
                 }
             }
+            combatAction.Traits.Add(Trait.Move);
 
-            Option? selectedOption = (await user.Battle.SendRequest(new AdvancedRequest(user, "Debug", leapOptions)
+            Option? selectedOption = (await user.Battle.SendRequest(new AdvancedRequest(user, "Select tile to Sneak to", leapOptions)
             {
                 IsMainTurn = false,
                 IsStandardMovementRequest = false,
                 TopBarIcon = IllustrationName.WarpStep,
-                TopBarText = "Debug"
+                TopBarText = "Select tile to Sneak to"
             })).ChosenOption;
 
             if (selectedOption != null)
