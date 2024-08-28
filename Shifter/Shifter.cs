@@ -82,7 +82,7 @@ namespace Shifter
             var abilityString = "{b}1. Animal Claws.{/b} You can shift your hands into claws. Your fists gain the versatile slashing trait and lose the nonlethal trait.\n\n" +
                 "{b}2. Forms.{/b} You can use an action to Shift into different forms. Each form gives you an unarmed attack, a passive benefit, and an Apex activity. You know two forms.\n\n" +
                 "{b}3 Animal Influence.{/b} You've spent so much time around animals that you've picked up some of their traits. You gain an animal influence, which has an effect when you Shift.\n\n" +
-                "{b}4 Bestial Instincts.{/b} When you Shift, you briefly succumb to the instincts of your new form. Your unarmed attacks deal an additional 1d4 damage until your next turn.\n\n" +
+                "{b}4 Bestial Instincts.{/b} When you Shift, you briefly succumb to the instincts of your new form. Your unarmed attacks deal an additional 1d6 damage until your next turn.\n\n" +
                 "{b}5. Apex Actions.{/b} Some actions, like those granted by your forms, have the Apex trait. You must be in a form to use an Apex action, and you lose your form after that action. \n\n" +
                 "{b}6. Shifter Feat.{/b} \n\n" +
                 "{b}At higher levels:{/b}\n" +
@@ -166,7 +166,7 @@ namespace Shifter
 
             #region Class Creation
 
-            yield return new ClassSelectionFeat(shifterFeat, "", ShifterTrait, new LimitedAbilityBoost(Ability.Strength, Ability.Dexterity), 8,
+            yield return new ClassSelectionFeat(shifterFeat, "", ShifterTrait, new LimitedAbilityBoost(Ability.Strength, Ability.Dexterity), 10,
             [
                 Trait.Perception,
                 Trait.Reflex,
@@ -186,7 +186,7 @@ namespace Shifter
                 sheet.AddSelectionOption(new SingleFeatSelectionOption("ShifterFeat1", "Shifter feat", 1, (Feat ft) => ft.HasTrait(ShifterTrait) && ft.HasTrait(Trait.ClassFeat)));
                 sheet.AddAtLevel(3, delegate (CalculatedCharacterSheetValues values)
                 {
-                    values.SetProficiency(Trait.Will, Proficiency.Expert);
+                    values.SetProficiency(Trait.Perception, Proficiency.Expert);
                     values.GrantFeat(FeatName.IncredibleInitiative);
                 });
             }).WithOnCreature(delegate (Creature creature)
@@ -204,7 +204,7 @@ namespace Shifter
                         
                         var user = effect.Owner;
 
-                        user.AddQEffect(new QEffect("Bestial Insticts", "You deal an additional 1d4 damage with unarmed attacks.", ExpirationCondition.ExpiresAtEndOfSourcesTurn, user, IllustrationName.Rage)
+                        user.AddQEffect(new QEffect("Bestial Insticts", "You deal an additional 1d6 damage with unarmed attacks.", ExpirationCondition.ExpiresAtEndOfSourcesTurn, user, IllustrationName.Rage)
                         {
                             Id = bestialInstictsID,
                             AddExtraStrikeDamage = delegate (CombatAction attack, Creature defender)
@@ -214,7 +214,7 @@ namespace Shifter
                                     return null;
                                 }
 
-                                var additionalDamage = DiceFormula.FromText("1d4", "Bestial Insticts");
+                                var additionalDamage = DiceFormula.FromText("1d6", "Bestial Insticts");
 
                                 var list = attack.Item.DetermineDamageKinds();
                                 var damageType = defender.WeaknessAndResistance.WhatDamageKindIsBestAgainstMe(list);
