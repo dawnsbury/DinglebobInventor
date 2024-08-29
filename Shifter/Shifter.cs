@@ -342,7 +342,7 @@ namespace Shifter
                     sheet.AddSelectionOptionRightNow(new SingleFeatSelectionOption("DragonFormType", "Dragon Form Type", 1, feat => feat.HasTrait(FormTrait) && feat.HasTrait(Trait.Dragon)));
                 });
             
-            yield return new TrueFeat(frogFormFeat, 1, "Your legs become strong and springy and your tongue grows to impossible lengths.", "You can Shift into frog form. While in frog form, you gain the following benefits:\n\n    1. You can make ranged tongue unarmed attacks that deal 1d6 bludgeoning damage and have the backswing trait. Tongue attacks add your full strength to damage rolls and have a maximum range of 15 feet.\n\n    2. You have a +1 circumstance bonus on saving throws against Poison effects and you gain a swim speed equal to your normal speed.\n\n    3. You gain the Frog Slam apex action.", [FormTrait]) { }
+            yield return new TrueFeat(frogFormFeat, 1, "Your legs become strong and springy and your tongue grows to impossible lengths.", "You can Shift into frog form. While in frog form, you gain the following benefits:\n\n    1. You can make ranged tongue unarmed attacks that deal 1d6 bludgeoning damage and have the backswing trait. Tongue attacks add your full strength to damage rolls, have a maximum range of 15 feet, and use your strength modifier for the attack roll instead of your dexterity modifier if it's higher.\n\n    2. You have a +1 circumstance bonus on saving throws against Poison effects and you gain a swim speed equal to your normal speed.\n\n    3. You gain the Frog Slam apex action.", [FormTrait]) { }
                 .WithIllustration(IllustrationName.MonitorLizard256)
                 .WithRulesBlockForCombatAction(FrogSlam)
                 .WithOnCreature((Creature featUser) =>
@@ -356,7 +356,7 @@ namespace Shifter
                                 return null;
                             }
 
-                            return ((ActionPossibility)new CombatAction(qEffect.Owner, IllustrationName.MonitorLizard256, "Frog Form", [ShifterTrait, Trait.Morph, ShiftTrait], "You can Shift into frog form. While in frog form, you gain the following benefits:\n\n    1. You can make ranged tongue unarmed attacks that deal 1d6 bludgeoning damage and have the backswing trait. Tongue attacks add your full strength to damage rolls and have a maximum range of 15 feet.\n\n    2. You have a +1 circumstance bonus on saving throws against Poison effects and you gain a swim speed equal to your normal speed.\n\n    3. You gain the Frog Slam apex action.", Target.Self())
+                            return ((ActionPossibility)new CombatAction(qEffect.Owner, IllustrationName.MonitorLizard256, "Frog Form", [ShifterTrait, Trait.Morph, ShiftTrait], "You can Shift into frog form. While in frog form, you gain the following benefits:\n\n    1. You can make ranged tongue unarmed attacks that deal 1d6 bludgeoning damage and have the backswing trait. Tongue attacks add your full strength to damage rolls, have a maximum range of 15 feet, and use your strength modifier for the attack roll instead of your dexterity modifier if it's higher.\n\n    2. You have a +1 circumstance bonus on saving throws against Poison effects and you gain a swim speed equal to your normal speed.\n\n    3. You gain the Frog Slam apex action.", Target.Self())
                                 { ShortDescription = "Your legs become strong and springy and your tongue grows to impossible lengths." }
                                 .WithActionCost(1)
                                 .WithSoundEffect(Dawnsbury.Audio.SfxName.AuraExpansion)
@@ -375,7 +375,7 @@ namespace Shifter
                                     user.AddQEffect(new("Frog Form", "Form of the frog", ExpirationCondition.Never, user, IllustrationName.MonitorLizard256)
                                     {
                                         Id = FormID,
-                                        AdditionalUnarmedStrike = new Item(IllustrationName.Tongue, "tongue", Trait.Unarmed, Trait.Finesse, Trait.Backswing, Trait.CountsAsThrownForThePurposesOfAddingStrengthModifier).WithWeaponProperties(new WeaponProperties("1d6", DamageKind.Bludgeoning).WithMaximumRange(3)),
+                                        AdditionalUnarmedStrike = new Item(IllustrationName.Tongue, "tongue", Trait.Unarmed, user.Abilities.Strength > user.Abilities.Dexterity ? Trait.Brutal : Trait.Finesse, Trait.Backswing, Trait.CountsAsThrownForThePurposesOfAddingStrengthModifier).WithWeaponProperties(new WeaponProperties("1d6", DamageKind.Bludgeoning).WithMaximumRange(3)),
                                         BonusToDefenses = (QEffect effect, CombatAction? action, Defense defense) =>
                                         {
                                             if (action == null || !action.HasTrait(Trait.Poison))
