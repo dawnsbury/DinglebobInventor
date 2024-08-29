@@ -342,7 +342,7 @@ namespace Shifter
                     sheet.AddSelectionOptionRightNow(new SingleFeatSelectionOption("DragonFormType", "Dragon Form Type", 1, feat => feat.HasTrait(FormTrait) && feat.HasTrait(Trait.Dragon)));
                 });
             
-            yield return new TrueFeat(frogFormFeat, 1, "Your legs become strong and springy and your tongue grows to impossible lengths.", "You can Shift into frog form. While in frog form, you gain the following benefits:\n\n    1. You can make ranged tongue unarmed attacks that deal 1d6 bludgeoning damage and have the backswing trait. Tongue attacks add your full strength to damage rolls and have a maximum range of 15 feet.\n\n    2. You have a +1 circumstance bonus on saving throws against Poison effects.\n\n    3. You gain the Frog Slam apex action.", [FormTrait]) { }
+            yield return new TrueFeat(frogFormFeat, 1, "Your legs become strong and springy and your tongue grows to impossible lengths.", "You can Shift into frog form. While in frog form, you gain the following benefits:\n\n    1. You can make ranged tongue unarmed attacks that deal 1d6 bludgeoning damage and have the backswing trait. Tongue attacks add your full strength to damage rolls and have a maximum range of 15 feet.\n\n    2. You have a +1 circumstance bonus on saving throws against Poison effects and you gain a swim speed equal to your normal speed.\n\n    3. You gain the Frog Slam apex action.", [FormTrait]) { }
                 .WithIllustration(IllustrationName.MonitorLizard256)
                 .WithRulesBlockForCombatAction(FrogSlam)
                 .WithOnCreature((Creature featUser) =>
@@ -356,7 +356,7 @@ namespace Shifter
                                 return null;
                             }
 
-                            return ((ActionPossibility)new CombatAction(qEffect.Owner, IllustrationName.MonitorLizard256, "Frog Form", [ShifterTrait, Trait.Morph, ShiftTrait], "You can Shift into frog form. While in frog form, you gain the following benefits:\n\n    1. You can make ranged tongue unarmed attacks that deal 1d6 bludgeoning damage and have the backswing trait. Tongue attacks add your full strength to damage rolls and have a maximum range of 15 feet.\n\n    2. You have a +1 circumstance bonus on saving throws against Poison effects.\n\n    3. You gain the Frog Slam apex action.", Target.Self())
+                            return ((ActionPossibility)new CombatAction(qEffect.Owner, IllustrationName.MonitorLizard256, "Frog Form", [ShifterTrait, Trait.Morph, ShiftTrait], "You can Shift into frog form. While in frog form, you gain the following benefits:\n\n    1. You can make ranged tongue unarmed attacks that deal 1d6 bludgeoning damage and have the backswing trait. Tongue attacks add your full strength to damage rolls and have a maximum range of 15 feet.\n\n    2. You have a +1 circumstance bonus on saving throws against Poison effects and you gain a swim speed equal to your normal speed.\n\n    3. You gain the Frog Slam apex action.", Target.Self())
                                 { ShortDescription = "Your legs become strong and springy and your tongue grows to impossible lengths." }
                                 .WithActionCost(1)
                                 .WithSoundEffect(Dawnsbury.Audio.SfxName.AuraExpansion)
@@ -364,6 +364,14 @@ namespace Shifter
                                 .WithEffectOnSelf(async delegate (CombatAction frogForm, Creature user)
                                 {
                                     user.RemoveAllQEffects(effect => effect.Id == FormID);
+
+                                    var swimming = new QEffect()
+                                    {
+                                        Id = QEffectId.Swimming,
+                                        Name = "Swimming from Frog Form"
+                                    };
+                                    user.AddQEffect(swimming);
+
                                     user.AddQEffect(new("Frog Form", "Form of the frog", ExpirationCondition.Never, user, IllustrationName.MonitorLizard256)
                                     {
                                         Id = FormID,
@@ -374,12 +382,16 @@ namespace Shifter
                                             {
                                                 return null;
                                             }
-
+                                            
                                             return new Bonus(1, BonusType.Circumstance, "Frog Form", true);
                                         },
                                         ProvideMainAction = delegate (QEffect actionQEffect)
                                         {
                                             return (ActionPossibility)FrogSlam(actionQEffect.Owner);
+                                        },
+                                        WhenExpires = (effect) =>
+                                        {
+                                            effect.Owner.RemoveAllQEffects(effectToRemove => effectToRemove.Name == "Swimming from Frog Form");
                                         }
                                     });
                                 })).WithPossibilityGroup("Shift");
@@ -1287,7 +1299,7 @@ namespace Shifter
         {
             var name = ModManager.RegisterFeatName($"DragonForm:{damageKind}", $"{damageKind} Dragon Form");
             
-            return new Feat(name, "You take on the aspects of a mighty dragon", $"You can Shift into dragon form. While in dragon form, you gain the following benefits:\n\n    1. You can make jaws unarmed attacks that deal 1d8 piercing damage plus 1 {damageKind.ToString().ToLower()} damage.\n\n    2. You have resistance to {damageKind.ToString().ToLower()} equal to half your level.\n\n    3. You gain the Breathe {damageKind} apex action.", [FormTrait, Trait.Dragon], null)
+            return new Feat(name, "You take on the aspects of a mighty dragon", $"You can Shift into dragon form. While in dragon form, you gain the following benefits:\n\n    1. You can make jaws unarmed attacks that deal 1d8 piercing damage plus 1 {damageKind.ToString().ToLower()} damage.\n\n    2. You have resistance to {damageKind.ToString().ToLower()} equal to 2 + half your level.\n\n    3. You gain the Breathe {damageKind} apex action.", [FormTrait, Trait.Dragon], null)
                 .WithRulesBlockForCombatAction(creature => BreathWeapon(creature, damageKind))
                 .WithOnCreature((Creature featUser) =>
                 {
@@ -1300,7 +1312,7 @@ namespace Shifter
                                 return null;
                             }
 
-                            return ((ActionPossibility)new CombatAction(qEffect.Owner, IllustrationName.FaerieDragon256, $"{damageKind} Dragon Form", [ShifterTrait, Trait.Morph, ShiftTrait], $"You Shift into dragon form. While in dragon form, you gain the following benefits:\n\n    1. You can make jaws unarmed attacks that deal 1d8 piercing damage plus 1 {damageKind.ToString().ToLower()} damage.\n\n    2. You have resistance to {damageKind.ToString().ToLower()} equal to half your level.\n\n    3. You gain the Breathe {damageKind} apex action.", Target.Self()) { ShortDescription = "You take on the aspects of a mighty dragon." }
+                            return ((ActionPossibility)new CombatAction(qEffect.Owner, IllustrationName.FaerieDragon256, $"{damageKind} Dragon Form", [ShifterTrait, Trait.Morph, ShiftTrait], $"You Shift into dragon form. While in dragon form, you gain the following benefits:\n\n    1. You can make jaws unarmed attacks that deal 1d8 piercing damage plus 1 {damageKind.ToString().ToLower()} damage.\n\n    2. You have resistance to {damageKind.ToString().ToLower()} equal to 2 + half your level.\n\n    3. You gain the Breathe {damageKind} apex action.", Target.Self()) { ShortDescription = "You take on the aspects of a mighty dragon." }
                                 .WithActionCost(1)
                                 .WithSoundEffect(Dawnsbury.Audio.SfxName.AuraExpansion)
                                 .WithActionId(ShiftID)
@@ -1313,7 +1325,7 @@ namespace Shifter
                                         AdditionalUnarmedStrike = new Item(IllustrationName.Jaws, "dragon jaws", Trait.Unarmed).WithWeaponProperties(new WeaponProperties("1d8", DamageKind.Piercing).WithAdditionalDamage("1", damageKind)),
                                         StateCheck = delegate (QEffect self)
                                         {
-                                            self.Owner.WeaknessAndResistance.AddResistance(damageKind, user.Level > 1 ? user.Level / 2 : 1);
+                                            self.Owner.WeaknessAndResistance.AddResistance(damageKind, 2 + user.Level / 2);
                                         },
                                         ProvideMainAction = delegate (QEffect actionQEffect)
                                         {
