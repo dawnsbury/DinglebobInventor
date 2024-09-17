@@ -229,6 +229,7 @@ namespace Inventor
                 Trait.Reflex,
                 Trait.Simple,
                 Trait.Martial,
+                Trait.Unarmed,
                 Trait.UnarmoredDefense,
                 Trait.LightArmor,
                 Trait.MediumArmor
@@ -252,11 +253,9 @@ namespace Inventor
                 });
                 sheet.AddAtLevel(5, delegate (CalculatedCharacterSheetValues values)
                 {
+                    values.SetProficiency(Trait.Unarmed, Proficiency.Expert);
                     values.SetProficiency(Trait.Simple, Proficiency.Expert);
                     values.SetProficiency(Trait.Martial, Proficiency.Expert);
-                });
-                sheet.AddAtLevel(5, delegate (CalculatedCharacterSheetValues values)
-                {
                     values.SetProficiency(Trait.Reflex, Proficiency.Expert);
                 });
                 sheet.AddAtLevel(7, delegate (CalculatedCharacterSheetValues values)
