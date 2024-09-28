@@ -264,15 +264,15 @@ namespace Inventor
 
                     if (values.HasFeat(armorInnovationFeat))
                     {
-                        values.AddSelectionOption(new SingleFeatSelectionOption("ArmorBreakthroughInnovation", "Breakthrough Armor Innovation", 7, (Feat ft) => ft.HasTrait(armorTrait) && ft.HasTrait(breakthroughModificationTrait)));
+                        values.AddSelectionOption(new SingleFeatSelectionOption("ArmorBreakthroughInnovation", "Breakthrough Armor Innovation", 7, (Feat ft) => ft.HasTrait(armorTrait) && (ft.HasTrait(breakthroughModificationTrait) || ft.HasTrait(initialModificationTrait))));
                     }
                     else if (values.HasFeat(constructInnovationFeat))
                     {
-                        values.AddSelectionOption(new SingleFeatSelectionOption("ConstructBreakthroughInnovation", "Breakthrough Construct Innovation", 7, (Feat ft) => ft.HasTrait(constructTrait) && ft.HasTrait(breakthroughModificationTrait)));
+                        values.AddSelectionOption(new SingleFeatSelectionOption("ConstructBreakthroughInnovation", "Breakthrough Construct Innovation", 7, (Feat ft) => ft.HasTrait(constructTrait) && (ft.HasTrait(breakthroughModificationTrait) || ft.HasTrait(initialModificationTrait))));
                     }
                     else if (values.HasFeat(weaponInnovationFeat))
                     {
-                        values.AddSelectionOption(new SingleFeatSelectionOption("WeaponBreakthroughInnovation", "Breakthrough Weapon Innovation", 7, (Feat ft) => ft.HasTrait(weaponTrait) && ft.HasTrait(breakthroughModificationTrait)));
+                        values.AddSelectionOption(new SingleFeatSelectionOption("WeaponBreakthroughInnovation", "Breakthrough Weapon Innovation", 7, (Feat ft) => ft.HasTrait(weaponTrait) && (ft.HasTrait(breakthroughModificationTrait) || ft.HasTrait(initialModificationTrait))));
                     }
                 });
             }).WithOnCreature(delegate (Creature creature)
@@ -684,9 +684,9 @@ namespace Inventor
                 creature.AddQEffect(QEffect.DamageResistance(DamageKind.Sonic, creature.Level / 2 + 5));
             });
 
-            yield return new Feat(heftyCompositionFeat, "Blunt surfaces and sturdy construction make your weapon hefty and mace-like.", "The melee weapon in your left hand at the start of combat gains the shove and thrown 20 feet traits.", new() { modificationTrait, initialModificationTrait, weaponTrait }, null).WithOnCreature(delegate (Creature creature)
+            yield return new Feat(heftyCompositionFeat, "Blunt surfaces and sturdy construction make your weapon hefty and mace-like.", "The melee weapon in your left hand at the start of combat gains the shove and versatile bludgeoning traits.", new() { modificationTrait, initialModificationTrait, weaponTrait }, null).WithOnCreature(delegate (Creature creature)
             {
-                creature.AddQEffect(new("Hefty Composition", "The melee weapon in your left hand at the start of combat gains the shove and thrown 20 feet traits.")
+                creature.AddQEffect(new("Hefty Composition", "The melee weapon in your left hand at the start of combat gains the shove and versatile bludgeoning traits.")
                 {
                     StartOfCombat = async delegate (QEffect effect)
                     {
@@ -697,7 +697,7 @@ namespace Inventor
                             return;
                         }
 
-                        user.PrimaryWeapon.Traits.AddRange([Trait.Shove, Trait.Thrown20Feet]);
+                        user.PrimaryWeapon.Traits.AddRange([Trait.Shove, Trait.VersatileB]);
                     }
                 });
             });
@@ -1271,7 +1271,7 @@ namespace Inventor
                 });
             });
 
-            yield return new TrueFeat(searingRestorationFeat, 2, "They told you there was no way that explosions could heal people, but they were fools… Fools who didn't understand your brilliance! You create a minor explosion from your innovation, altering the combustion to cauterize wounds using vaporized medicinal herbs.", "You or a living creature adjacent to you regains 1d10 Hit Points. In addition, the creature you heal can attempt an immediate flat check to recover from a single source of persistent bleed damage, with the DC reduction from appropriate assistance. At 3rd level, and every 2 levels thereafter, increase the healing by 1d10.", [Trait.Fire, Trait.Healing, inventorTrait, Trait.Manipulate, unstableTrait, Trait.ClassFeat]).WithOnCreature(delegate (Creature creature)
+            yield return new TrueFeat(searingRestorationFeat, 2, "They told you there was no way that explosions could heal people, but they were fools… Fools who didn't understand your brilliance! You create a minor explosion from your innovation, altering the combustion to cauterize wounds using vaporized medicinal herbs.", "You or a living creature adjacent to you regains 1d10 Hit Points. In addition, the creature you heal can attempt an immediate flat check to recover from a single source of persistent bleed damage, with the DC reduction from appropriate assistance. At 3rd level, and every 2 levels thereafter, increase the healing by 1d10.", [Trait.Fire, Trait.Healing, inventorTrait, Trait.Manipulate, unstableTrait, Trait.ClassFeat]).WithActionCost(1).WithOnCreature(delegate (Creature creature)
             {
                 creature.AddQEffect(new()
                 {
