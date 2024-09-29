@@ -1364,7 +1364,7 @@ namespace Inventor
                     companion.Abilities.Dexterity += 1;
                     companion.Abilities.Constitution += 1;
                     companion.Abilities.Wisdom += 1;
-                    if (companion.UnarmedStrike.WeaponProperties.DamageDieCount == 1)
+                    if (companion.UnarmedStrike!.WeaponProperties!.DamageDieCount == 1)
                     {
                         companion.UnarmedStrike.WeaponProperties.DamageDieCount += 1;
                     }
@@ -1372,7 +1372,7 @@ namespace Inventor
 
                     foreach (QEffect qf in companion.QEffects.Where<QEffect>(qf => qf.AdditionalUnarmedStrike != null))
                     {
-                        if (qf.AdditionalUnarmedStrike.WeaponProperties.DamageDieCount == 1)
+                        if (qf.AdditionalUnarmedStrike!.WeaponProperties!.DamageDieCount == 1)
                         {
                             qf.AdditionalUnarmedStrike.WeaponProperties.DamageDieCount += 1;
                         }
@@ -1669,7 +1669,7 @@ namespace Inventor
             "Thanks to your continual tinkering, your construct companion has advanced to an astounding new stage of engineering, enhancing all its attributes.",
             "Your construct companion improves in the following ways:"
             + "\n\n- Its Strength, Dexterity, Constitution, and Wisdom modifiers increase by 2."
-            + "\n- It deals 2 additional damage with its unarmed attacks. Its attacks become magical, allowing it to bypass resistances to non-magical attacks."
+            + "\n- It deals 2 additional damage with its unarmed attacks.."
             + "\n- Its proficiency ranks in Athletics and Acrobatics increase to expert.", [InventorTrait, Trait.ClassFeat])
             .WithPrerequisite((CalculatedCharacterSheetValues values) => values.AllFeatNames.Contains(advancedConstructCompanionFeat), "You have an advanced Construct Companion.")
             .WithOnSheet((CalculatedCharacterSheetValues sheet) =>
@@ -1681,6 +1681,19 @@ namespace Inventor
                     companion.Abilities.Dexterity += 2;
                     companion.Abilities.Constitution += 2;
                     companion.Abilities.Wisdom += 2;
+
+                    companion.AddQEffect(new QEffect()
+                    {
+                        BonusToDamage = delegate (QEffect self, CombatAction action, Creature target)
+                        {
+                            if (action.Item == null)
+                            {
+                                return null;
+                            }
+
+                            return new Bonus(2, BonusType.Untyped, "Incredible Construct Companion");
+                        }
+                    });
 
                     companion.Proficiencies.Set(Trait.Acrobatics, Proficiency.Expert);
                     companion.Proficiencies.Set(Trait.Athletics, Proficiency.Expert);
