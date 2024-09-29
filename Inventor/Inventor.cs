@@ -151,6 +151,7 @@ namespace Inventor
             var explosiveLeapFeat = ModManager.RegisterFeatName("ExplosiveLeap", "Explosive Leap");
             var flingAcidFeat = ModManager.RegisterFeatName("FlingAcid", "Fling Acid");
             var flyingShieldFeat = ModManager.RegisterFeatName("FlyingShield", "Flying Shield");
+            var incredibleConstructCompanionFeat = ModManager.RegisterFeatName("IncredibleConstructCompanion", "Incredible Construct Companion");
             var modifiedShieldFeat = ModManager.RegisterFeatName("ModifiedShield", "Modified Shield");
             var megatonStrikeFeat = ModManager.RegisterFeatName("MegatonStrike", "Megaton Strike");
             var megavoltFeat = ModManager.RegisterFeatName("Megavolt", "Megavolt");
@@ -159,6 +160,7 @@ namespace Inventor
             var soaringArmorFeat = ModManager.RegisterFeatName("SoaringArmor", "Soaring Armor");
             var tamperFeat = ModManager.RegisterFeatName("Tamper", "Tamper");
             var variableCoreFeat = ModManager.RegisterFeatName("VariableCore", "Variable Core");
+            var visualFidelityFeat = ModManager.RegisterFeatName("VisualFidelity", "Visual Fidelity");
 
             var constructCompanionFusionAutomotonFeat = ModManager.RegisterFeatName("FusionAutomotonCompanion", "Fusion Automoton");
             var constructCompanionTrainingDummyFeat = ModManager.RegisterFeatName("TrainingDummyCompanion", "Training Dummy");
@@ -780,9 +782,38 @@ namespace Inventor
             {
                 sheet.RangerBenefitsToCompanion += (Creature companion, Creature inventor) =>
                 {
-                    companion.Proficiencies.Set(Trait.Intimidation, Proficiency.Trained);
-                    companion.Proficiencies.Set(Trait.Stealth, Proficiency.Trained);
-                    companion.Proficiencies.Set(Trait.Survival, Proficiency.Trained);
+                    if (companion.Proficiencies.Get(Trait.Survival) == Proficiency.Trained)
+                    {
+                        sheet.SetProficiency(Trait.Survival, Proficiency.Expert);
+                        companion.Proficiencies.Set(Trait.Survival, Proficiency.Expert);
+                    }
+                    else if (companion.Proficiencies.Get(Trait.Survival) == Proficiency.Untrained)
+                    {
+                        sheet.SetProficiency(Trait.Survival, Proficiency.Trained);
+                        companion.Proficiencies.Set(Trait.Survival, Proficiency.Trained);
+                    }
+
+                    if (companion.Proficiencies.Get(Trait.Intimidation) == Proficiency.Trained)
+                    {
+                        sheet.SetProficiency(Trait.Intimidation, Proficiency.Expert);
+                        companion.Proficiencies.Set(Trait.Intimidation, Proficiency.Expert);
+                    }
+                    else if (companion.Proficiencies.Get(Trait.Intimidation) == Proficiency.Untrained)
+                    {
+                        sheet.SetProficiency(Trait.Intimidation, Proficiency.Trained);
+                        companion.Proficiencies.Set(Trait.Intimidation, Proficiency.Trained);
+                    }
+
+                    if (companion.Proficiencies.Get(Trait.Stealth) == Proficiency.Trained)
+                    {
+                        sheet.SetProficiency(Trait.Stealth, Proficiency.Expert);
+                        companion.Proficiencies.Set(Trait.Stealth, Proficiency.Expert);
+                    }
+                    else if (companion.Proficiencies.Get(Trait.Stealth) == Proficiency.Untrained)
+                    {
+                        sheet.SetProficiency(Trait.Stealth, Proficiency.Trained);
+                        companion.Proficiencies.Set(Trait.Stealth, Proficiency.Trained);
+                    }
 
                     companion.Skills.Set(Skill.Intimidation, companion.Abilities.Charisma + companion.Proficiencies.Get(Trait.Intimidation).ToNumber(companion.Level));
                     companion.Skills.Set(Skill.Stealth, companion.Abilities.Dexterity + companion.Proficiencies.Get(Trait.Stealth).ToNumber(companion.Level));
@@ -1251,7 +1282,7 @@ namespace Inventor
                 });
             });
 
-            yield return new TrueFeat(modifiedShieldFeat, 2, "You've added blades to your shield, turning it into a weapon and improving its defenses", "Shields you hold at the start of combat have +2 hardness and the versatile slashing trait.", [InventorTrait, Trait.ClassFeat], null).WithOnCreature(delegate (Creature creature)
+            yield return new TrueFeat(modifiedShieldFeat, 2, "You've added blades to your shield, turning it into a weapon and improving its defenses.", "Shields you hold at the start of combat have +2 hardness and the versatile slashing trait.", [InventorTrait, Trait.ClassFeat], null).WithOnCreature(delegate (Creature creature)
             {
                 creature.AddQEffect(new("Modified Shield", "Shields you hold at the start of combat have +2 hardness and the versatile slashing trait.")
                 {
@@ -1634,6 +1665,40 @@ namespace Inventor
 
             #region Level 6 Feats
 
+            yield return new TrueFeat(incredibleConstructCompanionFeat, 4,
+            "Thanks to your continual tinkering, your construct companion has advanced to an astounding new stage of engineering, enhancing all its attributes.",
+            "Your construct companion improves in the following ways:"
+            + "\n\n- Its Strength, Dexterity, Constitution, and Wisdom modifiers increase by 2."
+            + "\n- It deals 2 additional damage with its unarmed attacks. Its attacks become magical, allowing it to bypass resistances to non-magical attacks."
+            + "\n- Its proficiency ranks in Athletics and Acrobatics increase to expert.", [InventorTrait, Trait.ClassFeat])
+            .WithPrerequisite((CalculatedCharacterSheetValues values) => values.AllFeatNames.Contains(advancedConstructCompanionFeat), "You have an advanced Construct Companion.")
+            .WithOnSheet((CalculatedCharacterSheetValues sheet) =>
+            {
+                sheet.RangerBenefitsToCompanion += (companion, ranger) =>
+                {
+                    companion.MaxHP += companion.Level * 2;
+                    companion.Abilities.Strength += 2;
+                    companion.Abilities.Dexterity += 2;
+                    companion.Abilities.Constitution += 2;
+                    companion.Abilities.Wisdom += 2;
+
+                    companion.Proficiencies.Set(Trait.Acrobatics, Proficiency.Expert);
+                    companion.Proficiencies.Set(Trait.Athletics, Proficiency.Expert);
+
+                    companion.Perception = companion.Abilities.Wisdom + companion.Proficiencies.Get(Trait.Perception).ToNumber(companion.Level);
+                    companion.Defenses.Set(Defense.Perception, companion.Abilities.Wisdom + companion.Proficiencies.Get(Trait.Perception).ToNumber(companion.Level));
+                    companion.Defenses.Set(Defense.Fortitude, companion.Abilities.Constitution + companion.Proficiencies.Get(Trait.Fortitude).ToNumber(companion.Level));
+                    companion.Defenses.Set(Defense.Reflex, companion.Abilities.Dexterity + companion.Proficiencies.Get(Trait.Reflex).ToNumber(companion.Level));
+                    companion.Defenses.Set(Defense.Will, companion.Abilities.Wisdom + companion.Proficiencies.Get(Trait.Will).ToNumber(companion.Level));
+
+                    companion.Skills.Set(Skill.Acrobatics, companion.Abilities.Dexterity + companion.Proficiencies.Get(Trait.Acrobatics).ToNumber(companion.Level));
+                    companion.Skills.Set(Skill.Athletics, companion.Abilities.Strength + companion.Proficiencies.Get(Trait.Athletics).ToNumber(companion.Level));
+                    companion.Skills.Set(Skill.Intimidation, companion.Abilities.Charisma + companion.Proficiencies.Get(Trait.Intimidation).ToNumber(companion.Level));
+                    companion.Skills.Set(Skill.Stealth, companion.Abilities.Dexterity + companion.Proficiencies.Get(Trait.Stealth).ToNumber(companion.Level));
+                    companion.Skills.Set(Skill.Survival, companion.Abilities.Wisdom + companion.Proficiencies.Get(Trait.Survival).ToNumber(companion.Level));
+                };
+            });
+
             yield return new TrueFeat(megavoltFeat, 6, "You bleed off some electric power from your innovation in the shape of a damaging bolt.", "Creatures in a 20-foot line from your innovation take 3d4 electricity damage, with a basic Reflex save against your class DC. The electricity damage increases by 1d4 at 8th level and every 2 levels thereafter.\n\n{b}Unstable Function{/b} You overload and supercharge the voltage even higher. Add the unstable trait to Megavolt. The area increases to a 60-foot line and the damage increases from d4s to d12s. If you have the breakthrough innovation class feature, you can choose a 60-foot or 90-foot line for the area when you use an unstable Megavolt.\n\n{b}Special{/b} If your innovation is a minion, it can take this action rather than you.", [Trait.Acid, InventorTrait, Trait.Manipulate, UnstableTrait, Trait.ClassFeat])
             .WithActionCost(2)
             .WithOnCreature(delegate (Creature creature)
@@ -1851,6 +1916,24 @@ namespace Inventor
                         });
                     }
                 };
+            });
+
+            yield return new TrueFeat(visualFidelityFeat, 6, "You've found a way to use a hodgepodge combination of devices to enhance your visual abilities in every situation.", "You have a +2 circumstance bonus to saving throws against visual effects and you can see invisible creatures and objects as translucent shapes, though these shapes are indistinct enough to be concealed to you.", [InventorTrait, Trait.ClassFeat], null)
+            .WithOnCreature(delegate (Creature creature)
+            {
+                creature.AddQEffect(new("Visual Fidelity", "You can see invisible creatures. You have a +2 cirmustance bonus to visual effects.")
+                {
+                    Id = QEffectId.SeeInvisibility,
+                    BonusToDefenses = (QEffect qEffect, CombatAction? combatAction, Defense defense) =>
+                    {
+                        if (combatAction != null && combatAction.HasTrait(Trait.Visual))
+                        {
+                            return new Bonus(2, BonusType.Circumstance, "Visual Fidelity", true);
+                        }
+
+                        return null;
+                    }
+                });
             });
 
             #endregion
