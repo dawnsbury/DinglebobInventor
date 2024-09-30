@@ -1657,7 +1657,7 @@ namespace Inventor
             });
 
             yield return new TrueFeat(soaringArmorFeat, 4, "Whether through a release of jets of flame, propeller blades, sonic bursts, streamlined aerodynamic structure, electromagnetic fields, or some combination of the above, you've managed to free your innovation from the bonds of gravity!", "You gain a fly Speed equal to your land Speed.", [InventorTrait, Trait.ClassFeat])
-            .WithPrerequisite((sheet) => sheet.HasFeat(armorInnovationFeatName), "You must have an armor innovation.")
+            .WithPrerequisite((sheet) => sheet.HasFeat(armorInnovationFeatName), "You have an armor innovation.")
             .WithOnCreature(delegate (Creature creature)
             {
                 creature.AddQEffect(QEffect.Flying().WithExpirationNever());
@@ -1666,53 +1666,6 @@ namespace Inventor
             #endregion
 
             #region Level 6 Feats
-
-            yield return new TrueFeat(incredibleConstructCompanionFeat, 4,
-            "Thanks to your continual tinkering, your construct companion has advanced to an astounding new stage of engineering, enhancing all its attributes.",
-            "Your construct companion improves in the following ways:"
-            + "\n\n- Its Strength, Dexterity, Constitution, and Wisdom modifiers increase by 2."
-            + "\n- It deals 2 additional damage with its unarmed attacks.."
-            + "\n- Its proficiency ranks in Athletics and Acrobatics increase to expert.", [InventorTrait, Trait.ClassFeat])
-            .WithPrerequisite((CalculatedCharacterSheetValues values) => values.AllFeatNames.Contains(advancedConstructCompanionFeat), "You have an advanced Construct Companion.")
-            .WithOnSheet((CalculatedCharacterSheetValues sheet) =>
-            {
-                sheet.RangerBenefitsToCompanion += (companion, ranger) =>
-                {
-                    companion.MaxHP += companion.Level * 2;
-                    companion.Abilities.Strength += 2;
-                    companion.Abilities.Dexterity += 2;
-                    companion.Abilities.Constitution += 2;
-                    companion.Abilities.Wisdom += 2;
-
-                    companion.AddQEffect(new QEffect()
-                    {
-                        BonusToDamage = delegate (QEffect self, CombatAction action, Creature target)
-                        {
-                            if (action.Item == null)
-                            {
-                                return null;
-                            }
-
-                            return new Bonus(2, BonusType.Untyped, "Incredible Construct Companion");
-                        }
-                    });
-
-                    companion.Proficiencies.Set(Trait.Acrobatics, Proficiency.Expert);
-                    companion.Proficiencies.Set(Trait.Athletics, Proficiency.Expert);
-
-                    companion.Perception = companion.Abilities.Wisdom + companion.Proficiencies.Get(Trait.Perception).ToNumber(companion.Level);
-                    companion.Defenses.Set(Defense.Perception, companion.Abilities.Wisdom + companion.Proficiencies.Get(Trait.Perception).ToNumber(companion.Level));
-                    companion.Defenses.Set(Defense.Fortitude, companion.Abilities.Constitution + companion.Proficiencies.Get(Trait.Fortitude).ToNumber(companion.Level));
-                    companion.Defenses.Set(Defense.Reflex, companion.Abilities.Dexterity + companion.Proficiencies.Get(Trait.Reflex).ToNumber(companion.Level));
-                    companion.Defenses.Set(Defense.Will, companion.Abilities.Wisdom + companion.Proficiencies.Get(Trait.Will).ToNumber(companion.Level));
-
-                    companion.Skills.Set(Skill.Acrobatics, companion.Abilities.Dexterity + companion.Proficiencies.Get(Trait.Acrobatics).ToNumber(companion.Level));
-                    companion.Skills.Set(Skill.Athletics, companion.Abilities.Strength + companion.Proficiencies.Get(Trait.Athletics).ToNumber(companion.Level));
-                    companion.Skills.Set(Skill.Intimidation, companion.Abilities.Charisma + companion.Proficiencies.Get(Trait.Intimidation).ToNumber(companion.Level));
-                    companion.Skills.Set(Skill.Stealth, companion.Abilities.Dexterity + companion.Proficiencies.Get(Trait.Stealth).ToNumber(companion.Level));
-                    companion.Skills.Set(Skill.Survival, companion.Abilities.Wisdom + companion.Proficiencies.Get(Trait.Survival).ToNumber(companion.Level));
-                };
-            });
 
             yield return new TrueFeat(megavoltFeat, 6, "You bleed off some electric power from your innovation in the shape of a damaging bolt.", "Creatures in a 20-foot line from your innovation take 3d4 electricity damage, with a basic Reflex save against your class DC. The electricity damage increases by 1d4 at 8th level and every 2 levels thereafter.\n\n{b}Unstable Function{/b} You overload and supercharge the voltage even higher. Add the unstable trait to Megavolt. The area increases to a 60-foot line and the damage increases from d4s to d12s. If you have the breakthrough innovation class feature, you can choose a 60-foot or 90-foot line for the area when you use an unstable Megavolt.\n\n{b}Special{/b} If your innovation is a minion, it can take this action rather than you.", [Trait.Electricity, InventorTrait, Trait.Manipulate, Trait.ClassFeat])
             .WithActionCost(2)
@@ -1956,6 +1909,7 @@ namespace Inventor
             #region Level 8 Feats
 
             yield return new TrueFeat(gigatonStrikeFeat, 8, "When you use a full-power Megaton Strike, you can knock your foe back.", "When you succeed at your Strike while using an unstable Megaton Strike, your target must attempt a Fortitude save against your class DC.\n\n{b}Critical Success{/b} The creature is unaffected.\n{b}Success{/b} The creature is pushed back 5 feet.\n{b}Failure{/b} The creature is pushed back 10 feet.\n{b}Critical Failure{/b} The creature is pushed back 20 feet.\n\n{b}Special{/b} If your innovation is a minion, this benefit applies on its unstable Megaton Strikes.", [InventorTrait, Trait.ClassFeat])
+            .WithPrerequisite((CalculatedCharacterSheetValues values) => values.AllFeatNames.Contains(megatonStrikeFeat), "You have Megaton Strike.")
             .WithOnCreature(delegate (Creature creature)
             {
                 if (creature.HasFeat(constructInnovationFeatName))
@@ -2031,6 +1985,53 @@ namespace Inventor
 
                         }
                     });
+                };
+            });
+
+            yield return new TrueFeat(incredibleConstructCompanionFeat, 8,
+            "Thanks to your continual tinkering, your construct companion has advanced to an astounding new stage of engineering, enhancing all its attributes.",
+            "Your construct companion improves in the following ways:"
+            + "\n\n- Its Strength, Dexterity, Constitution, and Wisdom modifiers increase by 2."
+            + "\n- It deals 2 additional damage with its unarmed attacks."
+            + "\n- Its proficiency ranks in Athletics and Acrobatics increase to expert.", [InventorTrait, Trait.ClassFeat])
+            .WithPrerequisite((CalculatedCharacterSheetValues values) => values.AllFeatNames.Contains(advancedConstructCompanionFeat), "You have an advanced Construct Companion.")
+            .WithOnSheet((CalculatedCharacterSheetValues sheet) =>
+            {
+                sheet.RangerBenefitsToCompanion += (companion, ranger) =>
+                {
+                    companion.MaxHP += companion.Level * 2;
+                    companion.Abilities.Strength += 2;
+                    companion.Abilities.Dexterity += 2;
+                    companion.Abilities.Constitution += 2;
+                    companion.Abilities.Wisdom += 2;
+
+                    companion.AddQEffect(new QEffect()
+                    {
+                        BonusToDamage = delegate (QEffect self, CombatAction action, Creature target)
+                        {
+                            if (action.Item == null)
+                            {
+                                return null;
+                            }
+
+                            return new Bonus(2, BonusType.Untyped, "Incredible Construct Companion");
+                        }
+                    });
+
+                    companion.Proficiencies.Set(Trait.Acrobatics, Proficiency.Expert);
+                    companion.Proficiencies.Set(Trait.Athletics, Proficiency.Expert);
+
+                    companion.Perception = companion.Abilities.Wisdom + companion.Proficiencies.Get(Trait.Perception).ToNumber(companion.Level);
+                    companion.Defenses.Set(Defense.Perception, companion.Abilities.Wisdom + companion.Proficiencies.Get(Trait.Perception).ToNumber(companion.Level));
+                    companion.Defenses.Set(Defense.Fortitude, companion.Abilities.Constitution + companion.Proficiencies.Get(Trait.Fortitude).ToNumber(companion.Level));
+                    companion.Defenses.Set(Defense.Reflex, companion.Abilities.Dexterity + companion.Proficiencies.Get(Trait.Reflex).ToNumber(companion.Level));
+                    companion.Defenses.Set(Defense.Will, companion.Abilities.Wisdom + companion.Proficiencies.Get(Trait.Will).ToNumber(companion.Level));
+
+                    companion.Skills.Set(Skill.Acrobatics, companion.Abilities.Dexterity + companion.Proficiencies.Get(Trait.Acrobatics).ToNumber(companion.Level));
+                    companion.Skills.Set(Skill.Athletics, companion.Abilities.Strength + companion.Proficiencies.Get(Trait.Athletics).ToNumber(companion.Level));
+                    companion.Skills.Set(Skill.Intimidation, companion.Abilities.Charisma + companion.Proficiencies.Get(Trait.Intimidation).ToNumber(companion.Level));
+                    companion.Skills.Set(Skill.Stealth, companion.Abilities.Dexterity + companion.Proficiencies.Get(Trait.Stealth).ToNumber(companion.Level));
+                    companion.Skills.Set(Skill.Survival, companion.Abilities.Wisdom + companion.Proficiencies.Get(Trait.Survival).ToNumber(companion.Level));
                 };
             });
 
