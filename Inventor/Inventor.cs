@@ -150,6 +150,7 @@ namespace Inventor
             var explosiveLeapFeat = ModManager.RegisterFeatName("ExplosiveLeap", "Explosive Leap");
             var flingAcidFeat = ModManager.RegisterFeatName("FlingAcid", "Fling Acid");
             var flyingShieldFeat = ModManager.RegisterFeatName("FlyingShield", "Flying Shield");
+            var gigatonStrikeFeat = ModManager.RegisterFeatName("GigatonStrike", "Gigaton Strike");
             var incredibleConstructCompanionFeat = ModManager.RegisterFeatName("IncredibleConstructCompanion", "Incredible Construct Companion");
             var manifoldModificationsFeat = ModManager.RegisterFeatName("ManifoldModifications", "Manifold Modifications");
             var modifiedShieldFeat = ModManager.RegisterFeatName("ModifiedShield", "Modified Shield");
@@ -1582,7 +1583,7 @@ namespace Inventor
                         QEffectForStrike = new QEffect("MegatonStrikeOnStrike", null) { AddExtraWeaponDamage = (Item item) => { return (DiceFormula.FromText($"2d{item.WeaponProperties!.DamageDieSize}"), item.WeaponProperties.DamageKind); } }
                     };
                     var weaponCombatAction = megatonQEffect.Owner.CreateStrike(item, -1, strikeModifiers);
-                    weaponCombatAction.Name = "Ustable Megaton Strike";
+                    weaponCombatAction.Name = "Unstable Megaton Strike";
                     weaponCombatAction.TrueDamageFormula = weaponCombatAction.TrueDamageFormula.Add(DiceFormula.FromText($"1d{item.WeaponProperties!.DamageDieSize}", $"Megaton Strike ({item.Name})"));
                     weaponCombatAction.Illustration = new SideBySideIllustration(weaponCombatAction.Illustration, IllustrationName.StarHit);
                     weaponCombatAction.ActionCost = 2;
@@ -1639,7 +1640,7 @@ namespace Inventor
                                 QEffectForStrike = new QEffect("MegatonStrikeOnStrike", null) { AddExtraWeaponDamage = (Item item) => { return (DiceFormula.FromText($"2d{item.WeaponProperties!.DamageDieSize}"), item.WeaponProperties.DamageKind); } }
                             };
                             var weaponCombatAction = companion.CreateStrike(item, -1, strikeModifiers);
-                            weaponCombatAction.Name = "Ustable Megaton Strike";
+                            weaponCombatAction.Name = "Unstable Megaton Strike";
                             weaponCombatAction.TrueDamageFormula = weaponCombatAction.TrueDamageFormula!.Add(DiceFormula.FromText($"1d{item.WeaponProperties!.DamageDieSize}", $"Megaton Strike ({item.Name})"));
                             weaponCombatAction.Illustration = new SideBySideIllustration(weaponCombatAction.Illustration, IllustrationName.StarHit);
                             weaponCombatAction.ActionCost = 2;
@@ -1954,6 +1955,85 @@ namespace Inventor
 
             #region Level 8 Feats
 
+            yield return new TrueFeat(gigatonStrikeFeat, 8, "When you use a full-power Megaton Strike, you can knock your foe back.", "When you succeed at your Strike while using an unstable Megaton Strike, your target must attempt a Fortitude save against your class DC.\n\n{b}Critical Success{/b} The creature is unaffected.\n{b}Success{/b} The creature is pushed back 5 feet.\n{b}Failure{/b} The creature is pushed back 10 feet.\n{b}Critical Failure{/b} The creature is pushed back 20 feet.\n\n{b}Special{/b} If your innovation is a minion, this benefit applies on its unstable Megaton Strikes.", [InventorTrait, Trait.ClassFeat])
+            .WithOnCreature(delegate (Creature creature)
+            {
+                if (creature.HasFeat(constructInnovationFeatName))
+                {
+                    return;
+                }
+
+                creature.AddQEffect(new("Gigaton Strike", "When you use a full-power Megaton Strike, you can knock your foe back.")
+                {
+                    AfterYouTakeAction = async (QEffect qEffect, CombatAction action) =>
+                    {
+                        if (action.Name != "Unstable Megaton Strike" || (action.CheckResult != CheckResult.Success && action.CheckResult != CheckResult.CriticalSuccess))
+                        {
+                            return;
+                        }
+
+                        if (action.ChosenTargets.ChosenCreature != null && action.ChosenTargets.ChosenCreature.HP > 0 && await action.Owner.Battle.AskForConfirmation(action.Owner, IllustrationName.KiBlast, "Do you want to use Gigaton Strike to knock the enemy back?", "Yes", "No"))
+                        {
+                            var checkResult = CommonSpellEffects.RollSavingThrow(action.ChosenTargets.ChosenCreature!, action, Defense.Fortitude, GetClassDC(creature));
+
+                            if (checkResult == CheckResult.Success)
+                            {
+                                await action.Owner.PushCreature(action.ChosenTargets.ChosenCreature, 1);
+                            }
+                            else if (checkResult == CheckResult.Failure)
+                            {
+                                await action.Owner.PushCreature(action.ChosenTargets.ChosenCreature, 2);
+                            }
+                            else if (checkResult == CheckResult.Failure)
+                            {
+                                await action.Owner.PushCreature(action.ChosenTargets.ChosenCreature, 4);
+                            }
+                        }
+
+                    }
+                });
+            })
+            .WithOnSheet(delegate (CalculatedCharacterSheetValues sheet)
+            {
+                if (!sheet.HasFeat(constructInnovationFeat))
+                {
+                    return;
+                }
+
+                sheet.RangerBenefitsToCompanion += (Creature construct, Creature inventor) =>
+                {
+                    construct.AddQEffect(new("Gigaton Strike", "When you use a full-power Megaton Strike, you can knock your foe back.")
+                    {
+                        AfterYouTakeAction = async (QEffect qEffect, CombatAction action) =>
+                        {
+                            if (action.Name != "Unstable Megaton Strike" || (action.CheckResult != CheckResult.Success && action.CheckResult != CheckResult.CriticalSuccess))
+                            {
+                                return;
+                            }
+
+                            if (action.ChosenTargets.ChosenCreature != null && action.ChosenTargets.ChosenCreature.HP > 0 && await action.Owner.Battle.AskForConfirmation(action.Owner, IllustrationName.KiBlast, "Do you want to use Gigaton Strike to knock the enemy back?", "Yes", "No"))
+                            {
+                                var checkResult = CommonSpellEffects.RollSavingThrow(action.ChosenTargets.ChosenCreature!, action, Defense.Fortitude, GetClassDC(GetInventor(action.Owner)));
+
+                                if (checkResult == CheckResult.Success)
+                                {
+                                    await action.Owner.PushCreature(action.ChosenTargets.ChosenCreature, 1);
+                                }
+                                else if (checkResult == CheckResult.Failure)
+                                {
+                                    await action.Owner.PushCreature(action.ChosenTargets.ChosenCreature, 2);
+                                }
+                                else if (checkResult == CheckResult.Failure)
+                                {
+                                    await action.Owner.PushCreature(action.ChosenTargets.ChosenCreature, 4);
+                                }
+                            }
+
+                        }
+                    });
+                };
+            });
+
             yield return new TrueFeat(manifoldModificationsFeat, 8, "You've modified your innovation using clever workarounds, so you can include another initial modification without compromising its structure.", "Your innovation gains an additional initial modification from the list for innovations of its type.", [InventorTrait, Trait.ClassFeat])
             .WithOnSheet((CalculatedCharacterSheetValues sheet) =>
             {
@@ -1977,9 +2057,9 @@ namespace Inventor
             {
                 creature.AddQEffect(new()
                 {
-                    ProvideMainAction = delegate (QEffect flyingShieldQEffect)
+                    ProvideMainAction = delegate (QEffect overdriveAllyQEffect)
                     {
-                        var user = flyingShieldQEffect.Owner;
+                        var user = overdriveAllyQEffect.Owner;
                         if (!user.CarriedItems.All((Item item) => !item.HasTrait(Trait.Shield)))
                         {
                             return null;
@@ -2252,6 +2332,11 @@ namespace Inventor
         }
 
         #endregion
+
+        private static int GetClassDC(Creature inventor)
+        {
+            return inventor!.ProficiencyLevel + inventor!.Abilities.Intelligence + 12;
+        }
 
         public static int GetLevelDC(int level)
         {
