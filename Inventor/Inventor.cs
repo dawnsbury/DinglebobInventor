@@ -6,7 +6,6 @@ using Dawnsbury.Core.CharacterBuilder.AbilityScores;
 using Dawnsbury.Core.CharacterBuilder.Feats;
 using Dawnsbury.Core.CharacterBuilder.FeatsDb;
 using Dawnsbury.Core.CharacterBuilder.FeatsDb.Common;
-using Dawnsbury.Core.CharacterBuilder.FeatsDb.TrueFeatDb;
 using Dawnsbury.Core.CharacterBuilder.Selections.Options;
 using Dawnsbury.Core.CombatActions;
 using Dawnsbury.Core.Creatures;
@@ -155,6 +154,7 @@ namespace Inventor
             var modifiedShieldFeat = ModManager.RegisterFeatName("ModifiedShield", "Modified Shield");
             var megatonStrikeFeat = ModManager.RegisterFeatName("MegatonStrike", "Megaton Strike");
             var megavoltFeat = ModManager.RegisterFeatName("Megavolt", "Megavolt");
+            var overdriveAllyFeat = ModManager.RegisterFeatName("OverdriveAlly", "Overdrive Ally");
             var reactiveShieldFeat = ModManager.RegisterFeatName("ReactiveShieldInventor", "Reactive Shield");
             var searingRestorationFeat = ModManager.RegisterFeatName("SearingRestoration", "Searing Restoration");
             var soaringArmorFeat = ModManager.RegisterFeatName("SoaringArmor", "Soaring Armor");
@@ -1945,6 +1945,77 @@ namespace Inventor
                         }
 
                         return null;
+                    }
+                });
+            });
+
+            #endregion
+
+            #region Level 8 Feats
+
+            yield return new TrueFeat(overdriveAllyFeat, 8, "You quickly fling some of your powered-up mechanisms to an ally, sharing your benefits with them briefly", "Choose an ally within 30 feet. Until the end of their next turn, that ally's Strikes deal additional damage equal to half your Intelligence modifier, or your full Intelligence modifier if you were in critical overdrive. The ally doesn't gain the increased damage from expert, master, or legendary overdrive.", [InventorTrait, Trait.ClassFeat, Trait.Manipulate])
+            .WithActionCost(1)
+            .WithOnCreature(delegate (Creature creature)
+            {
+                creature.AddQEffect(new()
+                {
+                    ProvideMainAction = delegate (QEffect flyingShieldQEffect)
+                    {
+                        var user = flyingShieldQEffect.Owner;
+                        if (!user.CarriedItems.All((Item item) => !item.HasTrait(Trait.Shield)))
+                        {
+                            return null;
+                        }
+
+                        return (ActionPossibility)new CombatAction(user, new SideBySideIllustration(IllustrationName.Throw, IllustrationName.Swords), "Overdrive Ally", [InventorTrait, Trait.Manipulate], "Choose an ally within 30 feet. Until the end of their next turn, that ally's Strikes deal additional damage equal to half your Intelligence modifier, or your full Intelligence modifier if you were in critical overdrive.", Target.RangedFriend(6).WithAdditionalConditionOnTargetCreature((Creature user, Creature target) => (!user.HasEffect(OverdrivedID) || user.Name == target.Name) ? Usability.CommonReasons.NotUsableForComplexReason : Usability.Usable)) {  }
+                        .WithActionCost(1)
+                        .WithSoundEffect(Dawnsbury.Audio.SfxName.ElementalBlastMetal)
+                        .WithEffectOnEachTarget(async delegate (CombatAction overdriveAlly, Creature user, Creature target, CheckResult result)
+                        {
+                            var overdriveQEffect = user.FindQEffect(OverdrivedID);
+
+                            if (overdriveQEffect == null)
+                            {
+                                return;
+                            }
+
+                            var damage = user.Abilities.Intelligence / 2;
+
+                            if (overdriveQEffect.Name == "Critical Overdrive")
+                            {
+                                damage = user.Abilities.Intelligence;
+                            }
+
+                            var overDriveAllyTargetEffect = target.QEffects.FirstOrDefault((QEffect qf) => qf.Name == "Overdrive Ally");
+
+                            if (overDriveAllyTargetEffect != null && (int)overDriveAllyTargetEffect.Tag! >= damage)
+                            {
+                                return;
+                            }
+                            else if (overDriveAllyTargetEffect != null)
+                            {
+                                target.RemoveAllQEffects((qf) => qf == overDriveAllyTargetEffect);
+                            }
+
+                            target.AddQEffect(new QEffect()
+                            {
+                                Name = "Overdrive Ally",
+                                Illustration = new SideBySideIllustration(IllustrationName.Throw, IllustrationName.Swords),
+                                Owner = target,
+                                Source = user,
+                                Tag = damage,
+                                Description = $"You deal an additional {damage} damage with strikes.",
+                                BonusToDamage = (QEffect effect, CombatAction combatAction, Creature owner) =>
+                                {
+                                    if (combatAction.Item == null)
+                                    {
+                                        return null;
+                                    }
+
+                                    return new Bonus(damage, BonusType.Untyped, "Overdrive Ally");
+                                }
+                            }.WithExpirationAtEndOfOwnerTurn());
+                        });
                     }
                 });
             });
