@@ -151,6 +151,7 @@ namespace Inventor
             var flingAcidFeat = ModManager.RegisterFeatName("FlingAcid", "Fling Acid");
             var flyingShieldFeat = ModManager.RegisterFeatName("FlyingShield", "Flying Shield");
             var incredibleConstructCompanionFeat = ModManager.RegisterFeatName("IncredibleConstructCompanion", "Incredible Construct Companion");
+            var manifoldModificationsFeat = ModManager.RegisterFeatName("ManifoldModifications", "Manifold Modifications");
             var modifiedShieldFeat = ModManager.RegisterFeatName("ModifiedShield", "Modified Shield");
             var megatonStrikeFeat = ModManager.RegisterFeatName("MegatonStrike", "Megaton Strike");
             var megavoltFeat = ModManager.RegisterFeatName("Megavolt", "Megavolt");
@@ -1953,7 +1954,24 @@ namespace Inventor
 
             #region Level 8 Feats
 
-            yield return new TrueFeat(overdriveAllyFeat, 8, "You quickly fling some of your powered-up mechanisms to an ally, sharing your benefits with them briefly", "Choose an ally within 30 feet. Until the end of their next turn, that ally's Strikes deal additional damage equal to half your Intelligence modifier, or your full Intelligence modifier if you were in critical overdrive. The ally doesn't gain the increased damage from expert, master, or legendary overdrive.", [InventorTrait, Trait.ClassFeat, Trait.Manipulate])
+            yield return new TrueFeat(manifoldModificationsFeat, 8, "You've modified your innovation using clever workarounds, so you can include another initial modification without compromising its structure.", "Your innovation gains an additional initial modification from the list for innovations of its type.", [InventorTrait, Trait.ClassFeat])
+            .WithOnSheet((CalculatedCharacterSheetValues sheet) =>
+            {
+                if (sheet.HasFeat(armorInnovationFeat))
+                {
+                    sheet.AddSelectionOptionRightNow(new SingleFeatSelectionOption("ManifoldModifications", "Additional Modification", 7, (Feat ft) => ft.HasTrait(armorTrait) && ft.HasTrait(initialModificationTrait)));
+                }
+                else if (sheet.HasFeat(constructInnovationFeat))
+                {
+                    sheet.AddSelectionOptionRightNow(new SingleFeatSelectionOption("ManifoldModifications", "Additional Modification", 7, (Feat ft) => ft.HasTrait(constructTrait) && ft.HasTrait(initialModificationTrait)));
+                }
+                else if (sheet.HasFeat(weaponInnovationFeat))
+                {
+                    sheet.AddSelectionOptionRightNow(new SingleFeatSelectionOption("ManifoldModifications", "Additional Modification", 7, (Feat ft) => ft.HasTrait(weaponTrait) && ft.HasTrait(initialModificationTrait)));
+                }
+            });
+
+            yield return new TrueFeat(overdriveAllyFeat, 8, "You quickly fling some of your powered-up mechanisms to an ally, sharing your benefits with them briefly.", "Choose an ally within 30 feet. Until the end of their next turn, that ally's Strikes deal additional damage equal to half your Intelligence modifier, or your full Intelligence modifier if you were in critical overdrive. The ally doesn't gain the increased damage from expert, master, or legendary overdrive.", [InventorTrait, Trait.ClassFeat, Trait.Manipulate])
             .WithActionCost(1)
             .WithOnCreature(delegate (Creature creature)
             {
