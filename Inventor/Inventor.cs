@@ -1286,7 +1286,7 @@ namespace Inventor
 
             yield return new TrueFeat(modifiedShieldFeat, 2, "You've added blades to your shield, turning it into a weapon and improving its defenses.", "Shields you hold at the start of combat have +2 hardness and the versatile slashing trait.", [InventorTrait, Trait.ClassFeat], null).WithOnCreature(delegate (Creature creature)
             {
-                creature.AddQEffect(new("Modified Shield", "Shields you hold at the start of combat have +2 hardness and the versatile slashing trait.")
+                creature.AddQEffect(new("Modified Shield", "Shields you hold at the start of combat have +2 hardness and the versatile slashing trait. The additional hardness increases by 2 at level 7 and every 4 levels afterward.")
                 {
                     StartOfCombat = async delegate (QEffect effect)
                     {
@@ -1714,7 +1714,7 @@ namespace Inventor
                 };
             });
 
-            yield return new TrueFeat(megavoltFeat, 6, "You bleed off some electric power from your innovation in the shape of a damaging bolt.", "Creatures in a 20-foot line from your innovation take 3d4 electricity damage, with a basic Reflex save against your class DC. The electricity damage increases by 1d4 at 8th level and every 2 levels thereafter.\n\n{b}Unstable Function{/b} You overload and supercharge the voltage even higher. Add the unstable trait to Megavolt. The area increases to a 60-foot line and the damage increases from d4s to d12s. If you have the breakthrough innovation class feature, you can choose a 60-foot or 90-foot line for the area when you use an unstable Megavolt.\n\n{b}Special{/b} If your innovation is a minion, it can take this action rather than you.", [Trait.Acid, InventorTrait, Trait.Manipulate, UnstableTrait, Trait.ClassFeat])
+            yield return new TrueFeat(megavoltFeat, 6, "You bleed off some electric power from your innovation in the shape of a damaging bolt.", "Creatures in a 20-foot line from your innovation take 3d4 electricity damage, with a basic Reflex save against your class DC. The electricity damage increases by 1d4 at 8th level and every 2 levels thereafter.\n\n{b}Unstable Function{/b} You overload and supercharge the voltage even higher. Add the unstable trait to Megavolt. The area increases to a 60-foot line and the damage increases from d4s to d12s. If you have the breakthrough innovation class feature, you can choose a 60-foot or 90-foot line for the area when you use an unstable Megavolt.\n\n{b}Special{/b} If your innovation is a minion, it can take this action rather than you.", [Trait.Electricity, InventorTrait, Trait.Manipulate, Trait.ClassFeat])
             .WithActionCost(2)
             .WithOnCreature(delegate (Creature creature)
             {
