@@ -614,7 +614,7 @@ namespace Inventor
 
                                 if (companion != null)
                                 {
-                                    await companion.DealDirectDamage(overdrive, DiceFormula.FromText($"{user.Level}"), user, CheckResult.CriticalFailure, damageKind);
+                                    await companion.DealDirectDamage(overdrive, DiceFormula.FromText($"{user.Level}"), companion, CheckResult.CriticalFailure, damageKind);
                                 }
                             }
                         });
