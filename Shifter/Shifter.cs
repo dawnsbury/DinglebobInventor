@@ -86,13 +86,13 @@ namespace Shifter
             var terrifyingShiftFeat = ModManager.RegisterFeatName("ShifterTerrifyingShift", "Terrifying Shift");
             var thickHideFeat = ModManager.RegisterFeatName("ShifterThickHide", "Thick Hide");
             var violentShiftFeat = ModManager.RegisterFeatName("ShifterViolentShift", "Violent Shift");
-
+            
             #region Class Description Strings
 
             var abilityString = "{b}1. Animal Claws.{/b} You can shift your hands into claws. Your fists gain the versatile slashing trait and lose the nonlethal trait.\n\n" +
                 "{b}2. Forms.{/b} You can use an action to Shift into different forms. Each form gives you an unarmed attack, a passive benefit, and an Apex activity. You know two forms.\n\n" +
                 "{b}3 Animal Influence.{/b} You've spent so much time around animals that you've picked up some of their traits. You gain an animal influence, which has an effect when you Shift.\n\n" +
-                "{b}4 Bestial Instincts.{/b} When you Shift, you briefly succumb to the instincts of your new form. Your unarmed attacks deal an additional 1d6 damage until your next turn.\n\nAs your level increases, so does the number of damage dice for your bestial insticts. Increase the number of dice by one at 5th, 11th, and 17th levels.\n\n" +
+                "{b}4 Bestial Instincts.{/b} When you Shift, you briefly succumb to the instincts of your new form. Your unarmed attacks deal an additional 1d6 damage until your next turn.\n\nAs your level increases, so does the number of damage dice for your bestial instincts. Increase the number of dice by one at 5th, 11th, and 17th levels.\n\n" +
                 "{b}5. Apex Actions.{/b} Some actions, like those granted by your forms, have the Apex trait. You must be in a form to use an Apex action, and you lose your form after that action. \n\n" +
                 "{b}6. Shifter Feat.{/b} \n\n" +
                 "{b}At higher levels:{/b}\n" +
@@ -101,7 +101,7 @@ namespace Shifter
                 "{b}Level 4:{/b} Shifter feat\n" +
                 "{b}Level 5:{/b} Ability boosts, ancestry feat, bestial insticts 2d6, expert strikes, natural specialization {i}(You gain the {tooltip:criteffect}critical specialization effects{/} of unarmed attacks.){/i}, skill increase\n" +
                 "{b}Level 6:{/b} Shifter feat\n" +
-                "{b}Level 7:{/b} Expert shifter {i}(Your shifter class DC increases to expert, and you gain an additional form. The additional form can be either a starting form or a form feat of your level or lower.){/i}, general feat, skill increase, weapon specialization {i}(You deal 2 additional damage with weapons and unarmed attacks in which you are an expert; this damage increases to 3 if you're a master, and to 4 if you're legendary){/i}, physical maleability {i}(Your proficiency rank for Fortitude saves increases to master. When you roll a success on a Fortitude save, you get a critical success instead.){/i}\n" +
+                "{b}Level 7:{/b} Expert shifter {i}(Your shifter class DC increases to expert, and you gain an additional form. The additional form can be either a starting form or a form feat of your level or lower.){/i}, general feat, skill increase, weapon specialization {i}(You deal 2 additional damage with weapons and unarmed attacks in which you are an expert; this damage increases to 3 if you're a master, and to 4 if you're legendary){/i}, physical malleability {i}(Your proficiency rank for Fortitude saves increases to master. When you roll a success on a Fortitude save, you get a critical success instead.){/i}\n" +
                 "{b}Level 8:{/b} Shifter feat";
 
             #endregion
