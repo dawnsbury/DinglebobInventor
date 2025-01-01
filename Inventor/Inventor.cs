@@ -31,6 +31,10 @@ namespace Inventor
 {
     public static class Inventor
     {
+        public static QEffectId ConstructCompanionID = ModManager.RegisterEnumMember<QEffectId>("ConstructCompanion");
+
+        public static QEffect ConstructCompanion = new() { Id = ConstructCompanionID };
+
         public static QEffectId UsedUnstableID = ModManager.RegisterEnumMember<QEffectId>("UsedUnstable");
 
         public static QEffect UsedUnsable = new() { Id = UsedUnstableID };
@@ -207,7 +211,7 @@ namespace Inventor
             #region Class Creation
 
             #region Innovation Feats
-
+            
             var armorInnovationFeat = new Feat(armorInnovationFeatName, "Your innovation is a cutting-edge suit of medium armor with a variety of attached gizmos and devices.", "", [], null).WithOnSheet(delegate (CalculatedCharacterSheetValues values)
             {
                 values.AddSelectionOption(new SingleFeatSelectionOption("ArmorInitialInnovation", "Initial Armor Innovation", 1, (Feat ft) => ft.HasTrait(armorTrait) && ft.HasTrait(initialModificationTrait)));
@@ -426,18 +430,19 @@ namespace Inventor
                                 .WithSavingThrow(new SavingThrow(Defense.Reflex, (Creature? explodeUser) => explodeUser!.ProficiencyLevel + explodeUser!.Abilities.Intelligence + 12))
                                 .WithEffectOnEachTarget(async delegate (CombatAction explode, Creature user, Creature target, CheckResult result)
                                 {
+                                    await CommonSpellEffects.DealBasicDamage(explode, user, target, result, user.Level == 1 ? "2d6" : user.Level + "d6", damageKind);
+                                })
+                                .WithEffectOnSelf(async delegate (CombatAction unstable, Creature user)
+                                {
                                     var explodeEffect = new List<Tile>();
                                     foreach (Edge item in user.Occupies.Neighbours.ToList())
                                     {
                                         explodeEffect.Add(item.Tile);
                                     }
-                                    await CommonAnimations.CreateConeAnimation(user.Battle, user.Occupies.ToCenterVector(), explodeEffect, 25, ProjectileKind.Cone, explode.Illustration);
+                                    await CommonAnimations.CreateConeAnimation(user.Battle, user.Occupies.ToCenterVector(), explodeEffect, 25, ProjectileKind.Cone, unstable.Illustration);
 
-                                    await CommonSpellEffects.DealBasicDamage(explode, user, target, result, user.Level == 1 ? "2d6" : user.Level + "d6", damageKind);
-                                })
-                                .WithEffectOnSelf(async delegate (CombatAction unstable, Creature user)
-                                {
                                     await MakeUnstableCheck(unstable, user);
+
                                 })).WithPossibilityGroup("Unstable");
                             }
 
@@ -447,17 +452,17 @@ namespace Inventor
                                 .WithSavingThrow(new SavingThrow(Defense.Reflex, (Creature? explodeUser) => explodeUser!.ProficiencyLevel + explodeUser!.Abilities.Intelligence + 12))
                                 .WithEffectOnEachTarget(async delegate (CombatAction explode, Creature user, Creature target, CheckResult result)
                                 {
+                                    await CommonSpellEffects.DealBasicDamage(explode, user, target, result, user.Level == 1 ? "2d6" : user.Level + "d6", damageKind);
+                                })
+                                .WithEffectOnSelf(async delegate (CombatAction unstable, Creature user)
+                                {
                                     var explodeEffect = new List<Tile>();
                                     foreach (Edge item in user.Occupies.Neighbours.ToList())
                                     {
                                         explodeEffect.Add(item.Tile);
                                     }
-                                    await CommonAnimations.CreateConeAnimation(user.Battle, user.Occupies.ToCenterVector(), explodeEffect, 25, ProjectileKind.Cone, explode.Illustration);
+                                    await CommonAnimations.CreateConeAnimation(user.Battle, user.Occupies.ToCenterVector(), explodeEffect, 25, ProjectileKind.Cone, unstable.Illustration);
 
-                                    await CommonSpellEffects.DealBasicDamage(explode, user, target, result, user.Level == 1 ? "2d6" : user.Level + "d6", damageKind);
-                                })
-                                .WithEffectOnSelf(async delegate (CombatAction unstable, Creature user)
-                                {
                                     await MakeUnstableCheck(unstable, user);
                                 }));
                             possibilities.Add((ActionPossibility)new CombatAction(user, IllustrationName.BurningHands, "10-Foot Explode", [damageKind == DamageKind.Acid ? Trait.Acid : damageKind == DamageKind.Cold ? Trait.Cold : damageKind == DamageKind.Electricity ? Trait.Electricity : Trait.Fire, InventorTrait, Trait.Manipulate, UnstableTrait], $"You intentionally take your innovation beyond normal safety limits, making it explode and damage nearby creatures without damaging the innovation... hopefully. The explosion deals {(user.Level == 1 ? "2" : user.Level)}d6 {damageKind.ToString().ToLower()} damage with a basic Reflex save to all creatures in a 10-foot emanation.", Target.SelfExcludingEmanation(2)) { ShortDescription = $"Deal {(user.Level == 1 ? "2" : user.Level)}d6 {damageKind.ToString().ToLower()} damage with a basic Reflex save to all creatures inin a 10-foot emanation." }
@@ -466,17 +471,17 @@ namespace Inventor
                                 .WithSavingThrow(new SavingThrow(Defense.Reflex, (Creature? explodeUser) => explodeUser!.ProficiencyLevel + explodeUser!.Abilities.Intelligence + 12))
                                 .WithEffectOnEachTarget(async delegate (CombatAction explode, Creature user, Creature target, CheckResult result)
                                 {
+                                    await CommonSpellEffects.DealBasicDamage(explode, user, target, result, user.Level == 1 ? "2d6" : user.Level + "d6", damageKind);
+                                })
+                                .WithEffectOnSelf(async delegate (CombatAction unstable, Creature user)
+                                {
                                     var explodeEffect = new List<Tile>();
                                     foreach (Edge item in user.Occupies.Neighbours.ToList())
                                     {
                                         explodeEffect.Add(item.Tile);
                                     }
-                                    await CommonAnimations.CreateConeAnimation(user.Battle, user.Occupies.ToCenterVector(), explodeEffect, 25, ProjectileKind.Cone, explode.Illustration);
+                                    await CommonAnimations.CreateConeAnimation(user.Battle, user.Occupies.ToCenterVector(), explodeEffect, 25, ProjectileKind.Cone, unstable.Illustration);
 
-                                    await CommonSpellEffects.DealBasicDamage(explode, user, target, result, user.Level == 1 ? "2d6" : user.Level + "d6", damageKind);
-                                })
-                                .WithEffectOnSelf(async delegate (CombatAction unstable, Creature user)
-                                {
                                     await MakeUnstableCheck(unstable, user);
                                 }));
 
@@ -488,17 +493,17 @@ namespace Inventor
                                     .WithSavingThrow(new SavingThrow(Defense.Reflex, (Creature? explodeUser) => explodeUser!.ProficiencyLevel + explodeUser!.Abilities.Intelligence + 12))
                                     .WithEffectOnEachTarget(async delegate (CombatAction explode, Creature user, Creature target, CheckResult result)
                                     {
+                                        await CommonSpellEffects.DealBasicDamage(explode, user, target, result, user.Level == 1 ? "2d6" : user.Level + "d6", damageKind);
+                                    })
+                                    .WithEffectOnSelf(async delegate (CombatAction unstable, Creature user)
+                                    {
                                         var explodeEffect = new List<Tile>();
                                         foreach (Edge item in user.Occupies.Neighbours.ToList())
                                         {
                                             explodeEffect.Add(item.Tile);
                                         }
-                                        await CommonAnimations.CreateConeAnimation(user.Battle, user.Occupies.ToCenterVector(), explodeEffect, 25, ProjectileKind.Cone, explode.Illustration);
+                                        await CommonAnimations.CreateConeAnimation(user.Battle, user.Occupies.ToCenterVector(), explodeEffect, 25, ProjectileKind.Cone, unstable.Illustration);
 
-                                        await CommonSpellEffects.DealBasicDamage(explode, user, target, result, user.Level == 1 ? "2d6" : user.Level + "d6", damageKind);
-                                    })
-                                    .WithEffectOnSelf(async delegate (CombatAction unstable, Creature user)
-                                    {
                                         await MakeUnstableCheck(unstable, user);
                                     }));
                             }
@@ -994,7 +999,7 @@ namespace Inventor
                                     {
                                         Name = "Turret",
                                         Id = TurretConfigurationID,
-                                        Illustration = new SideBySideIllustration(IllustrationName.GaleBlast, IllustrationName.Bomb),
+                                        Illustration = new SideBySideIllustration(IllustrationName.Camp, IllustrationName.Bomb),
                                         Owner = user,
                                         Source = user,
                                         Description = "You're in your turret configuration.",
@@ -1355,7 +1360,7 @@ namespace Inventor
             + "\n- Unarmed attack damage increases from one die to two dice."
             + "\n- Proficiency rank for Perception and all saving throws increases to expert."
             + "\n- Proficiency ranks in Intimidation, Stealth, and Survival increase to trained. If the construct is your innovation and it was already trained in those skills from a modification, increase its proficiency rank in those skills to expert."
-            + "\n\nEven if you don't use the Command a Construct Companion action, your construct companion can still use 1 action at the end of your turn.", [InventorTrait, Trait.ClassFeat])
+            + "\n\nEven if you don't use the Command a Construct Companion action, your construct companion can still use 1 action at the end of your turn to stride or strike.", [InventorTrait, Trait.ClassFeat])
             .WithPrerequisite((CalculatedCharacterSheetValues values) => values.AllFeatNames.Contains(constructCompanionFeat), "You have created a Construct Companion.")
             .WithOnSheet((CalculatedCharacterSheetValues sheet) =>
             {
@@ -1432,9 +1437,9 @@ namespace Inventor
                     companion.Skills.Set(Skill.Survival, companion.Abilities.Wisdom + companion.Proficiencies.Get(Trait.Survival).ToNumber(companion.Level));
                 };
             })
-            .WithPermanentQEffect("If you don't command your companion, they will act with 1 action at end of your turn.", qf => qf.EndOfYourTurn = async (qfSelf, you) =>
+            .WithPermanentQEffect("Even if you don't use the Command a Construct Companion action, it can still use 1 action at the end of your turn to stride or strike.", qf => qf.EndOfYourTurnBeneficialEffect = async (qfSelf, you) =>
             {
-                Creature animalCompanion = you.Battle.AllCreatures.FirstOrDefault((cr => cr.QEffects.Any((qf => qf.Id == QEffectId.RangersCompanion && qf.Source == you)) && cr.Actions.CanTakeActions()));
+                Creature? animalCompanion = you.Battle.AllCreatures.FirstOrDefault((cr => cr.QEffects.Any((qf => qf.Id == ConstructCompanionID && qf.Source == you)) && cr.Actions.CanTakeActions()));
 
                 if (animalCompanion == null)
                 {
@@ -1442,19 +1447,18 @@ namespace Inventor
                     return;
                 }
 
-
                 if (!you.Actions.ActionHistoryThisTurn.Any((ac => ac.Name == "Command your Construct Companion" || ac.ActionId == ActionId.Delay)))
                 {
                     you.Occupies.Overhead("Advanced Companion.", Color.Green);
-                    animalCompanion.AddQEffect(new QEffect()
+                    animalCompanion.Actions.ResetToFull();
+                    animalCompanion.Actions.UseUpActions(1, ActionDisplayStyle.Summoned);
+
+                    animalCompanion.AddQEffect(new QEffect(ExpirationCondition.ExpiresAtEndOfYourTurn)
                     {
-                        ExpiresAt = ExpirationCondition.ExpiresAtEndOfYourTurn,
-                        StartOfYourTurn = (async (effect, creature) =>
-                        {
-                            creature.Actions.UseUpActions(1, ActionDisplayStyle.Summoned);
-                            return;
-                        })
+                        Id = QEffectId.MoveOnYourOwn,
+                        PreventTakingAction = (CombatAction ca) => (!ca.HasTrait(Trait.Move) && !ca.HasTrait(Trait.Strike) && ca.ActionId != ActionId.EndTurn) ? "You can only move or make a Strike." : null
                     });
+
                     await CommonSpellEffects.YourMinionActs(animalCompanion);
                 }
             });
@@ -2149,7 +2153,7 @@ namespace Inventor
                 {
                     StartOfCombat = async delegate (QEffect qfinventorTechnical)
                     {
-                        if (inventor2.PersistentUsedUpResources.AnimalCompanionIsDead)
+                        if (inventor2.PersistentUsedUpResources.UsedUpActions.Contains("ConstructCompanionIsDead"))
                         {
                             inventor2.Occupies.Overhead("no companion", Color.Green, inventor2?.ToString() + "'s construct companion is destroyed. You will repair it during your next long rest or downtime.");
                         }
@@ -2157,24 +2161,25 @@ namespace Inventor
                         {
                             Creature creature2 = CreateConstructCompanion(companionType, inventor2.Level);
                             creature2.MainName = qfinventorTechnical.Owner.Name + "'s " + creature2.MainName;
+                            creature2.InitiativeControlledBy = inventor2;
                             creature2.AddQEffect(new QEffect
                             {
-                                Id = QEffectId.RangersCompanion,
+                                Id = ConstructCompanionID,
                                 Source = inventor2,
                                 WhenMonsterDies = delegate
                                 {
-                                    inventor2.PersistentUsedUpResources.AnimalCompanionIsDead = true;
+                                    inventor2.PersistentUsedUpResources.UsedUpActions.Add("ConstructCompanionIsDead");
                                 }
                             });
                             sheet2.RangerBenefitsToCompanion?.Invoke(creature2, inventor2);
                             inventor2.Battle.SpawnCreature(creature2, inventor2.OwningFaction, inventor2.Occupies);
                         }
                     },
-                    EndOfYourTurn = async delegate (QEffect qfinventor, Creature self)
+                    EndOfYourTurnBeneficialEffect = async delegate (QEffect qfinventor, Creature self)
                     {
                         if (!qfinventor.UsedThisTurn)
                         {
-                            Creature animalCompanion2 = GetConstructCompanion(qfinventor.Owner);
+                            Creature? animalCompanion2 = GetConstructCompanion(qfinventor.Owner);
                             if (animalCompanion2 != null)
                             {
                                 await animalCompanion2.Battle.GameLoop.EndOfTurn(animalCompanion2);
@@ -2192,7 +2197,7 @@ namespace Inventor
 
                         var animalCompanion = GetConstructCompanion(user);
 
-                        if (animalCompanion == null || GetConstructCompanion(user) == null || GetConstructCompanion(user).HP <= 0)
+                        if (animalCompanion == null || GetConstructCompanion(user) == null || GetConstructCompanion(user)!.HP <= 0)
                         {
                             return null;
                         }
@@ -2222,17 +2227,8 @@ namespace Inventor
                                             {
                                                 commandQEffect.UsedThisTurn = true;
 
-                                                animalCompanion.AddQEffect(new QEffect()
-                                                {
-                                                    StartOfYourTurn = async (qf, self) => {
-                                                    self.Actions.RevertExpendingOfResources(1, combatAction);
-                                                    qf.ExpiresAt = ExpirationCondition.Immediately;
-                                                    }
-                                                });
-
-                                                Creature oldActiveCreature = animalCompanion.Battle.ActiveCreature;
-                                                await animalCompanion.Battle.GameLoop.Turn(animalCompanion, minion: true);
-                                                animalCompanion.Battle.ActiveCreature = oldActiveCreature;
+                                                animalCompanion.Actions.RevertExpendingOfResources(1, combatAction);
+                                                await CommonSpellEffects.YourMinionActs(animalCompanion);
                                             }
                                         }
                                         .WithActionCost(2)
@@ -2243,13 +2239,13 @@ namespace Inventor
                     },
                     ProvideMainAction = delegate (QEffect qfinventor)
                     {
-                        if (qfinventor.Owner.HasFeat(constructInnovationFeat) || GetConstructCompanion(qfinventor.Owner) == null || GetConstructCompanion(qfinventor.Owner).HP <= 0)
+                        if (qfinventor.Owner.HasFeat(constructInnovationFeat) || GetConstructCompanion(qfinventor.Owner) == null || GetConstructCompanion(qfinventor.Owner)!.HP <= 0)
                         {
                             return null;
                         }
 
                         QEffect qfinventor2 = qfinventor;
-                        Creature animalCompanion = GetConstructCompanion(qfinventor2.Owner);
+                        Creature? animalCompanion = GetConstructCompanion(qfinventor2.Owner);
                         return (animalCompanion != null && animalCompanion.Actions.CanTakeActions()) ? ((ActionPossibility)new CombatAction(qfinventor2.Owner, creature.Illustration, "Command your Construct Companion", [Trait.Auditory], "Take 2 actions as your construct companion.\n\nYou can only command your construct companion once per turn.", Target.Self().WithAdditionalRestriction((Creature self) => qfinventor2.UsedThisTurn ? "You already commanded your construct companion this turn." : null))
                         {
                             ShortDescription = "Take 2 actions as your construct companion."
@@ -2266,7 +2262,7 @@ namespace Inventor
         public static Creature? GetConstructCompanion(Creature inventor)
         {
             Creature inventor2 = inventor;
-            return inventor2.Battle.AllCreatures.FirstOrDefault((Creature cr) => cr.QEffects.Any((QEffect qf) => qf.Id == QEffectId.RangersCompanion && qf.Source == inventor2));
+            return inventor2.Battle.AllCreatures.FirstOrDefault((Creature cr) => cr.QEffects.Any((QEffect qf) => qf.Id == ConstructCompanionID && qf.Source == inventor2));
         }
 
         private static Creature CreateConstructCompanion(ConstructCompanionType companionType, int level)
@@ -2303,7 +2299,7 @@ namespace Inventor
             Trait.Construct,
             Trait.Minion,
             Trait.AnimalCompanion
-        }, level, wisdom + proficiency, speed, new Defenses(10 + dexterity + proficiency, constitution + proficiency, dexterity + proficiency, wisdom + proficiency), ancestryHp + (6 + constitution) * level, abilities, skills).AddQEffect(QEffect.TraitImmunity(Trait.Mental)).AddQEffect(QEffect.TraitImmunity(Trait.Poison)).AddQEffect(QEffect.TraitImmunity(Trait.Necromancy)).AddQEffect(QEffect.ImmunityToCondition(QEffectId.Sickened)).AddQEffect(QEffect.ImmunityToCondition(QEffectId.Drained)).AddQEffect(QEffect.ImmunityToCondition(QEffectId.Fatigued)).AddQEffect(QEffect.ImmunityToCondition(QEffectId.Paralyzed)).AddQEffect(QEffect.DamageImmunity(DamageKind.Bleed))
+        }, level, wisdom + proficiency, speed, new Defenses(10 + dexterity + proficiency, constitution + proficiency, dexterity + proficiency, wisdom + proficiency), ancestryHp + (6 + constitution) * level, abilities, skills).AddQEffect(QEffect.TraitImmunity(Trait.Mental))/*.AddQEffect(QEffect.TraitImmunity(Trait.Poison)).AddQEffect(QEffect.TraitImmunity(Trait.Necromancy)).AddQEffect(QEffect.ImmunityToCondition(QEffectId.Sickened)).AddQEffect(QEffect.ImmunityToCondition(QEffectId.Drained)).AddQEffect(QEffect.ImmunityToCondition(QEffectId.Fatigued)).AddQEffect(QEffect.ImmunityToCondition(QEffectId.Paralyzed)).AddQEffect(QEffect.DamageImmunity(DamageKind.Bleed))*/
                 .WithProficiency(Trait.Unarmed, Proficiency.Trained).WithEntersInitiativeOrder(entersInitiativeOrder: false).WithProficiency(Trait.UnarmoredDefense, Proficiency.Trained).WithProficiency(Trait.Acrobatics, Proficiency.Trained).WithProficiency(Trait.Athletics, Proficiency.Trained)
                 .AddQEffect(new QEffect
                 {
@@ -2329,7 +2325,7 @@ namespace Inventor
 
         private static Creature? GetInventor(Creature companion)
         {
-            return companion.QEffects.FirstOrDefault((QEffect qf) => qf.Id == QEffectId.RangersCompanion)?.Source;
+            return companion.QEffects.FirstOrDefault((QEffect qf) => qf.Id == ConstructCompanionID)?.Source;
         }
 
         #endregion
