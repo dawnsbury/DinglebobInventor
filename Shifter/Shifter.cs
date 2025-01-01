@@ -802,6 +802,28 @@ namespace Shifter
 
                             effect.Owner.RecalculateArmor();
                         }
+                        else if (effect.Owner.BaseArmor != null && effect.Owner.BaseArmor.HasTrait(Trait.UnarmoredDefense))
+                        {
+                            var thickHide = new Item(IllustrationName.LeatherArmor, "Thick Hide", Trait.Armor, Trait.UnarmoredDefense).WithArmorProperties(new(1, 2, 0, 0, -1));
+
+                            if (effect.Owner.BaseArmor.RuneProperties != null)
+                            {
+                                thickHide.RuneProperties = effect.Owner.BaseArmor.RuneProperties;
+                            }
+
+                            if (effect.Owner.BaseArmor != null)
+                            {
+                                thickHide.ArmorProperties!.ItemBonus = effect.Owner.BaseArmor.ArmorProperties!.ItemBonus;
+                                thickHide.ArmorProperties!.ItemBonusToSavingThrows = effect.Owner.BaseArmor.ArmorProperties!.ItemBonusToSavingThrows;
+                            }
+
+                            effect.Owner.AddQEffect(new()
+                            {
+                                ProvidesArmor = thickHide
+                            });
+
+                            effect.Owner.RecalculateArmor();
+                        }
                     };
                 });
 
@@ -1418,7 +1440,7 @@ namespace Shifter
 
         private static CombatAction HyenaCackle(Creature user)
         {
-            return new CombatAction(user, IllustrationName.Demoralize, "Hyena Cackle", [ShifterTrait, ApexTrait, Trait.Mental, Trait.Fear, Trait.Auditory], "You cackle and laugh like a hyena, instilling fear in your enemies. All enemies within 30 feet of you must make a Will save or become frightened 1 (frightened 2 on a critical failure).\n\nStarting at 5th level, creatures that succeed on their saving throw take have a -1 status penalty to their attack rolls until the end of their next turn.", Target.Emanation(6).WithIncludeOnlyIf((areaTarget, target) => !user.FriendOf(target))) { ShortDescription = "All enemies within 30 feet of you must make a Will save or become frightened." }
+            return new CombatAction(user, IllustrationName.Demoralize, "Hyena Cackle", [ShifterTrait, ApexTrait, Trait.Mental, Trait.Fear, Trait.Auditory], "You cackle and laugh like a hyena, instilling fear in your enemies. All enemies within 30 feet of you must make a Will save or become frightened 1 (frightened 2 on a critical failure).\n\nStarting at 5th level, creatures that succeed on their saving throw have a -1 status penalty to their attack rolls until the end of their next turn.", Target.Emanation(6).WithIncludeOnlyIf((areaTarget, target) => !user.FriendOf(target))) { ShortDescription = "All enemies within 30 feet of you must make a Will save or become frightened." }
                     .WithActionCost(2)
                     .WithSoundEffect(Dawnsbury.Audio.SfxName.Fear)
                     .WithSavingThrow(new(Defense.Will, target => user.ClassOrSpellDC()))
