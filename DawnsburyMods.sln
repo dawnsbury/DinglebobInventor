@@ -16,6 +16,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.editorconfig = .editorconfig
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Necromancer", "Necromancer\Necromancer.csproj", "{E0053D92-E5CD-481E-89B8-5F31441A4BC4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -35,6 +37,10 @@ Global
 		{BDFC80A9-9C33-4D42-81D3-69ED8AA1EB4A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{BDFC80A9-9C33-4D42-81D3-69ED8AA1EB4A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BDFC80A9-9C33-4D42-81D3-69ED8AA1EB4A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E0053D92-E5CD-481E-89B8-5F31441A4BC4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E0053D92-E5CD-481E-89B8-5F31441A4BC4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E0053D92-E5CD-481E-89B8-5F31441A4BC4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E0053D92-E5CD-481E-89B8-5F31441A4BC4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
