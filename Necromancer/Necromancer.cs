@@ -29,6 +29,11 @@ using Dawnsbury.Core.Tiles;
 using Microsoft.Xna.Framework.Graphics;
 using static Dawnsbury.Delegates;
 using Microsoft.Xna.Framework;
+using Dawnsbury.Auxiliary;
+using Dawnsbury.Campaign.Encounters;
+using Dawnsbury.Core.Animations;
+using Dawnsbury.Core.Mechanics.Rules;
+using Dawnsbury.IO;
 
 namespace Necromancer
 {
@@ -164,7 +169,7 @@ namespace Necromancer
                 });
             }).WithOnCreature(delegate (Creature creature)
             {
-                creature.AddQEffect(new QEffect()
+                creature.AddQEffect(new()
                 {
                     ProvideActionIntoPossibilitySection = (effect, section) =>
                     {
@@ -198,7 +203,7 @@ namespace Necromancer
 
                 #region Thrall Management Actions
 
-                creature.AddQEffect(new QEffect()
+                creature.AddQEffect(new()
                 {
                     ProvideActionIntoPossibilitySection = (effect, section) =>
                     {
@@ -225,7 +230,7 @@ namespace Necromancer
                     }
                 });
 
-                creature.AddQEffect(new QEffect()
+                creature.AddQEffect(new()
                 {
                     ProvideActionIntoPossibilitySection = (effect, section) =>
                     {
@@ -252,7 +257,7 @@ namespace Necromancer
 
                 if (creature.Level >= 3)
                 {
-                    creature.AddQEffect(new QEffect("Grim Wards", "When you roll a success at a Will save against a mental or possession effect caused by an undead or haunt, you get a critical success instead.")
+                    creature.AddQEffect(new("Grim Wards", "When you roll a success at a Will save against a mental or possession effect caused by an undead or haunt, you get a critical success instead.")
                     {
                         AdjustSavingThrowCheckResult = (QEffect _, Defense defense, CombatAction combatAction, CheckResult checkResult) =>
                         {
@@ -262,6 +267,56 @@ namespace Necromancer
                             }
 
                             return CheckResult.CriticalSuccess;
+                        }
+                    });
+
+                    creature.AddQEffect(new("Inevitable Return", "When an enemy within 60 feet dies, you can use your reaction to raise it as a thrall.")
+                    {
+                        StateCheck = (inevitableReturnEffect) =>
+                        {
+                            var necromancer = inevitableReturnEffect.Owner;
+                            foreach (Creature creature in necromancer.Battle.AllCreatures)
+                            {
+                                if (creature.EnemyOf(necromancer))
+                                {
+                                    creature.AddQEffect(new(ExpirationCondition.Ephemeral)
+                                    {
+                                        Source = necromancer,
+                                        WhenCreatureDiesAtStateCheckAsync = async (QEffect effect) =>
+                                        {
+                                            var enemy = effect.Owner;
+                                            var necromancer2 = effect.Source;
+
+                                            if (necromancer2 == null || creature.DistanceTo(necromancer) > 12)
+                                            {
+                                                return;
+                                            }
+
+                                            var tileToSpawnIn = enemy.Occupies;
+
+                                            if (enemy.QEffects.All((e) => e.Name != "Inevitable Return") && await necromancer2.AskToUseReaction($"{enemy.Name} has died. Do you want to use your reaction to summon it as a thrall?"))
+                                            {
+                                                enemy.AddQEffect(new(ExpirationCondition.Never)
+                                                {
+                                                    Name = "Inevitable Return"
+                                                });
+
+                                                necromancer2.AddQEffect(new(ExpirationCondition.Ephemeral)
+                                                {
+                                                    StateCheckWithVisibleChanges = async (QEffect irEffect) =>
+                                                    {
+                                                        if (tileToSpawnIn.PrimaryOccupant == null)
+                                                        {
+                                                            necromancer2.Battle.SpawnCreature(CreateThrall(necromancer2, necromancer2.MaximumSpellRank), necromancer2.OwningFaction, tileToSpawnIn);
+                                                            irEffect.ExpiresAt = ExpirationCondition.Immediately;
+                                                        }
+                                                    }
+                                                });
+                                            }
+                                        }
+                                    });
+                                }
+                            }
                         }
                     });
                 }
@@ -311,7 +366,7 @@ namespace Necromancer
                         Id = BonyThrallID,
                         Tag = new NecromancerBenefitToThralls(async (necromancer, thrall) =>
                         {
-                            thrall.AddQEffect(new QEffect()
+                            thrall.AddQEffect(new()
                             {
                                 AfterYouTakeDamage = async (QEffect effect, int amount, DamageKind _, CombatAction? action, bool _) =>
                                 {
@@ -347,12 +402,10 @@ namespace Necromancer
                         Id = FleshyThrallID,
                         Tag = new NecromancerBenefitToThralls(async (necromancer, thrall) =>
                         {
-                            thrall.AddQEffect(new QEffect()
+                            thrall.AddQEffect(new()
                             {
                                 Tag = new ThrallOnDeath(async (effect, thrall2) =>
                                 {
-                                    /*thrall2.Occupies.DifficultTerrainToComputerControlledCreatures = true;
-                                    thrall2.Occupies.FoggyTerrain = true;*/
                                     thrall2.Occupies.AddQEffect(new()
                                     {
                                         Illustration = IllustrationName.GraspingClawsUndead,
@@ -562,7 +615,7 @@ namespace Necromancer
 
                             target2.AddQEffect(deadWeightEffect);
                             
-                            user2.AddQEffect(new QEffect(ExpirationCondition.ExpiresAtStartOfSourcesTurn)
+                            user2.AddQEffect(new(ExpirationCondition.ExpiresAtStartOfSourcesTurn)
                             {
                                 Source = user,
                                 WhenMonsterDies = (effect) => target2.RemoveAllQEffects((qf) => qf == deadWeightEffect),
@@ -578,7 +631,7 @@ namespace Necromancer
                             };
                             target2.AddQEffect(deadWeightEffect);
 
-                            user2.AddQEffect(new QEffect(ExpirationCondition.ExpiresAtStartOfSourcesTurn)
+                            user2.AddQEffect(new(ExpirationCondition.ExpiresAtStartOfSourcesTurn)
                             {
                                 Source = user,
                                 WhenMonsterDies = (effect) => target2.RemoveAllQEffects((qf) => qf == deadWeightEffect),
@@ -595,7 +648,7 @@ namespace Necromancer
                             deadWeightEffect.Id = QEffectId.Immobilized;
                             target2.AddQEffect(deadWeightEffect);
 
-                            user2.AddQEffect(new QEffect(ExpirationCondition.ExpiresAtStartOfSourcesTurn)
+                            user2.AddQEffect(new(ExpirationCondition.ExpiresAtStartOfSourcesTurn)
                             {
                                 Source = user,
                                 WhenMonsterDies = (effect) => target2.RemoveAllQEffects((qf) => qf == deadWeightEffect),
@@ -710,13 +763,13 @@ namespace Necromancer
             return creature;
         }
 
-        public static Creature CreateThrall(Creature user, int spellLevel, Guid identifier)
+        public static Creature CreateThrall(Creature user, int spellLevel, Guid? identifier = null)
         {
             var thrall = new Creature(GetThrallIllustration(user), $"{user}'s Thrall",
                 [Trait.Undead, Trait.Mindless, Trait.Summoned, Trait.Minion, ThrallTrait], -1, user.Perception, 4, new(user.Level + 15, user.Defenses.GetBaseValue(Defense.Fortitude), user.Defenses.GetBaseValue(Defense.Reflex), user.Defenses.GetBaseValue(Defense.Will)), 1, new(0, 0, 0, 0, 0, 0), new())
             { InitiativeControlledBy = user }.WithEntersInitiativeOrder(false);
 
-            thrall.AddQEffect(new QEffect(ExpirationCondition.ExpiresAtEndOfSourcesTurn)
+            thrall.AddQEffect(new(ExpirationCondition.ExpiresAtEndOfSourcesTurn)
             {
                 Name = "IdentifierQEffect",
                 Source = user,
@@ -724,7 +777,7 @@ namespace Necromancer
             });
 
             //TODO: Fix the attack section to result in a success instead of critical success.
-            thrall.AddQEffect(new QEffect
+            thrall.AddQEffect(new()
             {
                 Id = SummonedThrallID,
                 Source = user,
@@ -902,7 +955,7 @@ namespace Necromancer
                         grappler.HeldItems.RemoveAll((Item hi) => hi.Grapplee == a2);
                         break;
                     case CheckResult.CriticalFailure:
-                        a2.AddQEffect(new QEffect("Cannot escape", "You can't Escape until your next turn.", ExpirationCondition.ExpiresAtStartOfYourTurn, a2)
+                        a2.AddQEffect(new("Cannot escape", "You can't Escape until your next turn.", ExpirationCondition.ExpiresAtStartOfYourTurn, a2)
                         {
                             PreventTakingAction = (CombatAction ca) => (!ca.Name.StartsWith("Escape")) ? null : "You already tried to escape and rolled a critical failure."
                         });
