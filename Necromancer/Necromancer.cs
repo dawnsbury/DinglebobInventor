@@ -36,6 +36,7 @@ using Dawnsbury.Core.Mechanics.Rules;
 using Dawnsbury.IO;
 using Dawnsbury.Core.Creatures.Parts;
 using Dawnsbury.Core.CharacterBuilder.FeatsDb.TrueFeatDb;
+using Dawnsbury.Core.Mechanics.Damage;
 
 namespace Necromancer
 {
@@ -84,6 +85,7 @@ namespace Necromancer
             var bodyShieldFeat = ModManager.RegisterFeatName("NecromancerBodyShield", "Body Shield");
             var boneSpearFeat = ModManager.RegisterFeatName("NecromancerBoneSpear", "Bone Spear");
             var deadWeightFeat = ModManager.RegisterFeatName("NecromancerDeadWeight", "Dead Weight");
+            var drainingStrikeFeat = ModManager.RegisterFeatName("NecromancerDrainingStrike", "Draining Strike");
             var lifeTapFeat = ModManager.RegisterFeatName("NecromancerLifeTap", "Life Tap");
             var muscleBarrierFeat = ModManager.RegisterFeatName("NecromancerMuscleBarrier", "Muscle Barrier");
             var necroticBombFeat = ModManager.RegisterFeatName("NecromancerNecroticBomb", "Necrotic Bomb");
@@ -325,11 +327,6 @@ namespace Necromancer
                         }
                     });
                 }
-
-                if (creature.Level >= 7)
-                {
-                    
-                }
             });
 
             #endregion
@@ -387,8 +384,8 @@ namespace Necromancer
 
             #region Level 4 Feats
 
-            yield return new TrueFeat(bodyShieldFeat, 4, "You throw one of your thralls that’s adjacent to you, placing it between you and the attacker. ", "The thrall grants you a +2 circumstance bonus to AC against the triggering attack. If the attack still hits, you gain resistance to all damage from the triggering attack equal to your level. Regardless of the result, the thrall is destroyed.", [NecromancerTrait, Trait.ClassFeat])
-                .WithActionCost(-1)
+            yield return new TrueFeat(bodyShieldFeat, 4, "You throw one of your thralls that’s adjacent to you, placing it between you and the attacker.", "The thrall grants you a +2 circumstance bonus to AC against the triggering attack. If the attack still hits, you gain resistance to all damage from the triggering attack equal to your level. Regardless of the result, the thrall is destroyed.", [NecromancerTrait, Trait.ClassFeat])
+                .WithActionCost(-2)
                 .WithOnCreature((Creature creature) =>
                 {
                     creature.AddQEffect(new("Body Shield", "You can use your reaction to throw a thrall in front of you to gain a +2 circumstance bonus against an attack.")
@@ -429,7 +426,78 @@ namespace Necromancer
                         }
                     });
                 });
-            
+
+            yield return new TrueFeat(drainingStrikeFeat, 4, "You draw the life out of your target using both your weapon and your thralls as a conduit.", "Make a Strike. On a success, you can destroy up to three thralls that are within 10 feet of you or your target. For each thrall destroyed this way, the Strike deals an additional 1d4 positive or negative damage, and you regain 1d4 Hit Points", [NecromancerTrait, Trait.ClassFeat])
+                .WithActionCost(1)
+                .WithOnCreature((Creature creature) =>
+                {
+                    creature.AddQEffect(new("Draining Strike", "You can destroy up to three thralls within 10 feet of you to heal yourself and deal extra positive or negative damage.")
+                    {
+                        ProvideStrikeModifier = (Item weapon) =>
+                        {
+                            var combatAction = creature.CreateStrike(weapon);
+
+                            combatAction.EffectOnOneTarget = null;
+                            combatAction.Illustration = new SideBySideIllustration(combatAction.Illustration, IllustrationName.VampiricTouch2);
+                            combatAction.WithEffectOnEachTarget(async (action, user, target, result) =>
+                            {
+                                if (result < CheckResult.Success)
+                                {
+                                    return;
+                                }
+
+                                var validThralls = GetAllThralls(user).FindAll((c) => c.DistanceTo(user) <= 2);
+
+                                if (validThralls.Count == 0)
+                                {
+                                    return;
+                                }
+
+                                var targets = new CreatureTarget[3];
+
+                                for (int i = 0; i < 3; i++)
+                                {
+                                    targets[i] = CreateThrallTarget(2);
+                                }
+
+                                var destroyAction = new CombatAction(user, action.Illustration, "Drain Thralls", [], "You use your thralls to draw the life out of your target.", Target.MultipleCreatureTargets(targets).WithSimultaneousAnimation().WithMustBeDistinct().WithMinimumTargets(1))
+                                .WithEffectOnChosenTargets(async (necromancer, chosenTargets) =>
+                                {
+                                    var destroyedThrallCount = chosenTargets.ChosenCreatures.Count;
+
+                                    necromancer.AddQEffect(new(ExpirationCondition.Never)
+                                    {
+                                        AddExtraKindedDamageOnStrike = (CombatAction strike, Creature target) =>
+                                        {
+                                            return new KindedDamage(DiceFormula.FromText($"{destroyedThrallCount}d4"), target.WeaknessAndResistance.WhatDamageKindIsBestAgainstMe([DamageKind.Positive, DamageKind.Negative]));
+                                        },
+                                        StateCheckWithVisibleChanges = async (QEffect effect) =>
+                                        {
+                                            await effect.Owner.HealAsync(DiceFormula.FromText($"{destroyedThrallCount}d4"), combatAction);
+                                            effect.ExpiresAt = ExpirationCondition.Immediately;
+                                        }
+                                    });
+
+                                    foreach (var thrall in chosenTargets.ChosenCreatures)
+                                    {
+                                        await KillThrall(thrall);
+                                    }
+
+                                    action.WithEffectOnEachTarget(necromancer.CreateStrike(weapon).EffectOnOneTarget!);
+                                });
+
+                                await user.Battle.GameLoop.FullCast(destroyAction);
+                                await action.EffectOnOneTarget!(action, user, target, result);
+                            });
+                            combatAction.Name = "Draining Strike";
+                            combatAction.Traits.Add(Trait.Basic);
+
+                            return combatAction;
+                        },
+                        PreventTakingAction = (CombatAction action) => action.Name == "Draining Strike" && GetAllThralls(action.Owner).Find((c) => c.DistanceTo(action.Owner) <= 2) == null? "You must have a thrall within 10 feet of you." : null
+                    });
+                });
+
             #endregion
 
             #region Grim Fascinations
@@ -509,7 +577,14 @@ namespace Necromancer
                 {
                     featUser.AddQEffect(new("Ghostly Thralls", "Your thralls can deal negative damage instead of physical.")
                     {
-                        Id = GhostlyThrallID
+                        Id = GhostlyThrallID,
+                        Tag = new NecromancerBenefitToThralls(async (necromancer, thrall) =>
+                        {
+                            thrall.AddQEffect(new("Ghostly", "You can deal negative damage instead of physical.")
+                            {
+                                YourStrikeGainsDamageType = (effect, action) => DamageKind.Negative
+                            });
+                        })
                     });
                 });
 
@@ -539,7 +614,9 @@ namespace Necromancer
                     .WithSavingThrow(new(Defense.Reflex, spell.SpellcastingSource?.GetSpellSaveDC(spell) ?? 0))
                     .WithEffectOnEachTarget(async (CombatAction action, Creature user2, Creature target2, CheckResult result) =>
                     {
-                        await CommonSpellEffects.DealBasicDamage(action, user, target2, result, $"{spellLevel * 2}d6", DamageKind.Piercing);
+                        var damageKind = user.HasEffect(GhostlyThrallID) ? target2.WeaknessAndResistance.WhatDamageKindIsBestAgainstMe([DamageKind.Negative, DamageKind.Piercing]) : DamageKind.Piercing;
+
+                        await CommonSpellEffects.DealBasicDamage(action, user, target2, result, $"{spellLevel * 2}d6", damageKind);
                     });
 
                     if (await target.Battle.GameLoop.FullCast(commandThrallToBoneSpearCombatAction))
@@ -816,7 +893,7 @@ namespace Necromancer
 
             #endregion
 
-            #region Muscle Marrier
+            #region Muscle Barrier
 
             NecromancerSpells[NecromancerSpell.MuscleBarrier] = ModManager.RegisterNewSpell("Muscle Barrier", 1, (spellId, spellcaster, spellLevel, inCombat, spellInformation) =>
             {
@@ -885,7 +962,7 @@ namespace Necromancer
                 var mainSpell = Spells.CreateModern(IllustrationName.Bomb, "Necrotic Bomb",
                     [NecromancerTrait, Trait.Focus, GraveTrait, Trait.Necromancy],
                     "You overload one of your thralls with void energy, causing it to explode.",
-                    $"All creatures within a 10-foot emanation of the thrall take {spellLevel}d12 negative damage with a basic Reflex save. This destroys the thrall.",
+                    $"All creatures within a 10-foot emanation of the thrall take {spellLevel}d12 negative or positive damage with a basic Reflex save. This destroys the thrall.",
                     CreateThrallTarget(12), 1, null)
                 .WithActionCost(2)
                 .WithHeighteningOfDamageEveryLevel(1, 1, inCombat, "1d12")
@@ -897,7 +974,7 @@ namespace Necromancer
                     .WithProjectileCone(VfxStyle.BasicProjectileCone(spell.Illustration))
                     .WithEffectOnEachTarget(async (CombatAction action, Creature user2, Creature target2, CheckResult result) =>
                     {
-                        await CommonSpellEffects.DealBasicDamage(action, user, target2, result, $"{spellLevel}d12", DamageKind.Negative);
+                        await CommonSpellEffects.DealBasicDamage(action, user, target2, result, $"{spellLevel}d12", target2.WeaknessAndResistance.WhatDamageKindIsBestAgainstMe([DamageKind.Negative, DamageKind.Positive]));
                     });
 
                     if (await target.Battle.GameLoop.FullCast(commandThrallToTakeAction))
@@ -1099,7 +1176,7 @@ namespace Necromancer
 
                 if (source != null)
                 {
-                    AddNaturalWeapon(thrall, "undead assault", IllustrationName.Jaws, source.GetSpellAttack(), [Trait.VersatileB, Trait.VersatileS, Trait.VersatileB], $"{user.MaximumSpellRank}d6+0", user.HasEffect(GhostlyThrallID) ? DamageKind.Negative : DamageKind.Piercing);
+                    AddNaturalWeapon(thrall, "undead assault", IllustrationName.Jaws, source.GetSpellAttack(), [Trait.VersatileB, Trait.VersatileS], $"{user.MaximumSpellRank}d6+0", DamageKind.Piercing);
                 }
             }
         }
@@ -1168,7 +1245,7 @@ namespace Necromancer
         /// <summary>
         /// Create a NecromancerBenefitToThrall.
         /// </summary>
-        /// <param name="benefits">The benefits that a Creature necromancer gives to a creature thrall.</param>
+        /// <param name="benefits">The benefits that a Creature necromancer gives to a Creature thrall.</param>
         public NecromancerBenefitToThralls(Func<Creature, Creature, Task> benefits)
         {
             Benefits = benefits;
