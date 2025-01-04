@@ -89,6 +89,7 @@ namespace Necromancer
             var lifeTapFeat = ModManager.RegisterFeatName("NecromancerLifeTap", "Life Tap");
             var muscleBarrierFeat = ModManager.RegisterFeatName("NecromancerMuscleBarrier", "Muscle Barrier");
             var necroticBombFeat = ModManager.RegisterFeatName("NecromancerNecroticBomb", "Necrotic Bomb");
+            var reclaimPowerFeat = ModManager.RegisterFeatName("NecromancerReclaimPower", "Reclaim Power");
             var reaperWeaponFamiliarityFeat = ModManager.RegisterFeatName("NecromancerReaperWeaponFamiliarity", "Reaper's Weapon Familiarity");
 
             #region Class Description Strings
@@ -200,7 +201,7 @@ namespace Necromancer
                                 user.Spellcasting.FocusPoints++;
                                 user.AddQEffect(new()
                                 {
-                                    PreventTakingAction = (CombatAction action) => action.Name == "Consume Thrall" ? "You can only use Consume Thrall once per encounter." : null
+                                    PreventTakingAction = (CombatAction action) => action.Name == "Consume Thrall" || action.Name == "Reclaim Power" ? "You can only use Consume Thrall once per encounter." : null
                                 });
                             }
                         });
@@ -368,6 +369,7 @@ namespace Necromancer
                 }).WithRulesBlockForSpell(NecromancerSpells[NecromancerSpell.NecroticBomb], NecromancerTrait).WithIllustration(IllustrationName.Bomb);
 
             yield return new TrueFeat(reaperWeaponFamiliarityFeat, 2, "Long blades that can fell or reap in a single swing are classically associated with necromancy, and you take this association to a more practical end.", "You become proficient in martial weapons and you gain the {tooltip:criteffect}critical specialization effects{/} of greatswords, scythes, and axes.", [NecromancerTrait, Trait.ClassFeat])
+                .WithIllustration(IllustrationName.Scythe)
                 .WithOnSheet((CalculatedCharacterSheetValues sheet) =>
                 {
                     sheet.SetProficiency(Trait.Martial, Proficiency.Trained);
@@ -386,6 +388,7 @@ namespace Necromancer
 
             yield return new TrueFeat(bodyShieldFeat, 4, "You throw one of your thralls that’s adjacent to you, placing it between you and the attacker.", "The thrall grants you a +2 circumstance bonus to AC against the triggering attack. If the attack still hits, you gain resistance to all damage from the triggering attack equal to your level. Regardless of the result, the thrall is destroyed.", [NecromancerTrait, Trait.ClassFeat])
                 .WithActionCost(-2)
+                .WithIllustration(IllustrationName.Reaction)
                 .WithOnCreature((Creature creature) =>
                 {
                     creature.AddQEffect(new("Body Shield", "You can use your reaction to throw a thrall in front of you to gain a +2 circumstance bonus against an attack.")
@@ -427,8 +430,9 @@ namespace Necromancer
                     });
                 });
 
-            yield return new TrueFeat(drainingStrikeFeat, 4, "You draw the life out of your target using both your weapon and your thralls as a conduit.", "Make a Strike. On a success, you can destroy up to three thralls that are within 10 feet of you or your target. For each thrall destroyed this way, the Strike deals an additional 1d4 positive or negative damage, and you regain 1d4 Hit Points", [NecromancerTrait, Trait.ClassFeat])
+            yield return new TrueFeat(drainingStrikeFeat, 4, "You draw the life out of your target using both your weapon and your thralls as a conduit.", "Make a Strike. On a success, you can destroy up to three thralls that are within 10 feet of you or your target. For each thrall destroyed this way, the Strike deals an additional 1d4 positive or negative damage, and you regain 1d4 Hit Points.", [NecromancerTrait, Trait.ClassFeat])
                 .WithActionCost(1)
+                .WithIllustration(IllustrationName.TwoActions)
                 .WithOnCreature((Creature creature) =>
                 {
                     creature.AddQEffect(new("Draining Strike", "You can destroy up to three thralls within 10 feet of you to heal yourself and deal extra positive or negative damage.")
@@ -495,6 +499,77 @@ namespace Necromancer
                             return combatAction;
                         },
                         PreventTakingAction = (CombatAction action) => action.Name == "Draining Strike" && GetAllThralls(action.Owner).Find((c) => c.DistanceTo(action.Owner) <= 2) == null? "You must have a thrall within 10 feet of you." : null
+                    });
+                });
+
+            #endregion
+
+            #region Level 6 Feats
+
+            yield return new TrueFeat(reclaimPowerFeat, 6, "You use your thralls to restore yourself.", "You Consume a Thrall, increasing the range to 30 feet, and regain 10 Hit Points. You can destroy up to four more of your thralls in range to increase the healing by 10 per thrall. If you destroy five thralls total, you can also decrease your clumsy, enfeebled, frightened, sickened, or stupefied condition by 1.", [NecromancerTrait, Trait.ClassFeat])
+                .WithActionCost(2)
+                .WithIllustration(IllustrationName.TwoActions)
+                .WithOnCreature((Creature creature) =>
+                {
+                    creature.AddQEffect(new()
+                    {
+                        ProvideActionIntoPossibilitySection = (effect, section) =>
+                        {
+                            if (section.PossibilitySectionId != PossibilitySectionId.MainActions)
+                            {
+                                return null;
+                            }
+
+                            var targets = new CreatureTarget[5];
+
+                            for (int i = 0; i < 5; i++)
+                            {
+                                targets[i] = CreateThrallTarget(requireLineOfEffect: false);
+                            }
+
+                            return (ActionPossibility)new CombatAction(effect.Owner, IllustrationName.Heal, "Reclaim Power", [Trait.Manipulate, Trait.Concentrate, Trait.Occult, NecromancerTrait], "You Consume a Thrall, increasing the range to 30 feet, and regain 10 Hit Points. You can destroy up to four more of your thralls in range to increase the healing by 10 per thrall. If you destroy five thralls total, you can also decrease your clumsy, enfeebled, frightened, sickened, and stupefied conditions by 1.",
+                                Target.MultipleCreatureTargets(targets).WithSimultaneousAnimation().WithMustBeDistinct().WithMinimumTargets(1))
+                            {
+                                ShortDescription = "Consume one or more thralls within 30 feet of you to heal yourself."
+                            }
+                            .WithActionCost(2)
+                            .WithEffectOnChosenTargets(async (user, chosenTargets) =>
+                            {
+                                var chosenThralls = chosenTargets.ChosenCreatures;
+
+                                if (chosenThralls.Count == 0)
+                                {
+                                    return;
+                                }
+
+                                if (user.Spellcasting != null && user.Spellcasting.FocusPoints < user.Spellcasting.FocusPointsMaximum)
+                                {
+                                    user.Spellcasting.FocusPoints++;
+                                }
+
+                                foreach (var thrall in chosenThralls)
+                                {
+                                    await KillThrall(thrall);
+                                }
+
+                                await user.HealAsync(DiceFormula.FromText($"{chosenThralls.Count * 10}"), null);
+
+                                foreach (var effect in user.QEffects.Where((e) => e.Id == QEffectId.Clumsy || e.Id == QEffectId.Enfeebled || e.Id == QEffectId.Frightened || e.Id == QEffectId.Sickened || e.Id == QEffectId.Stupefied))
+                                {
+                                    effect.Value--;
+
+                                    if (effect.Value <= 0)
+                                    {
+                                        effect.ExpiresAt = ExpirationCondition.Immediately;
+                                    }
+                                }
+
+                                user.AddQEffect(new()
+                                {
+                                    PreventTakingAction = (CombatAction action) => action.Name == "Consume Thrall" || action.Name == "Reclaim Power" ? "You can only use Consume Thrall once per encounter." : null
+                                });
+                            });
+                        }
                     });
                 });
 
