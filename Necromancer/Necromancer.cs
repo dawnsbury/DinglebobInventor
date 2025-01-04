@@ -34,6 +34,7 @@ using Dawnsbury.Campaign.Encounters;
 using Dawnsbury.Core.Animations;
 using Dawnsbury.Core.Mechanics.Rules;
 using Dawnsbury.IO;
+using Dawnsbury.Core.Creatures.Parts;
 
 namespace Necromancer
 {
@@ -46,7 +47,9 @@ namespace Necromancer
             BoneSpear,
             CreateThrall,
             DeadWeight,
-            LifeTap
+            LifeTap,
+            MuscleBarrier,
+            NecroticBomb
         }
 
         private readonly static Dictionary<NecromancerSpell, SpellId> NecromancerSpells = new();
@@ -80,6 +83,9 @@ namespace Necromancer
             var boneSpearFeat = ModManager.RegisterFeatName("NecromancerBoneSpear", "Bone Spear");
             var deadWeightFeat = ModManager.RegisterFeatName("NecromancerDeadWeight", "Dead Weight");
             var lifeTapFeat = ModManager.RegisterFeatName("NecromancerLifeTap", "Life Tap");
+            var muscleBarrierFeat = ModManager.RegisterFeatName("NecromancerMuscleBarrier", "Muscle Barrier");
+            var necroticBombFeat = ModManager.RegisterFeatName("NecromancerNecroticBomb", "Necrotic Bomb");
+            var reaperWeaponFamiliarity = ModManager.RegisterFeatName("NecromancerReaperWeaponFamiliarity", "Reaper's Weapon Familiarity");
 
             #region Class Description Strings
 
@@ -351,6 +357,35 @@ namespace Necromancer
 
             #endregion
 
+            #region Level 2 Feats
+
+            yield return new TrueFeat(muscleBarrierFeat, 2, "You turn your thrall into an unliving bomb.", "You gain the {i}necrotic bomb{/i} focus spell and a focus pool of 1 Focus Point.", [NecromancerTrait, Trait.ClassFeat])
+                .WithOnSheet(delegate (CalculatedCharacterSheetValues sheet)
+                {
+                    sheet.AddFocusSpellAndFocusPoint(NecromancerTrait, Ability.Intelligence, NecromancerSpells[NecromancerSpell.MuscleBarrier]);
+                }).WithRulesBlockForSpell(NecromancerSpells[NecromancerSpell.MuscleBarrier], NecromancerTrait).WithIllustration(IllustrationName.ForbiddingWard);
+
+            yield return new TrueFeat(necroticBombFeat, 2, "You turn your thrall into an unliving bomb.", "You gain the {i}necrotic bomb{/i} focus spell and a focus pool of 1 Focus Point.", [NecromancerTrait, Trait.ClassFeat])
+                .WithOnSheet(delegate (CalculatedCharacterSheetValues sheet)
+                {
+                    sheet.AddFocusSpellAndFocusPoint(NecromancerTrait, Ability.Intelligence, NecromancerSpells[NecromancerSpell.NecroticBomb]);
+                }).WithRulesBlockForSpell(NecromancerSpells[NecromancerSpell.NecroticBomb], NecromancerTrait).WithIllustration(IllustrationName.Bomb);
+
+            yield return new TrueFeat(reaperWeaponFamiliarity, 2, "Long blades that can fell or reap in a single swing are classically associated with necromancy, and you take this association to a more practical end.", "You become proficient in martial weapons and you gain the {tooltip:criteffect}critical specialization effects{/} of greatswords, scythes, and axes.", [NecromancerTrait, Trait.ClassFeat])
+                .WithOnSheet((CalculatedCharacterSheetValues sheet) =>
+                {
+                    sheet.SetProficiency(Trait.Martial, Proficiency.Trained);
+                })
+                .WithOnCreature((Creature creature) =>
+                {
+                    creature.AddQEffect(new("Reaper's Weapon Familiarity", "You gain the {tooltip:criteffect}critical specialization effects{/} of greatswords, scythes, and axes.")
+                    {
+                        YouHaveCriticalSpecialization = (QEffect effect, Item item, CombatAction action, Creature defender) => item.HasTrait(Trait.Axe) || item.BaseItemName == ItemName.Greatsword || item.BaseItemName == ItemName.Scythe
+                    });
+                });
+
+            #endregion
+
             #region Grim Fascinations
 
             yield return new Feat(boneShaperFeat, "Bone shapers, also known as osteomancers, craft what they desire from the skeletons of the dead or simply create new skeletons by expanding and shaping small bone pieces.", "{b}Class Feat{/b} Bone Spear\n{b}General Feat{/b} Fleet\n{b}Thrall Enhancement{/b} Your thralls are well constructed and nimble. Whenever one of your thralls would take damage from an effect requiring a Reflex save, it attempts a DC 15 flat check. If it succeeds, it takes no damage.", [GrimFascinationTrait], null)
@@ -441,7 +476,7 @@ namespace Necromancer
         {
             #region Bone Spear
 
-            var boneSpear = ModManager.RegisterNewSpell("Bone Spea", 1, (spellId, spellcaster, spellLevel, inCombat, spellInformation) =>
+            NecromancerSpells[NecromancerSpell.BoneSpear] = ModManager.RegisterNewSpell("Bone Spea", 1, (spellId, spellcaster, spellLevel, inCombat, spellInformation) =>
             {
                 return Spells.CreateModern(IllustrationName.BoneSpray, "Bone Spear",
                     [NecromancerTrait, Trait.Focus, GraveTrait, Trait.Necromancy],
@@ -476,8 +511,6 @@ namespace Necromancer
                 });
             });
 
-            NecromancerSpells[NecromancerSpell.BoneSpear] = boneSpear;
-
             #endregion
 
             #region Create Thrall
@@ -498,7 +531,7 @@ namespace Necromancer
                 });
             };
 
-            var createThrall = ModManager.RegisterNewSpell("Create Thrall", 0, (spellId, spellcaster, spellLevel, inCombat, spellInformation) =>
+            NecromancerSpells[NecromancerSpell.CreateThrall] = ModManager.RegisterNewSpell("Create Thrall", 0, (spellId, spellcaster, spellLevel, inCombat, spellInformation) =>
             {
                 return Spells.CreateModern(GetThrallIllustration(spellcaster), "Create Thrall",
                     [NecromancerTrait, Trait.Cantrip, GraveTrait, Trait.Necromancy],
@@ -578,13 +611,11 @@ namespace Necromancer
                 });
             });
 
-            NecromancerSpells[NecromancerSpell.CreateThrall] = createThrall;
-
             #endregion
 
             #region Dead Weight
-            
-            var deadWeight = ModManager.RegisterNewSpell("Dead Weight", 1, (spellId, spellcaster, spellLevel, inCombat, spellInformation) =>
+
+            NecromancerSpells[NecromancerSpell.DeadWeight] = ModManager.RegisterNewSpell("Dead Weight", 1, (spellId, spellcaster, spellLevel, inCombat, spellInformation) =>
             {
                 return Spells.CreateModern(IllustrationName.Grapple, "Dead Weight",
                     [NecromancerTrait, Trait.Focus, GraveTrait, Trait.Necromancy],
@@ -661,13 +692,11 @@ namespace Necromancer
                 });
             });
 
-            NecromancerSpells[NecromancerSpell.DeadWeight] = deadWeight;
-
             #endregion
 
             #region Life Tap
 
-            var lifeTap = ModManager.RegisterNewSpell("Life Tap", 1, (spellId, spellcaster, spellLevel, inCombat, spellInformation) =>
+            NecromancerSpells[NecromancerSpell.LifeTap] = ModManager.RegisterNewSpell("Life Tap", 1, (spellId, spellcaster, spellLevel, inCombat, spellInformation) =>
             {
                 return Spells.CreateModern(IllustrationName.VampiricTouch2, "Life Tap",
                     [NecromancerTrait, Trait.Focus, GraveTrait, Trait.Necromancy],
@@ -726,7 +755,102 @@ namespace Necromancer
                 });
             });
 
-            NecromancerSpells[NecromancerSpell.LifeTap] = lifeTap;
+            #endregion
+
+            #region Muscle Marrier
+
+            NecromancerSpells[NecromancerSpell.MuscleBarrier] = ModManager.RegisterNewSpell("Muscle Barrier", 1, (spellId, spellcaster, spellLevel, inCombat, spellInformation) =>
+            {
+                return Spells.CreateModern(IllustrationName.ForbiddingWard, "Muscle Barrier",
+                    [NecromancerTrait, Trait.Focus, GraveTrait, Trait.Necromancy],
+                    "You transform a thrall into layers of thick muscle that wrap around you or an ally.",
+                    $"The thrall is split into pieces and flung toward a willing creature within 15 feet of it, destroying the thrall and granting that creature {spellLevel * 10} temporary Hit Points. The creature gains a +1 status bonus to Athletics checks until the spell ends. The spell ends if all the temporary Hit Points are gone.",
+                    CreateThrallTarget(12), 1, null)
+                .WithActionCost(2)
+                .WithHeighteningNumerical(1, 1, inCombat, 1, "The temporary Hit Points increase by 10.")
+                .WithEffectOnEachTarget(async delegate (CombatAction spell, Creature user, Creature target, CheckResult _)
+                {
+                    var commandThrallToTakeAction = new CombatAction(target, spell.Illustration, "Muscle Barrier", [Trait.Spell, Trait.Occult, Trait.Necromancy, NecromancerTrait], "", Target.RangedFriend(3).WithAdditionalConditionOnTargetCreature((user, target) => !target.HasEffect(SummonedThrallID) ? Usability.Usable : Usability.NotUsableOnThisCreature("thrall")))
+                    .WithActionCost(0)
+                    .WithEffectOnEachTarget(async (CombatAction action, Creature user2, Creature target2, CheckResult result) =>
+                    {
+                        target2.GainTemporaryHP(spellLevel * 10);
+
+                        target2.AddQEffect(new("Muscle Barrier", "As long as you have temporary HP, you have a +1 status bonus to Athletics checks.", ExpirationCondition.Never, user, IllustrationName.AthleticRush)
+                        {
+                            StateCheck = delegate (QEffect e)
+                            {
+                                if (e.Owner.TemporaryHP <= 0)
+                                {
+                                    e.ExpiresAt = ExpirationCondition.Immediately;
+                                }
+                            },
+                            BonusToSkillChecks = (Skill skill, CombatAction _, Creature? _) =>
+                            {
+                                if (skill != Skill.Athletics)
+                                {
+                                    return null;
+                                }
+
+                                return new Bonus(1, BonusType.Status, "Muscle Barrier", true);
+                            }
+                        });
+                    });
+
+                    if (await target.Battle.GameLoop.FullCast(commandThrallToTakeAction))
+                    {
+                        await KillThrall(target);
+                    }
+                    else
+                    {
+                        user.Actions.RevertExpendingOfResources(2, spell);
+
+                        if (user.Spellcasting != null)
+                        {
+                            user.Spellcasting.FocusPoints++;
+                        }
+                    }
+                });
+            });
+
+            #endregion
+
+            #region Necrotic Bomb
+
+            NecromancerSpells[NecromancerSpell.NecroticBomb] = ModManager.RegisterNewSpell("Necrotic Bomb", 1, (spellId, spellcaster, spellLevel, inCombat, spellInformation) =>
+            {
+                return Spells.CreateModern(IllustrationName.Bomb, "Necrotic Bomb",
+                    [NecromancerTrait, Trait.Focus, GraveTrait, Trait.Necromancy],
+                    "You overload one of your thralls with void energy, causing it to explode.",
+                    $"All creatures within a 10-foot emanation of the thrall take {spellLevel}d12 negative damage with a basic Reflex save. This destroys the thrall.",
+                    CreateThrallTarget(12), 1, null)
+                .WithActionCost(2)
+                .WithHeighteningOfDamageEveryLevel(1, 1, inCombat, "1d12")
+                .WithEffectOnEachTarget(async delegate (CombatAction spell, Creature user, Creature target, CheckResult _)
+                {
+                    var commandThrallToTakeAction = new CombatAction(target, spell.Illustration, "Necrotic Bomb", [Trait.Spell, Trait.Occult, Trait.Necromancy, NecromancerTrait], "", Target.SelfExcludingEmanation(2))
+                    .WithActionCost(0)
+                    .WithSavingThrow(new(Defense.Reflex, spell.SpellcastingSource?.GetSpellSaveDC(spell) ?? 0))
+                    .WithEffectOnEachTarget(async (CombatAction action, Creature user2, Creature target2, CheckResult result) =>
+                    {
+                        await CommonSpellEffects.DealBasicDamage(action, user, target2, result, $"{spellLevel}d12", DamageKind.Negative);
+                    });
+
+                    if (await target.Battle.GameLoop.FullCast(commandThrallToTakeAction))
+                    {
+                        await KillThrall(target);
+                    }
+                    else
+                    {
+                        user.Actions.RevertExpendingOfResources(2, spell);
+
+                        if (user.Spellcasting != null)
+                        {
+                            user.Spellcasting.FocusPoints++;
+                        }
+                    }
+                });
+            });
 
             #endregion
         }
