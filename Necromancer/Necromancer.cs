@@ -25,9 +25,8 @@ using Dawnsbury.Core.CharacterBuilder.FeatsDb.Common;
 using Microsoft.Xna.Framework;
 using Dawnsbury.IO;
 using Dawnsbury.Core.Mechanics.Damage;
-using Microsoft.Xna.Framework.Graphics;
-using Dawnsbury.Core.Creatures.Parts;
-using Dawnsbury.Core.Animations;
+using Dawnsbury.Core.Coroutines.Options;
+using Dawnsbury.Core.Tiles;
 
 namespace Necromancer
 {
@@ -43,7 +42,8 @@ namespace Necromancer
             DeadWeight,
             LifeTap,
             MuscleBarrier,
-            NecroticBomb
+            NecroticBomb,
+            ZombieHorde
         }
 
         private readonly static Dictionary<NecromancerSpell, SpellId> NecromancerSpells = new();
@@ -86,6 +86,7 @@ namespace Necromancer
             var necroticBombFeat = ModManager.RegisterFeatName("NecromancerNecroticBomb", "Necrotic Bomb");
             var reclaimPowerFeat = ModManager.RegisterFeatName("NecromancerReclaimPower", "Reclaim Power");
             var reaperWeaponFamiliarityFeat = ModManager.RegisterFeatName("NecromancerReaperWeaponFamiliarity", "Reaper's Weapon Familiarity");
+            var zombieHordeFeat = ModManager.RegisterFeatName("NecromancerZombieHorde", "Zombie Horde");
 
             #region Class Description Strings
 
@@ -631,6 +632,12 @@ namespace Necromancer
                     });
                 });
 
+            yield return new TrueFeat(zombieHordeFeat, 6, "You raise what seems like an endless torrent of walking corpses.", "You gain the {i}zombie horde{/i} focus spell and a focus pool of 1 Focus Point.", [NecromancerTrait, Trait.ClassFeat])
+                .WithOnSheet(delegate (CalculatedCharacterSheetValues sheet)
+                {
+                    sheet.AddFocusSpellAndFocusPoint(NecromancerTrait, Ability.Intelligence, NecromancerSpells[NecromancerSpell.ZombieHorde]);
+                }).WithRulesBlockForSpell(NecromancerSpells[NecromancerSpell.ZombieHorde], NecromancerTrait).WithIllustration(IllustrationName.ZombieShambler256);
+
             #endregion
 
             #region Level 8 Feats
@@ -775,7 +782,7 @@ namespace Necromancer
                     $"Destroy one of your thralls, then each creature in a 15-foot line starting from the thrall's space takes {spellLevel * 2}d6 piercing damage with a basic Reflex save.",
                     new CreatureTarget(RangeKind.Ranged, [new UnblockedLineOfEffectCreatureTargetingRequirement()], (Target _, Creature _, Creature _) => -2.14748365E+09f).WithAdditionalConditionOnTargetCreature((user2, target) => IsThrallTo(user2, target) ? (user2.Occupies.DistanceToReachSpecial(target.Occupies) <= 2 ? Usability.Usable : Usability.NotUsableOnThisCreature("range")) : Usability.NotUsableOnThisCreature("not a thrall controlled by you")), 1, null)
                 .WithActionCost(2)
-                .WithHeighteningOfDamageEveryLevel(1, 1, inCombat, "2d6")
+                .WithHeighteningOfDamageEveryLevel(spellLevel, 1, inCombat, "2d6")
                 .WithEffectOnEachTarget(async delegate (CombatAction spell, Creature user, Creature target, CheckResult _)
                 {
                     var commandThrallToBoneSpearCombatAction = new CombatAction(target, spell.Illustration, "Bone Spear", [Trait.Spell, Trait.Occult, Trait.Necromancy, NecromancerTrait], "", Target.Line(3))
@@ -822,7 +829,7 @@ namespace Necromancer
                     $"All creatures within a 30-foot conne centered on the thrall take {spellLevel}d10 piercing damage with a basic Reflex save. If you have a second thrall in the area, you shatter it to cover your allies in bone armor. If you do, the cone doesn’t affect your allies, and any ally in the area gains a +1 status bonus to AC until the start of your next turn. Each thrall you shatter is destroyed.",
                     CreateThrallTarget(6), 2, null)
                 .WithActionCost(2)
-                .WithHeighteningOfDamageEveryLevel(2, 1, inCombat, "1d10")
+                .WithHeighteningOfDamageEveryLevel(spellLevel, 2, inCombat, "1d10")
                 .WithEffectOnEachTarget(async delegate (CombatAction spell, Creature user, Creature target, CheckResult _)
                 {
                     Func<Task>? actionToTakeOnTargets = null;
@@ -1243,7 +1250,7 @@ namespace Necromancer
                     $"All creatures within a 10-foot emanation of the thrall take {spellLevel}d12 negative or positive damage with a basic Reflex save. This destroys the thrall.",
                     CreateThrallTarget(12), 1, null)
                 .WithActionCost(2)
-                .WithHeighteningOfDamageEveryLevel(1, 1, inCombat, "1d12")
+                .WithHeighteningOfDamageEveryLevel(spellLevel, 1, inCombat, "1d12")
                 .WithEffectOnEachTarget(async delegate (CombatAction spell, Creature user, Creature target, CheckResult _)
                 {
                     var commandThrallToTakeAction = new CombatAction(target, spell.Illustration, "Necrotic Bomb", [Trait.Spell, Trait.Occult, Trait.Necromancy, NecromancerTrait], "", Target.SelfExcludingEmanation(2))
@@ -1276,6 +1283,164 @@ namespace Necromancer
                 return mainSpell;
             });
 
+            #endregion
+
+            #region Zombie Horde
+
+            NecromancerSpells[NecromancerSpell.ZombieHorde] = ModManager.RegisterNewSpell("Zombie Horde", 3, (spellId, spellcaster, spellLevel, inCombat, spellInformation) =>
+            {
+                return Spells.CreateModern(IllustrationName.AnimateDead, "Zombie Horde",
+                    [NecromancerTrait, Trait.Focus, GraveTrait, Trait.Necromancy, Trait.Uncommon],
+                    "You lure in a horde of ravenous zombies by sacrificing a thrall.",
+                    $"The area must contain one of your thralls in it. Your thrall is destroyed. The horde’s area is difficult terrain, and whenever a creature begins its turn in the horde, it takes {spellLevel}d4 bludgeoning damage with a basic Fortitude save. Once per round on subsequent turns, you can Sustain the spell to move the area up to 20 feet. If you move the area onto one or more of your thralls, you can destroy one thrall it moved onto to increase the size of the area’s burst by 5 feet.",
+                    Target.Burst(12, 2), 3, null)
+                .WithActionCost(2)
+                .WithHeighteningOfDamageEveryLevel(spellLevel, 3, inCombat, "1d4")
+                .WithEffectOnSelf(async (CombatAction spell, Creature user) =>
+                {
+                    spell.Tag = Guid.NewGuid();
+
+                    user.AddQEffect(new()
+                    {
+                        Name = "Zombie Horde Info",
+                        Tag = new Tuple<Guid, int, Point, int>((Guid)spell.Tag, 2, spell.ChosenTargets.ChosenPointOfOrigin, user.QEffects.Where((qEffect) => qEffect.Name == "Zombie Horde Info").Count() + 1),
+                        DoNotShowUpOverhead = true
+                    });
+                    user.AddQEffect(new()
+                    {
+                        DoNotShowUpOverhead = true,
+                        ProvideContextualAction = (QEffect qf) =>
+                        {
+                            var spellInfoEffect = qf.Owner.QEffects.FirstOrDefault((qf) => qf.Name == "Zombie Horde Info" && qf.Tag is Tuple<Guid, int, Point, int> qfTag && spell.Tag is Guid spellTag && qfTag.Item1 == spellTag);
+
+                            Tuple<Guid, int, Point, int>? spellInfo = null;
+
+                            if (spellInfoEffect != null && spellInfoEffect.Tag is Tuple<Guid, int, Point, int> tuple)
+                            {
+                                spellInfo = tuple;
+                            }
+                            else
+                            {
+                                return null;
+                            }
+
+                            var target = Target.Burst(60, spellInfo.Item2);
+                            target.MustBeWithin20FeetOf = spellInfo.Item3;
+
+                            return (ActionPossibility)new CombatAction(user, spell.Illustration, $"Sustain {spell.Name} {spellInfo.Item4}", [Trait.Basic, Trait.Concentrate, Trait.SustainASpell], $"Move {spell.Name} {spellInfo.Item4} up to 20 feet.", target)
+                            .WithEffectOnEachTile(async delegate (CombatAction sustain, Creature creature, IReadOnlyList<Tile> chosenTiles)
+                            {
+                                var thrallList = new List<Creature>();
+
+                                foreach (var tile in chosenTiles)
+                                {
+                                    if (tile.PrimaryOccupant != null && IsThrallTo(creature, tile.PrimaryOccupant))
+                                    {
+                                        thrallList.Add(tile.PrimaryOccupant);
+                                    }
+                                }
+
+                                var tileList = new List<Tile>(chosenTiles);
+
+                                var chosenThrall = thrallList.Count == 0 ? null : await creature.Battle.AskToChooseACreature(creature, thrallList, spell.Illustration, "Choose a thrall to destroy.", "Destroy", "Decline");
+
+                                if (chosenThrall != null)
+                                {
+                                    await KillThrall(chosenThrall);
+                                    spellInfo = new Tuple<Guid, int, Point, int>(spellInfo.Item1, spellInfo.Item2, spellInfo.Item3, spellInfo.Item4);
+
+                                    target.Radius++;
+
+                                    var tiles = DetermineTiles(target, sustain.ChosenTargets.ChosenPointOfOrigin);
+
+                                    if (tiles != null)
+                                    {
+                                        tileList = tiles.TargetedTiles.ToList();
+                                    }
+                                }
+
+                                spellInfo = new Tuple<Guid, int, Point, int>(spellInfo.Item1, spellInfo.Item2, sustain.ChosenTargets.ChosenPointOfOrigin, spellInfo.Item4);
+
+                                foreach (var tile in creature.Battle.Map.AllTiles)
+                                {
+                                    tile.QEffects.RemoveAll((qEffect) => qEffect.Name == $"{user.Name}'s Zombie Horde ({spellInfo.Item1})");
+                                }
+
+                                foreach (var tile in tileList)
+                                {
+                                    tile.AddQEffect(new(tile)
+                                    {
+                                        Name = $"{user.Name}'s Zombie Horde ({spellInfo.Item1})",
+                                        Illustration = new ScrollIllustration(IllustrationName.Rubble, IllustrationName.ZombieShambler256),
+                                        TransformsTileIntoDifficultTerrain = true,
+                                        AfterCreatureBeginsItsTurnHere = async (Creature occupant) =>
+                                        {
+                                            if (occupant.HasTrait(ThrallTrait))
+                                            {
+                                                return;
+                                            }
+
+                                            var damageKind = user.HasEffect(GhostlyThrallID) ? occupant.WeaknessAndResistance.WhatDamageKindIsBestAgainstMe([DamageKind.Negative, DamageKind.Bludgeoning]) : DamageKind.Bludgeoning;
+
+                                            await CommonSpellEffects.DealBasicDamage(spell, user, occupant, CommonSpellEffects.RollSavingThrow(occupant, spell, Defense.Fortitude, GetNecromancerSpellDC(user) ?? 0), $"{spell.SpellLevel}d4", damageKind);
+                                        }
+                                    });
+                                }
+                            });
+                        }
+                    });
+                })
+                .WithEffectOnEachTile(async delegate (CombatAction spell, Creature user, IReadOnlyList<Tile> chosenTiles)
+                {
+                    var thrallList = new List<Creature>();
+
+                    foreach (var tile in chosenTiles)
+                    {
+                        if (tile.PrimaryOccupant != null && IsThrallTo(user, tile.PrimaryOccupant))
+                        {
+                            thrallList.Add(tile.PrimaryOccupant);
+                        }
+                    }
+
+                    if (thrallList.Count == 0)
+                    {
+                        user.Actions.RevertExpendingOfResources(2, spell);
+                        return;
+                    }
+
+                    var chosenThrall = thrallList.Count == 1 ? thrallList[0] : await user.Battle.AskToChooseACreature(user, thrallList, spell.Illustration, "Choose a thrall to destroy.", "Destroy", "Decline");
+
+                    if (chosenThrall == null)
+                    {
+                        user.Actions.RevertExpendingOfResources(2, spell);
+                        return;
+                    }
+
+                    await KillThrall(chosenThrall);
+
+                    foreach (var tile in chosenTiles)
+                    {
+                        tile.AddQEffect(new(tile)
+                        {
+                            Name = $"{user.Name}'s Zombie Horde ({spell.Tag})",
+                            Illustration = new ScrollIllustration(IllustrationName.Rubble, IllustrationName.ZombieShambler256),
+                            TransformsTileIntoDifficultTerrain = true,
+                            AfterCreatureBeginsItsTurnHere = async (Creature occupant) =>
+                            {
+                                if (occupant.HasTrait(ThrallTrait))
+                                {
+                                    return;
+                                }
+
+                                var damageKind = user.HasEffect(GhostlyThrallID) ? occupant.WeaknessAndResistance.WhatDamageKindIsBestAgainstMe([DamageKind.Negative, DamageKind.Bludgeoning]) : DamageKind.Bludgeoning;
+
+                                await CommonSpellEffects.DealBasicDamage(spell, user, occupant, CommonSpellEffects.RollSavingThrow(occupant, spell, Defense.Fortitude, GetNecromancerSpellDC(user) ?? 0), $"{spell.SpellLevel}d4", damageKind);
+                            }
+                        });
+                    }
+                });
+            });
+            
             #endregion
         }
 
@@ -1532,8 +1697,104 @@ namespace Necromancer
             });
         }
 
+        private static AreaSelection? DetermineTiles(BurstAreaTarget burstAreaTarget, Point burstOrigin, bool ignoreBurstOriginLoS = false)
+        {
+            Vector2 vector = burstOrigin.ToVector2();
+            bool flag = burstAreaTarget is RingAreaTarget;
+            Point point = new Point(burstAreaTarget.OwnerAction.Owner.Occupies.X, burstAreaTarget.OwnerAction.Owner.Occupies.Y);
+            Vector2 pointOne = burstAreaTarget.OwnerAction.Owner.Occupies.ToCenterVector();
+            float num = DistanceBetweenCenters(pointOne, vector);
+            Coverlines coverlines = burstAreaTarget.OwnerAction.Owner.Battle.Map.Coverlines;
+            if (num > (float)burstAreaTarget.Range)
+            {
+                return null;
+            }
+
+            if (burstAreaTarget.MustBeWithin20FeetOf.HasValue && DistanceBetweenCenters(burstAreaTarget.MustBeWithin20FeetOf.Value.ToVector2(), vector) > 4f)
+            {
+                return null;
+            }
+
+            bool flag2 = true;
+            for (int i = 0; i < 4; i++)
+            {
+                Point point2 = Coverlines.CreateCorner(point.X, point.Y, i);
+                if (!coverlines.GetCorner(point2.X, point2.Y, burstOrigin.X, burstOrigin.Y))
+                {
+                    flag2 = false;
+                    break;
+                }
+            }
+
+            if (flag2 && !ignoreBurstOriginLoS)
+            {
+                return null;
+            }
+
+            AreaSelection areaSelection = new AreaSelection();
+            foreach (Tile allTile in burstAreaTarget.OwnerAction.Owner.Battle.Map.AllTiles)
+            {
+                Vector2 pointTwo = allTile.ToCenterVector();
+                float num2 = (flag ? DistanceBetweenCentersChebyshev(vector, pointTwo) : DistanceBetweenCenters(vector, pointTwo));
+                if (!(num2 <= (float)burstAreaTarget.Radius))
+                {
+                    continue;
+                }
+
+                bool flag3 = false;
+                for (int j = 0; j < 4; j++)
+                {
+                    Point point3 = Coverlines.CreateCorner(allTile.X, allTile.Y, j);
+                    if (!coverlines.GetCorner(burstOrigin.X, burstOrigin.Y, point3.X, point3.Y))
+                    {
+                        if (!allTile.AlwaysBlocksLineOfEffect)
+                        {
+                            flag3 = true;
+                        }
+
+                        break;
+                    }
+                }
+
+                if (flag3)
+                {
+                    if (!flag || num2 > 1f)
+                    {
+                        areaSelection.TargetedTiles.Add(allTile);
+                    }
+                }
+                else
+                {
+                    areaSelection.ExcludedTiles.Add(allTile);
+                }
+            }
+
+            return areaSelection.VerifyForOverallLegality(burstAreaTarget.OwnerAction);
+        }
+
+        private static float DistanceBetweenCenters(Vector2 pointOne, Vector2 pointTwo)
+        {
+            float num = Math.Abs(pointOne.X - pointTwo.X);
+            float num2 = Math.Abs(pointOne.Y - pointTwo.Y);
+            if (num >= num2)
+            {
+                return num + num2 / 2f;
+            }
+
+            return num2 + num / 2f;
+        }
+
+        private static float DistanceBetweenCentersChebyshev(Vector2 pointOne, Vector2 pointTwo)
+        {
+            float val = Math.Abs(pointOne.X - pointTwo.X);
+            float val2 = Math.Abs(pointOne.Y - pointTwo.Y);
+            return Math.Max(val, val2);
+        }
+
         #endregion
     }
+
+    #region Supporting Classes
 
     public class NecromancerBenefitToThralls
     {
@@ -1582,4 +1843,6 @@ namespace Necromancer
             return DeathEffect(effect, thrall);
         }
     }
+
+    #endregion
 }
