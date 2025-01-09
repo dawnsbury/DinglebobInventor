@@ -27,6 +27,7 @@ using Dawnsbury.IO;
 using Dawnsbury.Core.Mechanics.Damage;
 using Dawnsbury.Core.Coroutines.Options;
 using Dawnsbury.Core.Tiles;
+using Dawnsbury.Core.Animations;
 
 namespace Necromancer
 {
@@ -86,6 +87,7 @@ namespace Necromancer
             var necroticBombFeat = ModManager.RegisterFeatName("NecromancerNecroticBomb", "Necrotic Bomb");
             var reclaimPowerFeat = ModManager.RegisterFeatName("NecromancerReclaimPower", "Reclaim Power");
             var reaperWeaponFamiliarityFeat = ModManager.RegisterFeatName("NecromancerReaperWeaponFamiliarity", "Reaper's Weapon Familiarity");
+            var vitalThrallsFeat = ModManager.RegisterFeatName("NecromancerVitalThralls", "Vital Thralls");
             var zombieHordeFeat = ModManager.RegisterFeatName("NecromancerZombieHorde", "Zombie Horde");
 
             #region Class Description Strings
@@ -675,6 +677,51 @@ namespace Necromancer
                     });
                 });
 
+            yield return new TrueFeat(vitalThrallsFeat, 8, "You can imbue your thralls with nodes of positive energy.", "When one of your thralls dies, it explodes in a burst of positive energy. Each friendly living reature within 15 feet of it gains a number of temporary Hit Points equal to half your level. Also, whenever one of your thralls would take positive damage from an effect requiing a Fortitude save, it attempts a DC 15 flat check to take no damage.", [NecromancerTrait, Trait.ClassFeat])
+                .WithIllustration(IllustrationName.Bless)
+                .WithOnCreature((Creature creature) =>
+                {
+                    creature.AddQEffect(new("Vital Thralls", "Your thralls grant temporary hit points to nearby allies when they die, and whenever one of your thralls would take positive damage from an effect requiring a Fortitude save, it attempts a DC 15 flat check to take no damage.")
+                    {
+                        Source = creature,
+                        Tag = new NecromancerBenefitToThralls(async (necromancer, thrall) =>
+                        {
+                            thrall.AddQEffect(new()
+                            {
+                                AfterYouTakeDamage = async (QEffect effect, int amount, DamageKind damageKind, CombatAction? action, bool _) =>
+                                {
+                                    if (action == null || action.SavingThrow == null || action.SavingThrow.Defense != Defense.Fortitude || damageKind != DamageKind.Positive)
+                                    {
+                                        return;
+                                    }
+
+                                    var flatCheck = Checks.RollFlatCheck(15);
+
+                                    if (flatCheck.Item1 >= CheckResult.Success)
+                                    {
+                                        effect.Owner.Heal(amount.ToString(), null);
+                                    }
+
+                                    effect.Owner.Occupies.Overhead($"{effect.Owner} took no damage", Color.Green, $"{effect.Owner} took no damage.", $"{effect.Owner} took no damage.", $"{effect.Owner} {flatCheck.Item2} on Bony Thralls.");
+                                },
+                                Tag = new ThrallOnDeath(async (QEffect effect, Creature thrall) =>
+                                {
+                                    var necromancer = GetNecromancer(thrall);
+                                    var tempHPAmount = necromancer != null ? necromancer.Level / 2 : 4;
+                                    var alliesInRange = thrall.Battle.AllCreatures.Where((creature) => creature.FriendOf(thrall) && creature.DistanceTo(thrall) <= 3);
+
+                                    await CommonAnimations.CreateConeAnimation(thrall.Battle, thrall.Occupies.ToCenterVector(), thrall.Battle.Map.AllTiles.Where((tile) => tile.DistanceTo(thrall.Occupies) <= 3).ToList(), 25, ProjectileKind.Cone, IllustrationName.BlessCircle);
+
+                                    foreach (var ally in alliesInRange)
+                                    {
+                                        ally.GainTemporaryHP(tempHPAmount);
+                                    }
+                                })
+                            });
+                        })
+                    });
+                });
+
             #endregion
 
             #region Grim Fascinations
@@ -687,7 +734,7 @@ namespace Necromancer
                 })
                 .WithOnCreature((Creature featUser) =>
                 {
-                    featUser.AddQEffect(new("Bony Thralls", "Whenever one of your thralls would take damage from an effect requiring a reflex save, it attempts a DC 15 flat check to take no damage.")
+                    featUser.AddQEffect(new("Bony Thralls", "Whenever one of your thralls would take damage from an effect requiring a Reflex save, it attempts a DC 15 flat check to take no damage.")
                     {
                         Id = BonyThrallID,
                         Tag = new NecromancerBenefitToThralls(async (necromancer, thrall) =>
@@ -1583,6 +1630,13 @@ namespace Necromancer
         public static List<Creature> GetAllThralls(Creature necromancer)
         {
             return necromancer.Battle.AllCreatures.Where((creature) => creature.HasEffect(SummonedThrallID) && creature.FindQEffect(SummonedThrallID)!.Source == necromancer).ToList();
+        }
+
+        public static Creature? GetNecromancer(Creature thrall)
+        {
+            var effect = thrall.FindQEffect(SummonedThrallID);
+
+            return effect != null ? effect.Source : null;
         }
 
         public static int? GetNecromancerSpellDC(Creature necromancer)
