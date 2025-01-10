@@ -25,9 +25,9 @@ using Dawnsbury.Core.CharacterBuilder.FeatsDb.Common;
 using Microsoft.Xna.Framework;
 using Dawnsbury.IO;
 using Dawnsbury.Core.Mechanics.Damage;
-using Dawnsbury.Core.Coroutines.Options;
 using Dawnsbury.Core.Tiles;
 using Dawnsbury.Core.Animations;
+using System.Text;
 
 namespace Necromancer
 {
@@ -39,6 +39,7 @@ namespace Necromancer
         {
             BoneSpear,
             BonyBarrage,
+            ConglomerateOfLimbs,
             CreateThrall,
             DeadWeight,
             LifeTap,
@@ -80,6 +81,7 @@ namespace Necromancer
             var boneSpearFeat = ModManager.RegisterFeatName("NecromancerBoneSpear", "Bone Spear");
             var bonyBarrageFeat = ModManager.RegisterFeatName("NecromancerBoBonyBarrage", "Bony Barrage");
             var concussiveThrallsFeat = ModManager.RegisterFeatName("NecromancerConcussiveThralls", "Concussive Thralls");
+            var conglomerateOfLimbsFeat = ModManager.RegisterFeatName("NecromancerConglomerateOfLimbs", "Conglomerate of Limbs");
             var deadWeightFeat = ModManager.RegisterFeatName("NecromancerDeadWeight", "Dead Weight");
             var drainingStrikeFeat = ModManager.RegisterFeatName("NecromancerDrainingStrike", "Draining Strike");
             var lifeTapFeat = ModManager.RegisterFeatName("NecromancerLifeTap", "Life Tap");
@@ -677,6 +679,12 @@ namespace Necromancer
                     });
                 });
 
+            yield return new TrueFeat(conglomerateOfLimbsFeat, 8, "You call forth a lumbering mass of fleshy limbs.", "You gain the {i}conglomerate of limbs{/i} focus spell and a focus pool of 1 Focus Point.", [NecromancerTrait, Trait.ClassFeat])
+                .WithOnSheet(delegate (CalculatedCharacterSheetValues sheet)
+                {
+                    sheet.AddFocusSpellAndFocusPoint(NecromancerTrait, Ability.Intelligence, NecromancerSpells[NecromancerSpell.ConglomerateOfLimbs]);
+                }).WithRulesBlockForSpell(NecromancerSpells[NecromancerSpell.ConglomerateOfLimbs], NecromancerTrait).WithIllustration(IllustrationName.RouseSkeletons);
+
             yield return new TrueFeat(vitalThrallsFeat, 8, "You can imbue your thralls with nodes of positive energy.", "When one of your thralls dies, it explodes in a burst of positive energy. Each friendly living reature within 15 feet of it gains a number of temporary Hit Points equal to half your level. Also, whenever one of your thralls would take positive damage from an effect requiing a Fortitude save, it attempts a DC 15 flat check to take no damage.", [NecromancerTrait, Trait.ClassFeat])
                 .WithIllustration(IllustrationName.Bless)
                 .WithOnCreature((Creature creature) =>
@@ -1065,6 +1073,175 @@ namespace Necromancer
                     });
 
                     await user.Battle.GameLoop.FullCast(commandThrallToStrikeCombatAction);
+                });
+            });
+
+            #endregion
+
+            #region Conglomerate of Limbs
+
+            NecromancerSpells[NecromancerSpell.ConglomerateOfLimbs] = ModManager.RegisterNewSpell("Conglomerate of Limbs", 4, (spellId, spellcaster, spellLevel, inCombat, spellInformation) =>
+            {
+                return Spells.CreateModern(IllustrationName.RouseSkeletons, "Conglomerate of Limbs",
+                    [NecromancerTrait, GraveTrait, Trait.Focus, Trait.Necromancy, Trait.Uncommon],
+                    "You call forth a lumbering mass of fleshy limbs.",
+                    $"You conjure forth a thrall that has {spellLevel * 15} Hit Points. Whenever an enemy begins its turn within reach of this thrall, it must succeed at a Fortitude saving throw or become grabbed by the thrall for 1 round or until it Escapes. Once per round on subsequent turns, you can Sustain the spell to have the thrall Stride up to 15 feet, using its many limbs to drag itself across the ground.",
+                    Target.Self(), 4, null)
+                .WithActionCost(2)
+                .WithEffectOnSelf(async delegate (CombatAction spell, Creature user)
+                {
+                    var identifier = Guid.NewGuid();
+
+                    var createThrall = createCreateThrallCombatAction(user, user.MaximumSpellRank, identifier);
+                    createThrall.Target = Target.RangedEmptyTileForSummoning(12);
+
+                    if (await user.Battle.GameLoop.FullCast(createThrall) == false)
+                    {
+                        user.Actions.RevertExpendingOfResources(2, spell);
+                        return;
+                    }
+
+                    var conglomerateCount = GetAllThralls(user).Where((thrall) => thrall.QEffects.FirstOrDefault((qEffect) => qEffect.Name != null && qEffect.Name.StartsWith("Conglomerate of Limbs")) != null).Count();
+
+                    var conjuredThrall = GetAllThralls(user).FirstOrDefault((thrall) => thrall.QEffects.FirstOrDefault((effect) => effect.Name == "IdentifierQEffect" && (Guid?)effect.Tag == identifier) != null);
+
+                    if (conjuredThrall == null)
+                    {
+                        return;
+                    }
+
+                    conjuredThrall.BaseSpeed = 0;
+                    conjuredThrall.MaxHP = spell.SpellLevel * 15;
+                    conjuredThrall.Illustration = IllustrationName.SkeletalChampion256;
+
+                    conjuredThrall.AddQEffect(new()
+                    {
+                        Name = $"Conglomerate of Limbs {conglomerateCount + 1}",
+                        Description = "Enemies that start their turn adjacent to you must succeed at a Fortitude saving throw or become grabbed.",
+                        Illustration = IllustrationName.RouseSkeletons,
+                        StateCheck = (conglomerateEffect) =>
+                        {
+                            var thrall = conglomerateEffect.Owner;
+                            foreach (Creature creature in thrall.Battle.AllCreatures)
+                            {
+                                if (creature.EnemyOf(thrall))
+                                {
+                                    creature.AddQEffect(new(ExpirationCondition.Ephemeral)
+                                    {
+                                        Source = thrall,
+                                        StartOfYourPrimaryTurn = async (QEffect effect, Creature enemy) =>
+                                        {
+                                            if (effect.Source == null || !enemy.IsAdjacentTo(effect.Source))
+                                            {
+                                                return;
+                                            }
+
+                                            var result = CommonSpellEffects.RollSavingThrow(enemy, spell, Defense.Fortitude, spell.SpellcastingSource?.GetSpellSaveDC(spell) ?? 0);
+
+                                            if (result <= CheckResult.Failure)
+                                            {
+                                                var grabEffect = QEffect.Immobilized().WithExpirationAtStartOfOwnerTurn();
+                                                grabEffect.Name = "Grabbed";
+                                                grabEffect.Illustration = IllustrationName.Grabbed;
+                                                grabEffect.Description = $"You're grabbed by {effect.Source}.\n\nYou're flat-footed and immobilized. If you attempt a manipulate action, you must succeed at a DC 5 flat check or it is lost.";
+                                                
+                                                grabEffect.IsFlatFootedTo = (QEffect qf, Creature? attacker, CombatAction? action) => "grabbed";
+                                                grabEffect.FizzleOutgoingActions = async delegate (QEffect qfSelf, CombatAction outgoingAction, StringBuilder stringBuilder)
+                                                {
+                                                    if (outgoingAction.HasTrait(Trait.Manipulate))
+                                                    {
+                                                        (CheckResult, string) tuple = Checks.RollFlatCheck(5);
+                                                        stringBuilder.AppendLine("Use manipulate action while grabbed: " + tuple.Item2);
+                                                        if (tuple.Item1 >= CheckResult.Success)
+                                                        {
+                                                            return false;
+                                                        }
+
+                                                        return true;
+                                                    }
+
+                                                    return false;
+                                                };
+                                                grabEffect.ProvideContextualAction = (qEffectSelf) =>
+                                                {
+                                                    return (ActionPossibility)CreateEscapeAgainstDC(enemy, effect.Source, grabEffect, spell.SpellcastingSource?.GetSpellSaveDC(spell) ?? 0);
+                                                };
+
+                                                enemy.AddQEffect(grabEffect);
+
+                                                effect.Source.AddQEffect(new(ExpirationCondition.ExpiresAtStartOfSourcesTurn)
+                                                {
+                                                    Source = enemy,
+                                                    WhenMonsterDies = (effect) =>
+                                                    {
+                                                        enemy.RemoveAllQEffects((qf) => qf == grabEffect);
+                                                    },
+                                                    YouAreDealtLethalDamage = async (effect, attacker, damage, defender) =>
+                                                    {
+                                                        enemy.RemoveAllQEffects((qf) => qf == grabEffect);
+
+                                                        return null;
+                                                    }
+                                                });
+                                            }
+                                        }
+                                    });
+                                }
+                            }
+                        }
+                    });
+
+                    user.AddQEffect(new()
+                    {
+                        Name = $"Sustain Conglomerate of Limbs {conglomerateCount + 1}",
+                        Tag = identifier,
+                        ProvideActionIntoPossibilitySection = (QEffect effect, PossibilitySection section) =>
+                        {
+                            if (section.PossibilitySectionId != PossibilitySectionId.ContextualActions || GetAllThralls(effect.Owner).FirstOrDefault((thrall) => thrall.QEffects.FirstOrDefault((effect) => effect.Name == "IdentifierQEffect" && (Guid?)effect.Tag == identifier) != null) == null)
+                            {
+                                return null;
+                            }
+
+                            return (ActionPossibility)new CombatAction(effect.Owner, IllustrationName.RouseSkeletons, $"Sustain Conglomerate of Limbs {conglomerateCount + 1}", [Trait.Basic, Trait.Concentrate, Trait.SustainASpell], "Command you conglomerate thrall to move up to 15 feet.", Target.Self())
+                            .WithActionCost(1)
+                            .WithEffectOnSelf(async (Creature user) =>
+                            {
+                                var conglomerate = GetAllThralls(user).FirstOrDefault((thrall) => thrall.QEffects.FirstOrDefault((effect) => effect.Name == "IdentifierQEffect" && (Guid?)effect.Tag == identifier) != null);
+
+                                if (conglomerate == null)
+                                {
+                                    user.Actions.RevertExpendingOfResources(1, null);
+                                    return;
+                                }
+
+                                conglomerate.BaseSpeed = 3;
+                                conglomerate.RecalculateLandSpeedAndInitiative();
+
+                                if (await conglomerate.StrideAsync("Select where you want to stride.", allowCancel: true, allowPass: true) == false)
+                                {
+                                    user.Actions.RevertExpendingOfResources(1, null);
+                                    conglomerate.BaseSpeed = 0;
+
+                                    conglomerate.RecalculateLandSpeedAndInitiative();
+
+                                    return;
+                                }
+
+                                conglomerate.BaseSpeed = 0;
+                                conglomerate.RecalculateLandSpeedAndInitiative();
+
+                                user.AddQEffect(new(ExpirationCondition.ExpiresAtStartOfYourTurn)
+                                {
+                                    PreventTakingAction = (CombatAction action) => action.Name == $"Sustain Conglomerate of Limbs {conglomerateCount + 1}" ? "You can only sustain Conglomerate of Limbs once per turn." : null
+                                });
+                            });
+                        }
+                    });
+
+                    user.AddQEffect(new(ExpirationCondition.ExpiresAtStartOfYourTurn)
+                    {
+                        PreventTakingAction = (CombatAction action) => action.Name == $"Sustain Conglomerate of Limbs {conglomerateCount + 1}" ? "You can't sustain this spell on the turn you cast it." : null
+                    });
                 });
             });
 
