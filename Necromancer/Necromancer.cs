@@ -1549,7 +1549,8 @@ namespace Necromancer
                             }
 
                             var target = Target.Burst(60, spellInfo.Item2);
-                            target.MustBeWithin20FeetOf = spellInfo.Item3;
+                            target.MustBeWithinShortDistanceOf = spellInfo.Item3;
+                            target.MustBeWithinShortDistanceOf_Distance = 2;
 
                             return (ActionPossibility)new CombatAction(user, spell.Illustration, $"Sustain {spell.Name} {spellInfo.Item4}", [Trait.Basic, Trait.Concentrate, Trait.SustainASpell], $"Move {spell.Name} {spellInfo.Item4} up to 20 feet.", target)
                             .WithEffectOnEachTile(async delegate (CombatAction sustain, Creature creature, IReadOnlyList<Tile> chosenTiles)
@@ -1941,7 +1942,7 @@ namespace Necromancer
                 return null;
             }
 
-            if (burstAreaTarget.MustBeWithin20FeetOf.HasValue && DistanceBetweenCenters(burstAreaTarget.MustBeWithin20FeetOf.Value.ToVector2(), vector) > 4f)
+            if (burstAreaTarget.MustBeWithinShortDistanceOf.HasValue && DistanceBetweenCenters(burstAreaTarget.MustBeWithinShortDistanceOf.Value.ToVector2(), vector) > (float)burstAreaTarget.MustBeWithinShortDistanceOf_Distance)
             {
                 return null;
             }
