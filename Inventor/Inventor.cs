@@ -53,11 +53,11 @@ namespace Inventor
 
         //The crafting feats here were taken from DawnniExpanded, for integration. It's duplicated here so that that mod is not required.
         //https://github.com/AurixVirlym/DawnniExpanded/blob/main/Misc/Skills.cs
-        public static Feat Crafting = new SkillSelectionFeat(FeatName.CustomFeat, Skill.Crafting, Trait.Crafting).WithCustomName("Crafting");
+        /*public static Feat Crafting = new SkillSelectionFeat(FeatName.CustomFeat, Skill.Crafting, Trait.Crafting).WithCustomName("Crafting");
 
         public static Feat ExpertCrafting = new SkillIncreaseFeat(FeatName.CustomFeat, Skill.Crafting, Trait.Crafting, Proficiency.Expert).WithCustomName("Expert in Crafting");
 
-        public static Feat MasterCrafting = new SkillIncreaseFeat(FeatName.CustomFeat, Skill.Crafting, Trait.Crafting, Proficiency.Master).WithCustomName("Master in Crafting");
+        public static Feat MasterCrafting = new SkillIncreaseFeat(FeatName.CustomFeat, Skill.Crafting, Trait.Crafting, Proficiency.Master).WithCustomName("Master in Crafting");*/
 
         public readonly static Trait InventorTrait = ModManager.RegisterTrait("Inventor");
 
@@ -66,7 +66,7 @@ namespace Inventor
         public static IEnumerable<Feat> LoadAll()
         {
             //If DawnniExpanded is installed, I need to find which feat I need to add and use.
-            if (AllFeats.All.All((Feat feat) => feat.CustomName != "Crafting"))
+            /*if (AllFeats.All.All((Feat feat) => feat.CustomName != "Crafting" || feat.Name == "Crafting"))
             {
                 ModManager.AddFeat(Crafting);
             }
@@ -79,7 +79,7 @@ namespace Inventor
                 }
             }
 
-            if (AllFeats.All.All((Feat feat) => feat.CustomName != "Expert in Crafting"))
+            if (AllFeats.All.All((Feat feat) => feat.CustomName != "Expert in Crafting" || feat.Name == "Expert in Crafting"))
             {
                 ModManager.AddFeat(ExpertCrafting);
             }
@@ -92,7 +92,7 @@ namespace Inventor
                 }
             }
 
-            if (AllFeats.All.All((Feat feat) => feat.CustomName != "Master in Crafting"))
+            if (AllFeats.All.All((Feat feat) => feat.CustomName != "Master in Crafting" || feat.Name == "Master in Crafting"))
             {
                 ModManager.AddFeat(MasterCrafting);
             }
@@ -103,7 +103,7 @@ namespace Inventor
                 {
                     MasterCrafting = craftingFeat;
                 }
-            }
+            }*/
 
             var inventorFeat = ModManager.RegisterFeatName("InventorFeat", "Inventor");
 
@@ -255,12 +255,12 @@ namespace Inventor
                 weaponInnovationFeat
             }).WithOnSheet(delegate (CalculatedCharacterSheetValues sheet)
             {
-                sheet.AddFeat(Crafting, null);
+                sheet.GrantFeat(FeatName.Crafting);
                 sheet.GrantFeat(FeatName.ShieldBlock);
                 sheet.AddSelectionOption(new SingleFeatSelectionOption("InventorFeat1", "Inventor feat", 1, (Feat ft) => ft.HasTrait(InventorTrait) && !ft.HasTrait(modificationTrait)));
                 sheet.AddAtLevel(3, delegate (CalculatedCharacterSheetValues values)
                 {
-                    values.AddFeat(ExpertCrafting, null);
+                    sheet.GrantFeat(FeatName.ExpertCrafting);
                 });
                 sheet.AddAtLevel(5, delegate (CalculatedCharacterSheetValues values)
                 {
@@ -271,7 +271,7 @@ namespace Inventor
                 });
                 sheet.AddAtLevel(7, delegate (CalculatedCharacterSheetValues values)
                 {
-                    values.AddFeat(MasterCrafting, null);
+                    sheet.GrantFeat(FeatName.MasterCrafting);
 
                     if (values.HasFeat(armorInnovationFeat))
                     {
