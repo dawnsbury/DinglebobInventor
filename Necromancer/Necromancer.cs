@@ -184,7 +184,7 @@ namespace Necromancer
                         {
                             return null;
                         }
-
+                        
                         return (ActionPossibility)new CombatAction(effect.Owner, IllustrationName.EradicateUndeath, "Consume Thrall", [Trait.Manipulate, Trait.Concentrate, Trait.Occult, NecromancerTrait], "{i}You crumble one of your thralls to dust to consume its necromantic magic.{/i}\n\nYou destroy one of your thralls within 15 feet of you and regain 1 Focus Point. You can't consume another thrall until your next encounter.",
                             Target.RangedFriend(3).WithAdditionalConditionOnTargetCreature((user, target) => IsThrallTo(user, target) ? Usability.Usable : Usability.NotUsableOnThisCreature("not a thrall controlled by you")))
                         {
@@ -412,7 +412,7 @@ namespace Necromancer
 
                                     if (chosenThrall != null)
                                     {
-                                        necromancer.WeaknessAndResistance.AddResistanceAllExcept(necromancer.Level, []);
+                                        necromancer.WeaknessAndResistance.AddResistanceAllExcept(necromancer.Level, false, []);
 
                                         necromancer.AddQEffect(new(ExpirationCondition.EphemeralAtEndOfImmediateAction)
                                         {
@@ -1530,6 +1530,7 @@ namespace Necromancer
                         Tag = new Tuple<Guid, int, Point, int>((Guid)spell.Tag, 2, spell.ChosenTargets.ChosenPointOfOrigin, user.QEffects.Where((qEffect) => qEffect.Name == "Zombie Horde Info").Count() + 1),
                         DoNotShowUpOverhead = true
                     });
+
                     user.AddQEffect(new()
                     {
                         DoNotShowUpOverhead = true,
@@ -1569,10 +1570,15 @@ namespace Necromancer
 
                                 var chosenThrall = thrallList.Count == 0 ? null : await creature.Battle.AskToChooseACreature(creature, thrallList, spell.Illustration, "Choose a thrall to destroy.", "Destroy", "Decline");
 
+
+                                foreach (var tile in creature.Battle.Map.AllTiles)
+                                {
+                                    tile.QEffects.RemoveAll((qEffect) => qEffect.Name == $"{user.Name}'s Zombie Horde ({spellInfo.Item1})");
+                                }
+
                                 if (chosenThrall != null)
                                 {
                                     await KillThrall(chosenThrall);
-                                    spellInfo = new Tuple<Guid, int, Point, int>(spellInfo.Item1, spellInfo.Item2, spellInfo.Item3, spellInfo.Item4);
 
                                     target.Radius++;
 
@@ -1584,18 +1590,15 @@ namespace Necromancer
                                     }
                                 }
 
-                                spellInfo = new Tuple<Guid, int, Point, int>(spellInfo.Item1, spellInfo.Item2, sustain.ChosenTargets.ChosenPointOfOrigin, spellInfo.Item4);
+                                spellInfo = new Tuple<Guid, int, Point, int>(spellInfo.Item1, target.Radius, sustain.ChosenTargets.ChosenPointOfOrigin, spellInfo.Item4);
 
-                                foreach (var tile in creature.Battle.Map.AllTiles)
-                                {
-                                    tile.QEffects.RemoveAll((qEffect) => qEffect.Name == $"{user.Name}'s Zombie Horde ({spellInfo.Item1})");
-                                }
+                                spellInfoEffect.Tag = spellInfo;
 
                                 foreach (var tile in tileList)
                                 {
                                     tile.AddQEffect(new(tile)
                                     {
-                                        Name = $"{user.Name}'s Zombie Horde ({spellInfo.Item1})",
+                                        Name = $"{creature.Name}'s Zombie Horde ({spellInfo.Item1})",
                                         Illustration = new ScrollIllustration(IllustrationName.Rubble, IllustrationName.ZombieShambler256),
                                         TransformsTileIntoDifficultTerrain = true,
                                         AfterCreatureBeginsItsTurnHere = async (Creature occupant) =>
@@ -1605,14 +1608,24 @@ namespace Necromancer
                                                 return;
                                             }
 
-                                            var damageKind = user.HasEffect(GhostlyThrallID) ? occupant.WeaknessAndResistance.WhatDamageKindIsBestAgainstMe([DamageKind.Negative, DamageKind.Bludgeoning]) : DamageKind.Bludgeoning;
+                                            var damageKind = creature.HasEffect(GhostlyThrallID) ? occupant.WeaknessAndResistance.WhatDamageKindIsBestAgainstMe([DamageKind.Negative, DamageKind.Bludgeoning]) : DamageKind.Bludgeoning;
 
-                                            await CommonSpellEffects.DealBasicDamage(spell, user, occupant, CommonSpellEffects.RollSavingThrow(occupant, spell, Defense.Fortitude, GetNecromancerSpellDC(user) ?? 0), $"{spell.SpellLevel}d4", damageKind);
+                                            await CommonSpellEffects.DealBasicDamage(spell, creature, occupant, CommonSpellEffects.RollSavingThrow(occupant, spell, Defense.Fortitude, GetNecromancerSpellDC(creature) ?? 0), $"{spell.SpellLevel}d4", damageKind);
                                         }
                                     });
                                 }
+
+                                creature.AddQEffect(new(ExpirationCondition.ExpiresAtStartOfYourTurn)
+                                {
+                                    PreventTakingAction = (CombatAction action) => action.Name == $"Sustain {spell.Name} {spellInfo.Item4}" ? "You can only sustain this spell once per turn." : null
+                                });
                             });
                         }
+                    });
+
+                    user.AddQEffect(new(ExpirationCondition.ExpiresAtStartOfYourTurn)
+                    {
+                        PreventTakingAction = (CombatAction action) => action.Name == $"Sustain {spell.Name} {user.QEffects.Where((qEffect) => qEffect.Name == "Zombie Horde Info").Count()}" ? "You can't sustain this spell on the turn you cast it." : null
                     });
                 })
                 .WithEffectOnEachTile(async delegate (CombatAction spell, Creature user, IReadOnlyList<Tile> chosenTiles)
