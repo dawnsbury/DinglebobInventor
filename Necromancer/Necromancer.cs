@@ -1738,30 +1738,6 @@ namespace Necromancer
                 {
                     return CheckResult.Failure;
                 },
-                /*YouAreTargetedByARoll = async (QEffect effect, CombatAction combatAction, CheckBreakdownResult breakdown) =>
-                {
-                    if (combatAction.HasTrait(Trait.Attack) && breakdown.CheckResult <= CheckResult.Success)
-                    {
-                        effect.Owner.AddQEffect(new(ExpirationCondition.Ephemeral)
-                        {
-                            BonusToDefenses = (QEffect bonusQEffect, CombatAction? bonusCombatAction, Defense defense) =>
-                            {
-                                if (bonusCombatAction == null || bonusCombatAction.ActiveRollSpecification == null)
-                                {
-                                    return null;
-                                }
-
-                                //var dc = bonusCombatAction.ActiveRollSpecification.DetermineDC(bonusCombatAction, bonusCombatAction.Owner, bonusQEffect.Owner);
-
-                                return new Bonus(-30, BonusType.Untyped, "Thrall", false);
-                            }
-                        });
-
-                        return true;
-                    }
-
-                    return false;
-                },*/
                 YouAreDealtLethalDamage = async (QEffect effect, Creature _, DamageStuff _, Creature creature) =>
                 {
                     if (effect.Owner.HP >= 0)
@@ -1909,7 +1885,7 @@ namespace Necromancer
 
                 if (source != null)
                 {
-                    AddNaturalWeapon(thrall, "undead assault", IllustrationName.Jaws, source.GetSpellAttack(), [Trait.VersatileB, Trait.VersatileS], $"{user.MaximumSpellRank}d6+0", DamageKind.Piercing);
+                    AddNaturalWeapon(thrall, "undead assault", IllustrationName.Jaws, source.GetSpellAttack(), [Trait.VersatileB, Trait.VersatileS], $"{1 + ((user.MaximumSpellRank - 1) / 2)}d6+0", DamageKind.Piercing);
                 }
             }
         }
