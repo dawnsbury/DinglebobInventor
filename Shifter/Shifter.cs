@@ -745,20 +745,17 @@ namespace Shifter
                         if (flag)
                         {
                             you.Occupies.Overhead("ferocity!!", Color.Red, you?.ToString() + " resists dying through ferocity!");
-                            int targetNumber = you.HP - (qEffect.Owner.Level * 3 + qEffect.Owner.Abilities.Constitution);
+                            int targetNumber = you.MaxHP - (qEffect.Owner.Level * 3 + qEffect.Owner.Abilities.Constitution);
                             you.IncreaseWounded();
                             qEffect.ExpiresAt = ExpirationCondition.Immediately;
 
                             qEffect.Owner.RemoveAllQEffects(effect => effect.Id == FormID);
-
+                            
                             qEffect.Owner.AddQEffect(new("Ferocity Immunity", "You can't use Ferocity again this combat."));
 
-                            if (targetNumber < 0)
-                            {
-                                await you.HealAsync($"{-targetNumber}", null);
-                            }
+                            you.SetDamageImmediately(targetNumber);
 
-                            return new SetToTargetNumberModification(targetNumber, "Ferocity!!");
+                            return new SetToTargetNumberModification(0, "Ferocity!!");
                         }
 
                         return null;

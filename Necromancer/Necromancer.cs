@@ -28,6 +28,7 @@ using Dawnsbury.Core.Mechanics.Damage;
 using Dawnsbury.Core.Tiles;
 using Dawnsbury.Core.Animations;
 using System.Text;
+using Dawnsbury.Core.Creatures.Parts;
 
 namespace Necromancer
 {
@@ -1717,7 +1718,7 @@ namespace Necromancer
         public static Creature CreateThrall(Creature user, int spellLevel, Guid? identifier = null)
         {
             var thrall = new Creature(GetThrallIllustration(user), $"{user}'s Thrall",
-                [Trait.Undead, Trait.Mindless, Trait.Summoned, Trait.Minion, ThrallTrait], -1, user.Perception, 4, new(user.Level + 15, user.Defenses.GetBaseValue(Defense.Fortitude), user.Defenses.GetBaseValue(Defense.Reflex), user.Defenses.GetBaseValue(Defense.Will)), 1, new(0, 0, 0, 0, 0, 0), new())
+                [Trait.Undead, Trait.Mindless, Trait.Summoned, Trait.Minion, ThrallTrait], -1, user.Perception, 4, new(Checks.DetermineDefenseDC(null, null, user, Defense.AC).TotalNumber, user.Defenses.GetBaseValue(Defense.Fortitude), user.Defenses.GetBaseValue(Defense.Reflex), user.Defenses.GetBaseValue(Defense.Will)), 1, new(0, 0, 0, 0, 0, 0), new())
             { InitiativeControlledBy = user }.WithEntersInitiativeOrder(false);
 
             thrall.AddQEffect(new(ExpirationCondition.ExpiresAtEndOfSourcesTurn)
@@ -1737,7 +1738,7 @@ namespace Necromancer
                 {
                     return CheckResult.Failure;
                 },
-                YouAreTargetedByARoll = async (QEffect effect, CombatAction combatAction, CheckBreakdownResult breakdown) =>
+                /*YouAreTargetedByARoll = async (QEffect effect, CombatAction combatAction, CheckBreakdownResult breakdown) =>
                 {
                     if (combatAction.HasTrait(Trait.Attack) && breakdown.CheckResult <= CheckResult.Success)
                     {
@@ -1760,7 +1761,7 @@ namespace Necromancer
                     }
 
                     return false;
-                },
+                },*/
                 YouAreDealtLethalDamage = async (QEffect effect, Creature _, DamageStuff _, Creature creature) =>
                 {
                     if (effect.Owner.HP >= 0)
@@ -1795,6 +1796,31 @@ namespace Necromancer
 
                         effect.Owner.Battle.RemoveCreatureFromGame(effect.Owner);
                         effect.Owner.Battle.Corpses.Remove(effect.Owner);
+                    }
+                    
+                    foreach (Creature creature in effect.Owner.Battle.AllCreatures)
+                    {
+                        creature.AddQEffect(new(ExpirationCondition.Ephemeral)
+                        {
+                            AdjustActiveRollCheckResult = (QEffect _, CombatAction _, Creature target, CheckResult result) =>
+                            {
+                                if (target == effect.Owner)
+                                {
+                                    return CheckResult.Success;
+                                }
+
+                                return result;
+                            },
+                            AdditionalGoodness = (QEffect _, CombatAction action, Creature target) =>
+                            {
+                                if (target == effect.Owner && !action.Target.IsAreaTarget)
+                                {
+                                    return -10f;
+                                }
+
+                                return 0f;
+                            }
+                        });
                     }
                 }
             });
