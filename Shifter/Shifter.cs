@@ -6,10 +6,8 @@ using Dawnsbury.Core.Animations.Movement;
 using Dawnsbury.Core.CharacterBuilder;
 using Dawnsbury.Core.CharacterBuilder.AbilityScores;
 using Dawnsbury.Core.CharacterBuilder.Feats;
-using Dawnsbury.Core.CharacterBuilder.FeatsDb;
 using Dawnsbury.Core.CharacterBuilder.FeatsDb.Common;
 using Dawnsbury.Core.CharacterBuilder.FeatsDb.Spellbook;
-using Dawnsbury.Core.CharacterBuilder.FeatsDb.TrueFeatDb;
 using Dawnsbury.Core.CharacterBuilder.Selections.Options;
 using Dawnsbury.Core.CharacterBuilder.Spellcasting;
 using Dawnsbury.Core.CombatActions;
@@ -19,6 +17,7 @@ using Dawnsbury.Core.Creatures;
 using Dawnsbury.Core.Intelligence;
 using Dawnsbury.Core.Mechanics;
 using Dawnsbury.Core.Mechanics.Core;
+using Dawnsbury.Core.Mechanics.Damage;
 using Dawnsbury.Core.Mechanics.Enumerations;
 using Dawnsbury.Core.Mechanics.Rules;
 using Dawnsbury.Core.Mechanics.Targeting;
@@ -77,6 +76,7 @@ namespace Shifter
             var ferocityFeat = ModManager.RegisterFeatName("ShifterFerocity", "Ferocity");
             var instictiveShiftFeat = ModManager.RegisterFeatName("InstictiveShift", "Instictive Shift");
             var knitFleshFeat = ModManager.RegisterFeatName("ShifterKnitFlesh", "Knit Flesh");
+            var knockdownFeat = ModManager.RegisterFeatName("ShifterKnockdown", "Knockdown");
             var quickShiftFeat = ModManager.RegisterFeatName("ShifterQuickShift", "Quick Shift");
             var resilientShiftFeat = ModManager.RegisterFeatName("ShifterResilientShift", "Resilient Shift");
             var scorpionFormFeat = ModManager.RegisterFeatName("ShifterScorpionForm", "Scorpion Form");
@@ -1160,6 +1160,68 @@ namespace Shifter
                             {
                                 user.AddQEffect(QEffect.Quickened((combatAction) => (combatAction.HasTrait(ShiftTrait) || combatAction.HasTrait(Trait.Move) || (combatAction.HasTrait(Trait.Strike) && (combatAction.Name.StartsWith("Strike") || combatAction.Name == "Throw"))) && combatAction.ActionCost == 1).WithExpirationAtStartOfOwnerTurn());
                             }
+                        }
+                    });
+                });
+
+            yield return new TrueFeat(knockdownFeat, 6, "You throw yourself at your enemies like an animal, knocking them to the ground.", "{b}Requirement{/b} Your last action was a successful unarmed Strike.\n\n{b}Effect{/b}You attempt to Trip the target. This doesn't apply or increase your multiple attack penalty.", [ShifterTrait, Trait.ClassFeat])
+                .WithActionCost(1)
+                .WithIllustration(IllustrationName.Trip)
+                .WithPrerequisite((sheet) => sheet.Proficiencies.Get(Trait.Athletics) >= Proficiency.Trained, "You must be trained in Athletics.")
+                .WithOnCreature((Creature creature) =>
+                {
+                    creature.AddQEffect(new(ExpirationCondition.Never)
+                    {
+                        ProvideMainAction = (QEffect effect) =>
+                        {
+                            var user = effect.Owner;
+
+                            Creature? attackTarget = null;
+                            Item? itemUsed = null;
+
+                            var lastAction = user.Actions.ActionHistoryThisTurn.LastOrDefault();
+
+                            if (lastAction != null && lastAction.HasTrait(Trait.Attack) && lastAction.Item != null && lastAction.Item.HasTrait(Trait.Unarmed)
+                                && lastAction.CheckResult >= CheckResult.Success && lastAction.ChosenTargets.ChosenCreature != null)
+                            {
+                                attackTarget = lastAction.ChosenTargets.ChosenCreature;
+                                itemUsed = lastAction.Item;
+                            }
+
+                            return (ActionPossibility)new CombatAction(user, IllustrationName.Trip, "Knockdown", [ShifterTrait], "{b}Requirement{/b} Your last action was a successful unarmed Strike.\n\n{b}Effect{/b}You attempt to Trip the target. This doesn't apply or increase your multiple attack penalty.", Target.ReachWithAnyWeapon().WithAdditionalConditionOnTargetCreature((_, target) => target == attackTarget && itemUsed != null ? Usability.Usable : Usability.NotUsableOnThisCreature("not the target of your last action")))
+                            { ShortDescription = "When you successfuly Strike a creature with an unarmed attack, you can use an action to Trip that creature without applying or increasing your multiple attack penalty." }
+                            .WithActionCost(1)
+                            .WithSoundEffect(SfxName.Trip)
+                            .WithActionId(ActionId.Trip)
+                            .WithActiveRollSpecification(new(TaggedChecks.SkillCheck(Skill.Athletics), Checks.DefenseDC(Defense.Reflex)))
+                            .WithEffectOnEachTarget(async (CombatAction action, Creature user, Creature target, CheckResult result) =>
+                            {
+                                if (result == CheckResult.CriticalSuccess)
+                                {
+                                    await target.FallProne();
+
+                                    if (!user.HasEffect(QEffectId.BrutalBully) || !user.HasEffect(QEffectId.Rage))
+                                    {
+                                        await CommonSpellEffects.DealDirectDamage(action, DiceFormula.FromText("1d6", "Falling damage"), target, CheckResult.CriticalSuccess, DamageKind.Bludgeoning);
+                                    }
+                                    else
+                                    {
+                                        await CommonSpellEffects.DealDirectDamage(new DamageEvent(action, target, CheckResult.CriticalSuccess, new KindedDamage[2]
+                                        {
+                                            new KindedDamage(DiceFormula.FromText("1d6", "Falling damage"), DamageKind.Bludgeoning),
+                                            new KindedDamage(DiceFormula.FromText(user.Abilities.Strength.ToString(), "Brutal Bully"), DamageKind.Bludgeoning)
+                                        }));
+                                    }
+                                }
+                                else if (result == CheckResult.Success)
+                                {
+                                    await target.FallProne();
+                                }
+                                else if (result == CheckResult.CriticalFailure)
+                                {
+                                    await user.FallProne();
+                                }
+                            });
                         }
                     });
                 });
