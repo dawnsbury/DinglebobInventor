@@ -318,7 +318,7 @@ namespace Shifter
                     });
                 });
 
-            yield return new TrueFeat(catFormFeat, 1, "You become lithe and nimble, like a cat.", "You can Shift into cat form. While in cat form, you gain the following benefits:\n\n    1. You can make claw unarmed attacks that deal 1d6 slashing damage and have the agile, backstabber, and finesse traits.\n\n    2. You have a +1 circumstance bonus on Stealth checks. This bonus is cumulative with Skilled Influnce.\n\n    3. You gain the Into The Shadows apex action.", [FormTrait]) { }
+            yield return new TrueFeat(catFormFeat, 1, "You become lithe and nimble, like a cat.", "You can Shift into cat form. While in cat form, you gain the following benefits:\n\n    1. You can make claw unarmed attacks that deal 1d6 slashing damage and have the agile, backstabber, and finesse traits.\n\n    2. You have a +1 circumstance bonus on Stealth checks. This bonus is cumulative with Skilled Influence.\n\n    3. You gain the Into The Shadows apex action.", [FormTrait]) { }
                 .WithIllustration(IllustrationName.AnimalFormCat)
                 .WithRulesBlockForCombatAction(IntoTheShadows)
                 .WithOnCreature((Creature featUser) =>
@@ -332,7 +332,7 @@ namespace Shifter
                                 return null;
                             }
                             
-                            return ((ActionPossibility)new CombatAction(qEffect.Owner, IllustrationName.AnimalFormCat, "Cat Form", [ShifterTrait, Trait.Morph, ShiftTrait], "You Shift into cat form. While in cat form, you gain the following benefits:\n\n    1. You can make claw unarmed attacks that deal 1d6 slashing damage and have the agile, backstabber, and finesse traits.\n\n    2. You have a +1 circumstance bonus on Stealth checks. This bonus is cumulative with Skilled Influnce.\n\n    3. You gain the Into The Shadows apex action.", Target.Self())
+                            return ((ActionPossibility)new CombatAction(qEffect.Owner, IllustrationName.AnimalFormCat, "Cat Form", [ShifterTrait, Trait.Morph, ShiftTrait], "You Shift into cat form. While in cat form, you gain the following benefits:\n\n    1. You can make claw unarmed attacks that deal 1d6 slashing damage and have the agile, backstabber, and finesse traits.\n\n    2. You have a +1 circumstance bonus on Stealth checks. This bonus is cumulative with Skilled Influence.\n\n    3. You gain the Into The Shadows apex action.", Target.Self())
                                 { ShortDescription = "You become lithe and nimble, like a cat." }
                                 .WithActionCost(1)
                                 .WithSoundEffect(Dawnsbury.Audio.SfxName.AuraExpansion)
@@ -470,7 +470,7 @@ namespace Shifter
                     });
                 });
 
-            yield return new TrueFeat(hyenaFormFeat, 1, "Your head becomes that of a hyena.", "You can Shift into hyena form. While in hyena form, you gain the following benefits:\n\n    1. You can make jaws unarmed attacks that deal 1d8 piercing damage plus 1 persistent bleed damage.\n\n    2. You have a +1 circumstance bonus on Intimidation checks to Demoralize, and you don't take a penalty for not sharing a language. This bonus is cumulative with Skilled Influnce.\n\n    3. You gain the Hyena Cackle apex action.", [FormTrait]) { }
+            yield return new TrueFeat(hyenaFormFeat, 1, "Your head becomes that of a hyena.", "You can Shift into hyena form. While in hyena form, you gain the following benefits:\n\n    1. You can make jaws unarmed attacks that deal 1d8 piercing damage plus 1 persistent bleed damage.\n\n    2. You have a +1 circumstance bonus on Intimidation checks to Demoralize, and you don't take a penalty for not sharing a language. This bonus is cumulative with Skilled Influence.\n\n    3. You gain the Hyena Cackle apex action.", [FormTrait]) { }
                 .WithIllustration(IllustrationName.BloodWolf256)
                 .WithRulesBlockForCombatAction(HyenaCackle)
                 .WithOnCreature((Creature featUser) =>
@@ -484,7 +484,7 @@ namespace Shifter
                                 return null;
                             }
 
-                            return ((ActionPossibility)new CombatAction(qEffect.Owner, IllustrationName.BloodWolf256, "Hyena Form", [ShifterTrait, Trait.Morph, ShiftTrait], "You Shift into hyena form. While in hyena form, you gain the following benefits:\n\n    1. You can make jaws unarmed attacks that deal 1d8 piercing damage plus 1 persistent bleed damage.\n\n    2. You have a +1 circumstance bonus on Intimidation checks to Demoralize, and you don't take a penalty for not sharing a language. This bonus is cumulative with Skilled Influnce.\n\n    3. You gain the Hyena Cackle apex action.", Target.Self())
+                            return ((ActionPossibility)new CombatAction(qEffect.Owner, IllustrationName.BloodWolf256, "Hyena Form", [ShifterTrait, Trait.Morph, ShiftTrait], "You Shift into hyena form. While in hyena form, you gain the following benefits:\n\n    1. You can make jaws unarmed attacks that deal 1d8 piercing damage plus 1 persistent bleed damage.\n\n    2. You have a +1 circumstance bonus on Intimidation checks to Demoralize, and you don't take a penalty for not sharing a language. This bonus is cumulative with Skilled Influence.\n\n    3. You gain the Hyena Cackle apex action.", Target.Self())
                                 { ShortDescription = $"Your head becomes that of a hyena." }
                                 .WithActionCost(1)
                                 .WithSoundEffect(Dawnsbury.Audio.SfxName.AuraExpansion)
@@ -534,7 +534,7 @@ namespace Shifter
                     });
                 });
 
-            yield return new TrueFeat(octopusFormFeat, 1, "You grow tentacles and an ink sack.", "You can Shift into octupus form. While in octopus form, you gain the following benefits:\n\n    1. You can make tentacle unarmed attacks that deal 1d6 bludgeoning damage and have the trip and agile traits.\n\n    2. You have a +1 circumstance bonus on Athletics checks to Disarm, Grapple, Shove, and Trip. This bonus is cumulative with Skilled Influnce.\n\n    3. You gain the Ink Shot apex action.", [FormTrait]) { }
+            yield return new TrueFeat(octopusFormFeat, 1, "You grow tentacles and an ink sack.", "You can Shift into octupus form. While in octopus form, you gain the following benefits:\n\n    1. You can make tentacle unarmed attacks that deal 1d6 bludgeoning damage and have the trip and agile traits.\n\n    2. You have a +1 circumstance bonus on Athletics checks to Disarm, Grapple, Shove, and Trip. This bonus is cumulative with Skilled Influence.\n\n    3. You gain the Ink Shot apex action.", [FormTrait]) { }
                 .WithIllustration(IllustrationName.OceansBalm)
                 .WithRulesBlockForCombatAction(InkShot)
                 .WithOnCreature((Creature featUser) =>
@@ -548,7 +548,7 @@ namespace Shifter
                                 return null;
                             }
 
-                            return ((ActionPossibility)new CombatAction(qEffect.Owner, IllustrationName.OceansBalm, "Octopus Form", [ShifterTrait, Trait.Morph, ShiftTrait], "You Shift into octupus form. While in octopus form, you gain the following benefits:\n\n    1. You can make tentacle unarmed attacks that deal 1d6 bludgeoning damage and have the trip and agile traits.\n\n    2. You have a +1 circumstance bonus to Athletics checks to Disarm, Grapple, Shove, and Trip. This bonus is cumulative with Skilled Influnce.\n\n    3. You gain the Ink Shot apex action.", Target.Self())
+                            return ((ActionPossibility)new CombatAction(qEffect.Owner, IllustrationName.OceansBalm, "Octopus Form", [ShifterTrait, Trait.Morph, ShiftTrait], "You Shift into octupus form. While in octopus form, you gain the following benefits:\n\n    1. You can make tentacle unarmed attacks that deal 1d6 bludgeoning damage and have the trip and agile traits.\n\n    2. You have a +1 circumstance bonus to Athletics checks to Disarm, Grapple, Shove, and Trip. This bonus is cumulative with Skilled Influence.\n\n    3. You gain the Ink Shot apex action.", Target.Self())
                                 { ShortDescription = "You grow tentacles and an ink sack." }
                                 .WithActionCost(1)
                                 .WithSoundEffect(Dawnsbury.Audio.SfxName.AuraExpansion)
@@ -1154,7 +1154,7 @@ namespace Shifter
                 {
                     creature.AddQEffect(new("Blood Frenzy", "When you reduce a creature to 0 hit points, you become quickened for 1 round. You can use the additional action only to Strike, Stride, or Shift.")
                     {
-                        AfterYouDealDamage = async delegate (Creature user, CombatAction action, Creature target)
+                        AfterYouDealDamage = async (Creature user, CombatAction action, Creature target) =>
                         {
                             if (target.HP <= 0)
                             {
@@ -1245,7 +1245,7 @@ namespace Shifter
                                 .WithActionCost(1)
                                 .WithSoundEffect(Dawnsbury.Audio.SfxName.AuraExpansion)
                                 .WithActionId(ShiftID)
-                                .WithEffectOnSelf(async delegate (CombatAction unstable, Creature user)
+                                .WithEffectOnSelf(async (CombatAction unstable, Creature user) =>
                                 {
                                     user.RemoveAllQEffects(effect => effect.Id == FormID);
 
@@ -1529,7 +1529,7 @@ namespace Shifter
 
         private static CombatAction InjectVenom(Creature user)
         {
-            return new CombatAction(user, IllustrationName.BloodVendetta, "Inject Venom", [ShifterTrait, ApexTrait], $"You inject potent venom into an enemy within 10 feet of you. The target takes {(user.Level + 1) / 2}d4 persistent poison damage, with a basic Fortitude save. The target also becomes sickened based on the result of its save.\n\n" + "{b}Success{/b}. The target becomes sickened 1.\n{b}Failure{/b}. The target becomes sickened 2.\n{b}Critical Failure.{/b} The target becomes sickened 3.\n\nRegardless of the target's result, it becomes inured to the venom. Its future saves against your inject venom improve by one step for the purpose of determining its sickened value.", Target.Ranged(2)) { ShortDescription = $"You inject potent venom into an enemy within 10 feet of you to sicken it and deal {(user.Level + 1) / 2}d4 persistent poison damage." }
+            return new CombatAction(user, IllustrationName.BloodVendetta, "Inject Venom", [ShifterTrait, ApexTrait], $"You inject potent venom into an enemy within 10 feet of you. The target takes {(user.Level + 1) / 2}d4 persistent poison damage, with a basic Fortitude save. The target also becomes sickened based on the result of its save.\n\n" + "{b}Success{/b}. The target becomes sickened 1.\n{b}Failure{/b}. The target becomes sickened 2.\n{b}Critical Failure.{/b} The target becomes sickened 3.\n\nRegardless of the target's result, it becomes inured to the venom. Its future saves against your inject venom improve by one step for the purpose of determining its sickened value.", Target.ReachWithWeaponOfTrait(Trait.Reach)) { ShortDescription = $"You inject potent venom into an enemy within 10 feet of you to sicken it and deal {(user.Level + 1) / 2}d4 persistent poison damage." }
                     .WithActionCost(2)
                     .WithSoundEffect(Dawnsbury.Audio.SfxName.ScratchFlesh)
                     .WithSavingThrow(new(Defense.Fortitude, target => user.ClassOrSpellDC()))
@@ -1539,18 +1539,41 @@ namespace Shifter
 
                         var inured = target.QEffects.Any((effect) => effect.Name == $"Inured to {user.Name}'s venom");
 
+                        QEffect? sickened = null;
+
                         if (result == CheckResult.Success && !inured)
                         {
-                            target.AddQEffect(QEffect.Sickened(1, user.ClassOrSpellDC()));
+                            sickened = QEffect.Sickened(1, user.ClassOrSpellDC());
                         }
                         else if (result == CheckResult.Failure)
                         {
-                            target.AddQEffect(QEffect.Sickened(inured ? 1 : 2, user.ClassOrSpellDC()));
+                            sickened = QEffect.Sickened(inured ? 1 : 2, user.ClassOrSpellDC());
                         }
                         else if (result == CheckResult.CriticalFailure)
                         {
-                            target.AddQEffect(QEffect.Sickened(inured ? 2 : 3, user.ClassOrSpellDC()));
+                            sickened = QEffect.Sickened(inured ? 2 : 3, user.ClassOrSpellDC());
                         }
+
+                        if (sickened != null)
+                        {
+                            sickened.ProvideContextualAction = (QEffect qf) =>
+                            {
+                                QEffect qf3 = qf;
+                                return new ActionPossibility(new CombatAction(qf3.Owner, IllustrationName.Retch, "Retch", [], $"Make a fortitude save against DC {user.ClassOrSpellDC()}. On a success, the sickened value is reduced by 1 (or by 2 on a critical success).", Target.Self((Creature user, AI ai) => user.Actions.ActionHistoryThisTurn.FirstOrDefault((CombatAction ac) => ac.ActionId == ActionId.Retch) != null ? ai.GainBonusToAC(1) * 1.5f : ai.GainBonusToAC(1))).WithActionId(ActionId.Retch).WithSavingThrow(new SavingThrow(Defense.Fortitude, user.ClassOrSpellDC())).WithEffectOnEachTarget(async (CombatAction spell, Creature a, Creature cr, CheckResult ck) =>
+                                {
+                                    if (ck >= CheckResult.Success)
+                                    {
+                                        qf3.Value -= ((ck != CheckResult.CriticalSuccess) ? 1 : 2);
+                                        if (qf3.Value <= 0)
+                                        {
+                                            qf3.ExpiresAt = ExpirationCondition.Immediately;
+                                        }
+                                    }
+                                })).WithPossibilityGroup("Remove debuff");
+                            };
+                        }
+
+                        target.AddQEffect(sickened);
 
                         if (!inured)
                         {

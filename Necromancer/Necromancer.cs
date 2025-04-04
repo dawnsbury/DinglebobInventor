@@ -552,12 +552,12 @@ namespace Necromancer
 
                                         Sfxs.Play(SfxName.BoneSpray);
 
-                                        var result = CommonSpellEffects.RollSpellSavingThrow(provoker, boneBurst, Defense.Reflex);
+                                        var result = CommonSpellEffects.RollSavingThrow(provoker, boneBurst, Defense.Reflex, spellDC.Value);
 
                                         var damageKind = effect.Source.HasEffect(GhostlyThrallID) ? provoker.WeaknessAndResistance.WhatDamageKindIsBestAgainstMe([DamageKind.Negative, DamageKind.Piercing]) : DamageKind.Piercing;
 
                                         await KillThrall(effect.Owner);
-
+                                        
                                         await CommonSpellEffects.DealBasicDamage(boneBurst, effect.Source, provoker, result, $"{effect.Source.Level / 6 + 1}d10", damageKind);
                                     }
                                 },
@@ -686,7 +686,7 @@ namespace Necromancer
                     sheet.AddFocusSpellAndFocusPoint(NecromancerTrait, Ability.Intelligence, NecromancerSpells[NecromancerSpell.ConglomerateOfLimbs]);
                 }).WithRulesBlockForSpell(NecromancerSpells[NecromancerSpell.ConglomerateOfLimbs], NecromancerTrait).WithIllustration(IllustrationName.RouseSkeletons);
 
-            yield return new TrueFeat(vitalThrallsFeat, 8, "You can imbue your thralls with nodes of positive energy.", "When one of your thralls dies, it explodes in a burst of positive energy. Each friendly living reature within 15 feet of it gains a number of temporary Hit Points equal to half your level. Also, whenever one of your thralls would take positive damage from an effect requiing a Fortitude save, it attempts a DC 15 flat check to take no damage.", [NecromancerTrait, Trait.ClassFeat])
+            yield return new TrueFeat(vitalThrallsFeat, 8, "You can imbue your thralls with nodes of positive energy.", "When one of your thralls dies, it explodes in a burst of positive energy. Each friendly living reature within 15 feet of it gains a number of temporary Hit Points equal to half your level. Also, whenever one of your thralls would take positive damage from an effect requiring a Fortitude save, it attempts a DC 15 flat check to take no damage.", [NecromancerTrait, Trait.ClassFeat])
                 .WithIllustration(IllustrationName.Bless)
                 .WithOnCreature((Creature creature) =>
                 {
@@ -882,7 +882,7 @@ namespace Necromancer
                 var mainSpell = Spells.CreateModern(IllustrationName.Boneshaker, "Bony Barrage",
                     [NecromancerTrait, Trait.Focus, GraveTrait, Trait.Evocation, Trait.Uncommon],
                     "You shatter the skeleton of a thrall within 30 feet, destroying it and creating a volley of phalanges, teeth, and vertebrae in a 30-foot cone from where the thrall was. ",
-                    $"All creatures within a 30-foot conne centered on the thrall take {spellLevel}d10 piercing damage with a basic Reflex save. If you have a second thrall in the area, you shatter it to cover your allies in bone armor. If you do, the cone doesn’t affect your allies, and any ally in the area gains a +1 status bonus to AC until the start of your next turn. Each thrall you shatter is destroyed.",
+                    $"All creatures within a 30-foot cone centered on the thrall take {spellLevel}d10 piercing damage with a basic Reflex save. If you have a second thrall in the area, you shatter it to cover your allies in bone armor. If you do, the cone doesn’t affect your allies, and any ally in the area gains a +1 status bonus to AC until the start of your next turn. Each thrall you shatter is destroyed.",
                     CreateThrallTarget(6), 2, null)
                 .WithActionCost(2)
                 .WithHeighteningOfDamageEveryLevel(spellLevel, 2, inCombat, "1d10")
@@ -1028,11 +1028,11 @@ namespace Necromancer
                         return;
                     }
 
-                    //Don't prompt for target if only one thral is available
+                    //Don't prompt for target if only one thrall is available
                     if (createdThralls.Count == 1)
                     {
                         SetThrallAttack(user, createdThralls[0]);
-                        var strike = createdThralls[0].CreateStrike(createdThralls[0].UnarmedStrike, user.Actions.AttackedThisManyTimesThisTurn);
+                        var strike = createdThralls[0].CreateStrike(createdThralls[0].UnarmedStrike, user.Actions.AttackedThisManyTimesThisTurn).WithActionCost(0);
 
                         if (await createdThralls[0].Battle.GameLoop.FullCast(strike))
                         {
@@ -1068,7 +1068,7 @@ namespace Necromancer
                         var thrall = target.ChosenCreature;
 
                         SetThrallAttack(user, thrall);
-                        var strike = thrall.CreateStrike(thrall.UnarmedStrike, user.Actions.AttackedThisManyTimesThisTurn);
+                        var strike = thrall.CreateStrike(thrall.UnarmedStrike, user.Actions.AttackedThisManyTimesThisTurn).WithActionCost(0);
 
                         await thrall.Battle.GameLoop.FullCast(strike);
                     });
@@ -1791,6 +1791,17 @@ namespace Necromancer
                             {
                                 if (target == effect.Owner && !action.Target.IsAreaTarget)
                                 {
+                                    /*var map = (float)action.Owner.Actions.AttackedThisTurn.Count;
+
+                                    if (map > 0)
+                                    {
+                                        float baseModifier = action.Owner.Level >= 1 ? (float)action.Owner.Level * 4f + 3f : 5f;
+
+                                        return (baseModifier - (baseModifier * map * 0.5f)) * -1f;
+                                    }
+
+                                    return action.Owner.Level >= 1 ? (float)action.Owner.Level * -5f - 3f : -5f;*/
+
                                     return -10f;
                                 }
 
