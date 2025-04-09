@@ -113,7 +113,7 @@ namespace Shifter
                 {
                     featUser.AddQEffect(new("Durable Influence", $"When you Shift, you gain " + (featUser.Level > 1 ? featUser.Level : 2) + " temporary Hit Points.")
                     {
-                        AfterYouTakeAction = async delegate (QEffect effect, CombatAction action)
+                        AfterYouTakeAction = async (QEffect effect, CombatAction action) =>
                         {
                             if (action.ActionId != ShiftID)
                             {
@@ -132,7 +132,7 @@ namespace Shifter
                 {
                     featUser.AddQEffect(new("Mobile Influence", "When you Shift for the first time each turn, you can Stride up to half your speed.")
                     {
-                        AfterYouTakeAction = async delegate (QEffect effect, CombatAction action)
+                        AfterYouTakeAction = async (QEffect effect, CombatAction action) =>
                         {
                             var user = effect.Owner;
 
@@ -155,7 +155,7 @@ namespace Shifter
                 {
                     featUser.AddQEffect(new("Skilled Influence", $"When you Shift, you gain a +1 circumstance bonus to skill checks until your next turn.")
                     {
-                        AfterYouTakeAction = async delegate (QEffect effect, CombatAction action)
+                        AfterYouTakeAction = async (QEffect effect, CombatAction action) =>
                         {
                             if (action.ActionId != ShiftID)
                             {
@@ -192,37 +192,37 @@ namespace Shifter
                 Trait.Will,
                 Trait.UnarmoredDefense,
             ], 3, abilityString, null)
-            .WithOnSheet(delegate (CalculatedCharacterSheetValues sheet)
+            .WithOnSheet((CalculatedCharacterSheetValues sheet) =>
             {
                 sheet.SetProficiency(ShifterTrait, Proficiency.Trained);
                 sheet.GrantFeat(FeatName.Nature);
                 sheet.AddSelectionOption(new SingleFeatSelectionOption("AnimalInfluence", "Animal influence", 1, (Feat ft) => ft.HasTrait(influenceTrait)));
                 sheet.AddSelectionOption(new MultipleFeatSelectionOption("ShifterForms1", "Shifter forms", 1, (Feat ft) => ft.HasTrait(FormTrait) && !ft.HasTrait(Trait.Dragon) && !ft.HasTrait(ShifterTrait), 2));
                 sheet.AddSelectionOption(new SingleFeatSelectionOption("ShifterFeat1", "Shifter feat", 1, (Feat ft) => ft.HasTrait(ShifterTrait) && ft.HasTrait(Trait.ClassFeat)));
-                sheet.AddAtLevel(3, delegate (CalculatedCharacterSheetValues values)
+                sheet.AddAtLevel(3, (CalculatedCharacterSheetValues values) =>
                 {
                     values.SetProficiency(Trait.Perception, Proficiency.Expert);
                     values.GrantFeat(FeatName.IncredibleInitiative);
                 });
-                sheet.AddAtLevel(5, delegate (CalculatedCharacterSheetValues values)
+                sheet.AddAtLevel(5, (CalculatedCharacterSheetValues values) =>
                 {
                     values.SetProficiency(Trait.Simple, Proficiency.Expert);
                     values.SetProficiency(Trait.Unarmed, Proficiency.Expert);
                 });
-                sheet.AddAtLevel(7, delegate (CalculatedCharacterSheetValues values)
+                sheet.AddAtLevel(7, (CalculatedCharacterSheetValues values) =>
                 {
                     values.SetProficiency(Trait.Fortitude, Proficiency.Master);
                     values.SetProficiency(ShifterTrait, Proficiency.Expert);
 
                     sheet.AddSelectionOption(new SingleFeatSelectionOption("ShifterForm2", "Additional form", 7, (Feat ft) => ft.HasTrait(FormTrait) && !ft.HasTrait(Trait.Dragon)));
                 });
-            }).WithOnCreature(delegate (Creature creature)
+            }).WithOnCreature((Creature creature) =>
             {
                 creature.UnarmedStrike = new Item(IllustrationName.Fist, "fist", Trait.Unarmed, Trait.Agile, Trait.Finesse, Trait.VersatileS).WithWeaponProperties(new WeaponProperties("1d4", DamageKind.Bludgeoning));
 
                 creature.AddQEffect(new("Bestial Instincts", "When you Shift, you briefly succumb to the insticts of your new form. Your unarmed attacks deal an additional " + (creature.Level >= 5 ? "2d6" : "1d6") + " damage until your next turn.")
                 {
-                    AfterYouTakeAction = async delegate (QEffect effect, CombatAction action)
+                    AfterYouTakeAction = async (QEffect effect, CombatAction action) =>
                     {
                         if (action.ActionId != ShiftID || effect.Owner.HasEffect(bestialInstictsID))
                         {
@@ -234,7 +234,7 @@ namespace Shifter
                         user.AddQEffect(new QEffect("Bestial Insticts", "You deal an additional " + (user.Level >= 5 ? "2d6" : "1d6") + " damage with unarmed attacks.", ExpirationCondition.ExpiresAtEndOfSourcesTurn, user, IllustrationName.Rage)
                         {
                             Id = bestialInstictsID,
-                            AddExtraStrikeDamage = delegate (CombatAction attack, Creature defender)
+                            AddExtraStrikeDamage = (CombatAction attack, Creature defender) =>
                             {
                                 if (attack.Item == null || !attack.Item.HasTrait(Trait.Unarmed))
                                 {
@@ -281,7 +281,7 @@ namespace Shifter
                 {
                     featUser.AddQEffect(new()
                     {
-                        ProvideMainAction = delegate (QEffect qEffect)
+                        ProvideMainAction = (QEffect qEffect) =>
                         {
                             if (qEffect.Owner.QEffects.Any(effect => effect.Name == "Berry Bush Form"))
                             {
@@ -293,18 +293,18 @@ namespace Shifter
                                 .WithActionCost(1)
                                 .WithSoundEffect(Dawnsbury.Audio.SfxName.AuraExpansion)
                                 .WithActionId(ShiftID)
-                                .WithEffectOnSelf(async delegate (CombatAction unstable, Creature user)
+                                .WithEffectOnSelf(async (CombatAction unstable, Creature user) =>
                                 {
                                     user.RemoveAllQEffects(effect => effect.Id == FormID);
                                     user.AddQEffect(new("Berry Bush Form", "Form of the berry bush", ExpirationCondition.Never, user, IllustrationName.HappyTree256)
                                     {
                                         Id = FormID,
                                         AdditionalUnarmedStrike = new Item(IllustrationName.Apple, "apple", Trait.Unarmed, Trait.Hammer, Trait.Propulsive).WithWeaponProperties(new WeaponProperties("1d4", DamageKind.Bludgeoning).WithRangeIncrement(4)),
-                                        ProvideMainAction = delegate (QEffect actionQEffect)
+                                        ProvideMainAction = (QEffect actionQEffect) =>
                                         {
                                             return (ActionPossibility)HealingBerry(actionQEffect.Owner);
                                         },
-                                        EndOfYourTurn = async delegate (QEffect effect, Creature user)
+                                        EndOfYourTurn = async (QEffect effect, Creature user) =>
                                         {
                                             foreach (var persistentBleed in user.QEffects.Where<QEffect>(effect => effect.Id == QEffectId.PersistentDamage && effect.Key == "PersistentDamage:Bleed"))
                                             {
@@ -325,7 +325,7 @@ namespace Shifter
                 {
                     featUser.AddQEffect(new()
                     {
-                        ProvideMainAction = delegate (QEffect qEffect)
+                        ProvideMainAction = (QEffect qEffect) =>
                         {
                             if (qEffect.Owner.QEffects.Any(effect => effect.Name == "Cat Form"))
                             {
@@ -337,7 +337,7 @@ namespace Shifter
                                 .WithActionCost(1)
                                 .WithSoundEffect(Dawnsbury.Audio.SfxName.AuraExpansion)
                                 .WithActionId(ShiftID)
-                                .WithEffectOnSelf(async delegate (CombatAction unstable, Creature user)
+                                .WithEffectOnSelf(async (CombatAction unstable, Creature user) =>
                                 {
                                     user.RemoveAllQEffects(effect => effect.Id == FormID);
                                     user.AddQEffect(new("Cat Form", "Form of the cat", ExpirationCondition.Never, user, IllustrationName.AnimalFormCat)
@@ -358,7 +358,7 @@ namespace Shifter
 
                                             return new Bonus(1, BonusType.Circumstance, "Cat Form", true);
                                         },
-                                        ProvideMainAction = delegate (QEffect actionQEffect)
+                                        ProvideMainAction = (QEffect actionQEffect) =>
                                         {
                                             return (ActionPossibility)IntoTheShadows(actionQEffect.Owner);
                                         }
@@ -393,7 +393,7 @@ namespace Shifter
                 {
                     featUser.AddQEffect(new()
                     {
-                        ProvideMainAction = delegate (QEffect qEffect)
+                        ProvideMainAction = (QEffect qEffect) =>
                         {
                             if (qEffect.Owner.QEffects.Any(effect => effect.Name == "Frog Form"))
                             {
@@ -405,7 +405,7 @@ namespace Shifter
                                 .WithActionCost(1)
                                 .WithSoundEffect(Dawnsbury.Audio.SfxName.AuraExpansion)
                                 .WithActionId(ShiftID)
-                                .WithEffectOnSelf(async delegate (CombatAction frogForm, Creature user)
+                                .WithEffectOnSelf(async (CombatAction frogForm, Creature user) =>
                                 {
                                     user.RemoveAllQEffects(effect => effect.Id == FormID);
 
@@ -429,7 +429,7 @@ namespace Shifter
                                             
                                             return new Bonus(1, BonusType.Circumstance, "Frog Form", true);
                                         },
-                                        ProvideActionIntoPossibilitySection = delegate (QEffect actionQEffect, PossibilitySection section)
+                                        ProvideActionIntoPossibilitySection = (QEffect actionQEffect, PossibilitySection section) =>
                                         {
                                             if (section.PossibilitySectionId != PossibilitySectionId.MainActions)
                                             {
@@ -477,7 +477,7 @@ namespace Shifter
                 {
                     featUser.AddQEffect(new()
                     {
-                        ProvideMainAction = delegate (QEffect qEffect)
+                        ProvideMainAction = (QEffect qEffect) =>
                         {
                             if (qEffect.Owner.QEffects.Any(effect => effect.Name == "Hyena Form"))
                             {
@@ -489,14 +489,14 @@ namespace Shifter
                                 .WithActionCost(1)
                                 .WithSoundEffect(Dawnsbury.Audio.SfxName.AuraExpansion)
                                 .WithActionId(ShiftID)
-                                .WithEffectOnSelf(async delegate (CombatAction unstable, Creature user)
+                                .WithEffectOnSelf(async (CombatAction unstable, Creature user) =>
                                 {
                                     user.RemoveAllQEffects(effect => effect.Id == FormID);
                                     user.AddQEffect(new("Hyena Form", "Form of the hyena", ExpirationCondition.Never, user, IllustrationName.BloodWolf256)
                                     {
                                         Id = FormID,
                                         AdditionalUnarmedStrike = new Item(IllustrationName.Jaws, "jaws", Trait.Unarmed, Trait.Pick).WithWeaponProperties(new WeaponProperties("1d8", DamageKind.Piercing).WithAdditionalPersistentDamage("1", DamageKind.Bleed)),
-                                        BeforeYourActiveRoll = async delegate (QEffect effect, CombatAction combatAction, Creature target)
+                                        BeforeYourActiveRoll = async (QEffect effect, CombatAction combatAction, Creature target) =>
                                         {
                                             if (combatAction.ActionId != ActionId.Demoralize)
                                             {
@@ -523,7 +523,7 @@ namespace Shifter
 
                                             return new Bonus(1, BonusType.Circumstance, "Hyena Form", true);
                                         },
-                                        ProvideMainAction = delegate (QEffect actionQEffect)
+                                        ProvideMainAction = (QEffect actionQEffect) =>
                                         {
                                             return (ActionPossibility)HyenaCackle(actionQEffect.Owner);
                                         }
@@ -541,7 +541,7 @@ namespace Shifter
                 {
                     featUser.AddQEffect(new()
                     {
-                        ProvideMainAction = delegate (QEffect qEffect)
+                        ProvideMainAction = (QEffect qEffect) =>
                         {
                             if (qEffect.Owner.QEffects.Any(effect => effect.Name == "Octopus Form"))
                             {
@@ -553,7 +553,7 @@ namespace Shifter
                                 .WithActionCost(1)
                                 .WithSoundEffect(Dawnsbury.Audio.SfxName.AuraExpansion)
                                 .WithActionId(ShiftID)
-                                .WithEffectOnSelf(async delegate (CombatAction unstable, Creature user)
+                                .WithEffectOnSelf(async (CombatAction unstable, Creature user) =>
                                 {
                                     user.RemoveAllQEffects(effect => effect.Id == FormID);
                                     user.AddQEffect(new("Octopus Form", "Form of the octopus", ExpirationCondition.Never, user, IllustrationName.OceansBalm)
@@ -574,7 +574,7 @@ namespace Shifter
 
                                             return new Bonus(1, BonusType.Circumstance, "Octopus Form", true);
                                         },
-                                        ProvideActionIntoPossibilitySection = delegate (QEffect actionQEffect, PossibilitySection section)
+                                        ProvideActionIntoPossibilitySection = (QEffect actionQEffect, PossibilitySection section) =>
                                         {
                                             if (section.PossibilitySectionId != PossibilitySectionId.MainActions)
                                             {
@@ -619,7 +619,7 @@ namespace Shifter
                 {
                     featUser.AddQEffect(new()
                     {
-                        ProvideMainAction = delegate (QEffect qEffect)
+                        ProvideMainAction = (QEffect qEffect) =>
                         {
                             if (qEffect.Owner.QEffects.Any(effect => effect.Name == "Tree Form"))
                             {
@@ -631,14 +631,14 @@ namespace Shifter
                                 .WithActionCost(1)
                                 .WithSoundEffect(Dawnsbury.Audio.SfxName.AuraExpansion)
                                 .WithActionId(ShiftID)
-                                .WithEffectOnSelf(async delegate (CombatAction unstable, Creature user)
+                                .WithEffectOnSelf(async (CombatAction unstable, Creature user) =>
                                 {
                                     user.RemoveAllQEffects(effect => effect.Id == FormID);
                                     user.AddQEffect(new("Tree Form", "Form of the tree", ExpirationCondition.Never, user, IllustrationName.Tree1)
                                     {
                                         Id = FormID,
                                         AdditionalUnarmedStrike = new Item(IllustrationName.Tree3, "slam", Trait.Unarmed, Trait.Club, Trait.Sweep).WithWeaponProperties(new WeaponProperties("1d8", DamageKind.Bludgeoning)),
-                                        ProvideActionIntoPossibilitySection = delegate (QEffect actionQEffect, PossibilitySection section)
+                                        ProvideActionIntoPossibilitySection = (QEffect actionQEffect, PossibilitySection section) =>
                                         {
                                             if (section.PossibilitySectionId != PossibilitySectionId.MainActions)
                                             {
@@ -669,7 +669,7 @@ namespace Shifter
                                                 }
                                             };
                                         },
-                                        ProvideMainAction = delegate (QEffect raiseArm)
+                                        ProvideMainAction = (QEffect raiseArm) =>
                                         {
                                             return (ActionPossibility)new CombatAction(user, IllustrationName.WoodenShieldBoss, "Raise Arms", [], "You raise your wooden arms to protect your body. You gain a +2 circumstance bonus to AC until your next turn or until you leave tree form.", Target.Self()) { ShortDescription = "Raise your wooden arms like shields." }
                                             .WithActionCost(1)
@@ -679,14 +679,14 @@ namespace Shifter
                                                 creature.AddQEffect(new("Arms Raised", "You have a +2 circumstance bonus to AC until your next turn or until you leave tree form.", ExpirationCondition.ExpiresAtStartOfYourTurn, creature, IllustrationName.WoodenShieldBoss)
                                                 {
                                                     Id = QEffectId.RaisingAShield,
-                                                    StateCheck = delegate (QEffect self)
+                                                    StateCheck = (QEffect self) =>
                                                     {
                                                         if (self.Owner.QEffects.All(effect => effect.Name != "Tree Form"))
                                                         {
                                                             self.ExpiresAt = ExpirationCondition.Immediately;
                                                         }
                                                     },
-                                                    BonusToDefenses = delegate (QEffect qEffect, CombatAction? attackAction, Defense targetDefense)
+                                                    BonusToDefenses = (QEffect qEffect, CombatAction? attackAction, Defense targetDefense) =>
                                                     {
                                                         if (targetDefense != Defense.AC)
                                                         {
@@ -711,7 +711,7 @@ namespace Shifter
             #region Level 1 Feats
 
             yield return new TrueFeat(animalFriendshipFeat, 1, "Animals recognize you as one of their own and instinctively pull back their attacks.", "You have a +1 circumstance bonus to AC and saving throws against animals.", [ShifterTrait, Trait.ClassFeat])
-                .WithPermanentQEffect("You have a +1 circumstance bonus to AC and saving throws against animals.", delegate (QEffect animalFriendshipQEffect)
+                .WithPermanentQEffect("You have a +1 circumstance bonus to AC and saving throws against animals.", (QEffect animalFriendshipQEffect) =>
                 {
                     animalFriendshipQEffect.BonusToDefenses = (QEffect effect, CombatAction? combatAction, Defense defense) =>
                     {
@@ -726,9 +726,9 @@ namespace Shifter
 
             yield return new TrueFeat(ferocityFeat, 1, "You're able to remain fighting through sheer adrenaline.", "Once per combat, if you would be reduced to 0 Hit Points, you can use your reaction to instead increase your wounded condition by 1 and regain a number of Hit Points equal to 3 times your level plus your Constitution modifier. This reaction has the Apex trait, so you must be in a form to use it and you lose your form immediately after.", [ShifterTrait, ApexTrait, Trait.ClassFeat])
                 .WithActionCost(-2)
-                .WithPermanentQEffect("Once per combat, you can increase your wounded condition and heal yourself instead of being reduced to 0 Hit Points.", delegate (QEffect ferocityEffect)
+                .WithPermanentQEffect("Once per combat, you can increase your wounded condition and heal yourself instead of being reduced to 0 Hit Points.", (QEffect ferocityEffect) =>
                 {
-                    ferocityEffect.YouAreDealtLethalDamage = async delegate (QEffect qEffect, Creature attacker, DamageStuff damageStuff, Creature you)
+                    ferocityEffect.YouAreDealtLethalDamage = async (QEffect qEffect, Creature attacker, DamageStuff damageStuff, Creature you) =>
                     {
                         if (!qEffect.Owner.QEffects.Any(effect => effect.Id == FormID || effect.Name == "Ferocity Immunity"))
                         {
@@ -764,14 +764,14 @@ namespace Shifter
 
             yield return new TrueFeat(suddenChargeFeat, 1, "With a quick sprint, you dash up to your foe and swing.", "Stride twice. If you end your movement within melee reach of at least one enemy, you can make a melee Strike against that enemy.", [ShifterTrait, Trait.Flourish, Trait.Open, Trait.ClassFeat])
                 .WithActionCost(2)
-                .WithPermanentQEffect("Stride twice, then make a melee Strike.", delegate (QEffect qf)
+                .WithPermanentQEffect("Stride twice, then make a melee Strike.", (QEffect qf) =>
                 {
-                    qf.ProvideMainAction = (QEffect qfSelf) => new ActionPossibility(new CombatAction(qfSelf.Owner, IllustrationName.FleetStep, "Sudden Charge", new Trait[3]
-                    {
+                    qf.ProvideMainAction = (QEffect qfSelf) => new ActionPossibility(new CombatAction(qfSelf.Owner, IllustrationName.FleetStep, "Sudden Charge",
+                    [
                         Trait.Flourish,
                         Trait.Open,
                         Trait.Move
-                    }, "Stride twice. If you end your movement within melee reach of at least one enemy, you can make a melee Strike against that enemy.", Target.Self()).WithActionCost(2).WithSoundEffect(SfxName.Footsteps).WithEffectOnSelf(async delegate (CombatAction action, Creature self)
+                    ], "Stride twice. If you end your movement within melee reach of at least one enemy, you can make a melee Strike against that enemy.", Target.Self()).WithActionCost(2).WithSoundEffect(SfxName.Footsteps).WithEffectOnSelf(async (CombatAction action, Creature self) =>
                     {
                         if (!(await self.StrideAsync("Choose where to Stride with Sudden Charge. (1/2)", allowStep: false, maximumFiveFeet: false, null, allowCancel: true)))
                         {
@@ -786,7 +786,7 @@ namespace Shifter
                 });
             
             yield return new TrueFeat(thickHideFeat, 1, "You skin is thick and leathery, providing you protection against attacks", "When you're unarmored, your hide gives you a +1 item bonus to AC with a Dexterity cap of +2. The item bonus to AC from Thick Hide is cumulative with armor potency runes on your explorer's clothing, mage armor, and bracers of armor.", [ShifterTrait, Trait.ClassFeat])
-                .WithPermanentQEffect("When you're unarmored, your hide gives you a +1 item bonus to AC with a Dexterity cap of +2.", delegate (QEffect thickHideQEffect)
+                .WithPermanentQEffect("When you're unarmored, your hide gives you a +1 item bonus to AC with a Dexterity cap of +2.", (QEffect thickHideQEffect) =>
                 {
                     thickHideQEffect.StateCheck = effect =>
                     {
@@ -829,13 +829,14 @@ namespace Shifter
             #region Level 2 Feats
 
             yield return new TrueFeat(additionalFormFeat, 2, "You've gained the ability to shift into another form.", "You gain an additional form.", [ShifterTrait, Trait.ClassFeat])
+                .WithMultipleSelection()
                 .WithOnSheet(sheet =>
                 {
                     sheet.AddSelectionOptionRightNow(new SingleFeatSelectionOption("AdditionalForm", "Additional Form", 2, feat => feat.HasTrait(FormTrait) && !feat.HasTrait(Trait.Dragon) && !feat.HasTrait(ShifterTrait)));
                 });
 
             yield return new TrueFeat(crushingGrabFeat, 2, "Like a powerful constrictor, you crush targets in your unyielding grasp.", "When you successfully Grapple a creature, you also deal bludgeoning damage to that creature equal to your Strength modifier.", [ShifterTrait, Trait.ClassFeat])
-                .WithOnCreature(delegate (Creature creature)
+                .WithOnCreature((Creature creature) =>
                 {
                     creature.AddQEffect(new QEffect("Crushing Grab", "When you Grapple a creature, you also deal " + creature.Abilities.Strength + " damage to it.")
                     {
@@ -848,7 +849,7 @@ namespace Shifter
                 {
                     creature.AddQEffect(new QEffect("Instictive Shift", "You are quickened during your first turn of combat. The additional action can only be used to Shift.")
                     {
-                        StartOfCombat = async delegate (QEffect instictiveShift)
+                        StartOfCombat = async (QEffect instictiveShift) =>
                         {
                             var user = instictiveShift.Owner;
 
@@ -863,9 +864,9 @@ namespace Shifter
 
             yield return new TrueFeat(animalRetributionFeat, 4, "When enemies hurt you, you intictively respond in kind.", "When you are critically hit by an adjacent creature, you can use your reaction to make an unarmed Strike against that creature.", [ShifterTrait, Trait.ClassFeat])
                 .WithActionCost(-2)
-                .WithPermanentQEffect("When you are critically hit by an adjacent creature, you can use your reaction to make an unarmed Strike against that creature.", delegate (QEffect animalRetributionQEffect)
+                .WithPermanentQEffect("When you are critically hit by an adjacent creature, you can use your reaction to make an unarmed Strike against that creature.", (QEffect animalRetributionQEffect) =>
                 {
-                    animalRetributionQEffect.AfterYouTakeDamage = async delegate (QEffect qEffect, int amount, DamageKind kind, CombatAction? combatAction, bool critical)
+                    animalRetributionQEffect.AfterYouTakeDamage = async (QEffect qEffect, int amount, DamageKind kind, CombatAction? combatAction, bool critical) =>
                     {
                         if (combatAction != null && combatAction.HasTrait(Trait.Attack) && combatAction.Owner.IsAdjacentTo(qEffect.Owner) && critical)
                         {
@@ -908,14 +909,14 @@ namespace Shifter
                         Target.Self(), spellLevel, null)
                     .WithSoundEffect(Dawnsbury.Audio.SfxName.MinorHealing)
                     .WithActionCost(1)
-                    .WithEffectOnEachTarget(async delegate (CombatAction spell, Creature self, Creature target, CheckResult result)
+                    .WithEffectOnEachTarget(async (CombatAction spell, Creature self, Creature target, CheckResult result) =>
                     {
                         await self.HealAsync($"{(spellLevel - 1) * 8}", spell);
                     });
             });
 
             yield return new TrueFeat(knitFleshFeat, 4, "Your expertise at changing your for allows you to heal wounds.", "You gain the {i}knit flesh{/i} focus spell and a focus pool of 1 Focus Point.", [ShifterTrait, Trait.ClassFeat])
-                .WithOnSheet(delegate (CalculatedCharacterSheetValues sheet)
+                .WithOnSheet((CalculatedCharacterSheetValues sheet) =>
                 {
                     sheet.SetProficiency(Trait.Spell, Proficiency.Trained);
                     sheet.AddFocusSpellAndFocusPoint(ShifterTrait, Ability.Wisdom, knitFleshSpell);
@@ -926,7 +927,7 @@ namespace Shifter
               {
                   creature.AddQEffect(new()
                   {
-                      AfterYouTakeAction = async delegate (QEffect effect, CombatAction action)
+                      AfterYouTakeAction = async (QEffect effect, CombatAction action) =>
                       {
                           if (action.ActionId != ShiftID || effect.Owner.QEffects.Any(effect => effect.Name == "Smokey Shift"))
                           {
@@ -972,7 +973,7 @@ namespace Shifter
 
                           effect.Owner.AddQEffect(new QEffect("Smokey Shift", "Your previous smoke cloud is still active. You can't Smokey Shift again until it dissipates.", ExpirationCondition.ExpiresAtStartOfSourcesTurn, effect.Owner, IllustrationName.ObscuringMist)
                           {
-                              WhenExpires = delegate (QEffect smokeyShiftCountdownEffect)
+                              WhenExpires = (QEffect smokeyShiftCountdownEffect) =>
                               {
                                   foreach (TileQEffect item in effects)
                                   {
@@ -984,7 +985,7 @@ namespace Shifter
                   });
               });
 
-            yield return new TrueFeat(selectPreyFeat, 4, "You single out an enemy to focus all of your attention on.", "Select one foe as your prey, which lasts until they are defeated, flee, or the encounter ends. \n\nAny time you hit that enemy with a weapon or unarmed attack, you gain a circumstance bonus to the Strike's damage equal to the number of damage dice your weapon or unarmed attack deals.\n\nIf you attack a creature other than your prey opponent, you take a circumstance penalty to damage equal to the number of damage dice your weapon or unarmed attack deals.", [ShifterTrait, Trait.ClassFeat])
+            yield return new TrueFeat(selectPreyFeat, 4, "You single out an enemy to focus all of your attention on.", "Select one foe as your prey, which lasts until they are defeated, flee, or the encounter ends. \n\nAny time you hit that enemy with a weapon or unarmed attack, you gain a circumstance bonus to the Strike's damage equal to the number of damage dice your weapon or unarmed attack deals.\n\nIf you attack a creature other than your prey opponent, you take a circumstance penalty to damage equal to the number of damage dice your weapon or unarmed attack deals.", [ShifterTrait, Trait.ClassFeat, Trait.UnaffectedByConcealment])
               .WithActionCost(1)
               .WithOnCreature((sheet, creature) =>
               {
@@ -1107,19 +1108,19 @@ namespace Shifter
                 {
                     featUser.AddQEffect(new()
                     {
-                        ProvideMainAction = delegate (QEffect qEffect)
+                        ProvideMainAction = (QEffect qEffect) =>
                         {
                             if (qEffect.Owner.QEffects.Any(effect => effect.Name == "Bird Form"))
                             {
                                 return null;
                             }
 
-                            return ((ActionPossibility)new CombatAction(qEffect.Owner, IllustrationName.Bird256, "Bird Form", [ShifterTrait, Trait.Morph, ShiftTrait], "", Target.Self())
+                            return ((ActionPossibility)new CombatAction(qEffect.Owner, IllustrationName.Bird256, "Bird Form", [ShifterTrait, Trait.Morph, ShiftTrait], "You Shift into bird form. While in bird form, you gain the following benefits:\n\n    1. You can make ranged wind buffet unarmed attacks that deal 1d6 bludgeoning damage, have the forceful and scatter 5 ft. traits, and have a range increment of 30 feet.\n\n    2. You gain a fly speed equal to your movement speed and have a +5-foot circumstance bonus to your speed.\n\n    3. You gain the Powerful Beat apex action.", Target.Self())
                             { ShortDescription = "You grow the wings of a bird." }
                                 .WithActionCost(1)
                                 .WithSoundEffect(Dawnsbury.Audio.SfxName.AuraExpansion)
                                 .WithActionId(ShiftID)
-                                .WithEffectOnSelf(async delegate (CombatAction unstable, Creature user)
+                                .WithEffectOnSelf(async (CombatAction unstable, Creature user) =>
                                 {
                                     user.RemoveAllQEffects(effect => effect.Id == FormID);
 
@@ -1133,7 +1134,7 @@ namespace Shifter
                                     {
                                         Id = FormID,
                                         AdditionalUnarmedStrike = new Item(IllustrationName.AngelicWings, "wind buffet", Trait.Unarmed, Trait.Club, Trait.Forceful).WithWeaponProperties(new WeaponProperties("1d6", DamageKind.Bludgeoning).WithRangeIncrement(6).WithAdditionalSplashDamage(2)),
-                                        ProvideMainAction = delegate (QEffect actionQEffect)
+                                        ProvideMainAction = (QEffect actionQEffect) =>
                                         {
                                             return (ActionPossibility)PowerfulBeat(actionQEffect.Owner);
                                         },
@@ -1233,14 +1234,14 @@ namespace Shifter
                 {
                     featUser.AddQEffect(new()
                     {
-                        ProvideMainAction = delegate (QEffect qEffect)
+                        ProvideMainAction = (QEffect qEffect) =>
                         {
                             if (qEffect.Owner.QEffects.Any(effect => effect.Name == "Scorpion Form"))
                             {
                                 return null;
                             }
 
-                            return ((ActionPossibility)new CombatAction(qEffect.Owner, IllustrationName.VenomousSnake256, "Scorpion Form", [ShifterTrait, Trait.Morph, ShiftTrait], "", Target.Self())
+                            return ((ActionPossibility)new CombatAction(qEffect.Owner, IllustrationName.VenomousSnake256, "Scorpion Form", [ShifterTrait, Trait.Morph, ShiftTrait], "You Shift into scorpion form. While in scorpion form, you gain the following benefits:\n\n    1. You can make stinger unarmed attacks that deal 1 piercing damage plus 1d4 poison damage and have the reach trait.\n\n    2. You gain the Attack of Opportunity reaction.\n\n    3. You gain the Inject Venom apex action.", Target.Self())
                             { ShortDescription = "You grow a scorpion's stinger filled with venom." }
                                 .WithActionCost(1)
                                 .WithSoundEffect(Dawnsbury.Audio.SfxName.AuraExpansion)
@@ -1257,7 +1258,7 @@ namespace Shifter
                                     {
                                         Id = FormID,
                                         AdditionalUnarmedStrike = new Item(IllustrationName.Spear, "stinger", Trait.Unarmed, Trait.Pick, Trait.Reach).WithWeaponProperties(new WeaponProperties("1d4", DamageKind.Poison).WithAdditionalDamage("1", DamageKind.Piercing)),
-                                        ProvideMainAction = delegate (QEffect actionQEffect)
+                                        ProvideMainAction = (QEffect actionQEffect) =>
                                         {
                                             return (ActionPossibility)InjectVenom(actionQEffect.Owner);
                                         },
@@ -1277,7 +1278,7 @@ namespace Shifter
                 {
                     creature.AddQEffect(new("Resilient Shift", "When you Shift, you can Demoralize an enemy. You don't take a penalty to this check for not sharing a language with the target.")
                     {
-                        AfterYouTakeAction = async delegate (QEffect effect, CombatAction action)
+                        AfterYouTakeAction = async (QEffect effect, CombatAction action) =>
                         {
                             if (action.ActionId != ShiftID || effect.UsedThisTurn)
                             {
@@ -1313,7 +1314,7 @@ namespace Shifter
             });
 
             yield return new TrueFeat(callAnimalFeat, 8, "Your ability to communicate with animals allows you to summon them to your side during battle.", "You gain the {i}call animal{/i} focus spell and a focus pool of 1 Focus Point.", [ShifterTrait, Trait.ClassFeat])
-                .WithOnSheet(delegate (CalculatedCharacterSheetValues sheet)
+                .WithOnSheet((CalculatedCharacterSheetValues sheet) =>
                 {
                     sheet.SetProficiency(Trait.Spell, Proficiency.Trained);
                     sheet.AddFocusSpellAndFocusPoint(ShifterTrait, Ability.Wisdom, callAnimalSpell);
@@ -1324,7 +1325,7 @@ namespace Shifter
                 {
                     creature.AddQEffect(new("Resilient Shift", $"When you Shift, you gain resistance {creature.Level / 2} to physical damage until your next turn.")
                     {
-                        AfterYouTakeAction = async delegate (QEffect effect, CombatAction action)
+                        AfterYouTakeAction = async (QEffect effect, CombatAction action) =>
                         {
                             if (action.ActionId != ShiftID || effect.UsedThisTurn)
                             {
@@ -1348,7 +1349,7 @@ namespace Shifter
                 {
                     creature.AddQEffect(new("Violent Shift", $"When you Shift for the first time each turn, you deal {creature.Level / 4}d4 slashing damage to adjacent enemies, with a basic Reflex save.")
                     {
-                        AfterYouTakeAction = async delegate (QEffect effect, CombatAction action)
+                        AfterYouTakeAction = async (QEffect effect, CombatAction action) =>
                         {
                             if (action.ActionId != ShiftID || effect.UsedThisTurn)
                             {
@@ -1400,7 +1401,8 @@ namespace Shifter
                 .WithActionCost(2)
                 .WithSoundEffect(Dawnsbury.Audio.SfxName.Fireball)
                 .WithSavingThrow(new(Defense.Reflex, target => user.ClassOrSpellDC()))
-                .WithEffectOnEachTarget(async delegate (CombatAction breathWeapon, Creature user, Creature target, CheckResult result)
+                .WithProjectileCone(VfxStyle.BasicProjectileCone(IllustrationName.BreathWeapon))
+                .WithEffectOnEachTarget(async (CombatAction breathWeapon, Creature user, Creature target, CheckResult result) =>
                 {
                     await CommonSpellEffects.DealBasicDamage(breathWeapon, user, target, result, $"{(user.Level + 1) / 2 + 1}d" + (user.Level >= 5 ? "8" : "6"), damageKind);
                 })
@@ -1433,7 +1435,8 @@ namespace Shifter
                 }, null))
                 .WithActionCost(2)
                 .WithSoundEffect(Dawnsbury.Audio.SfxName.Tremor)
-                .WithEffectOnChosenTargets(async delegate (CombatAction frogLeap, Creature user, ChosenTargets chosenTargets)
+                .WithProjectileCone(VfxStyle.BasicProjectileCone(IllustrationName.Tremor))
+                .WithEffectOnChosenTargets(async (CombatAction frogLeap, Creature user, ChosenTargets chosenTargets) =>
                 {
                     if (chosenTargets.ChosenTile == null)
                     {
@@ -1477,7 +1480,7 @@ namespace Shifter
             return new CombatAction(user, IllustrationName.FreshProduce, "Healing Berry", [ShifterTrait, ApexTrait, Trait.Manipulate, Trait.Healing], $"Feed an adjacent ally a berry infused with healing abilities. The ally regains {(user.Level + 1) / 2}d8+{((user.Level - 1) / 2 + 1) * 2} HP. They then become immune to Healing Berry for the rest of the encounter.\n\nStarting at 5th level, the target also immediately recovers from all sources of persistent damage.", Target.AdjacentFriendOrSelf().WithAdditionalConditionOnTargetCreature((user, target) => !target.QEffects.Any(effect => effect.Name == "Healing Berry Immunity") ? Usability.Usable : Usability.NotUsableOnThisCreature("Immune"))) { ShortDescription = $"Feed a berry to an adjacent ally to heal them for {(user.Level + 1) / 2}d8+{((user.Level - 1) / 2 + 1) * 2}." }
                     .WithActionCost(2)
                     .WithSoundEffect(Dawnsbury.Audio.SfxName.Healing)
-                    .WithEffectOnEachTarget(async delegate (CombatAction healingBerry, Creature user, Creature target, CheckResult result)
+                    .WithEffectOnEachTarget(async (CombatAction healingBerry, Creature user, Creature target, CheckResult result) =>
                     {
                         await target.HealAsync($"{(user.Level + 1) / 2}d8+{((user.Level - 1) / 2 + 1) * 2}", healingBerry);
 
@@ -1503,7 +1506,8 @@ namespace Shifter
                     .WithActionCost(2)
                     .WithSoundEffect(Dawnsbury.Audio.SfxName.Fear)
                     .WithSavingThrow(new(Defense.Will, target => user.ClassOrSpellDC()))
-                    .WithEffectOnEachTarget(async delegate (CombatAction hyenaCackle, Creature user, Creature target, CheckResult result)
+                    .WithProjectileCone(VfxStyle.BasicProjectileCone(IllustrationName.Demoralize))
+                    .WithEffectOnEachTarget(async (CombatAction hyenaCackle, Creature user, Creature target, CheckResult result) =>
                     {
                         if (result == CheckResult.Success)
                         {
@@ -1533,7 +1537,7 @@ namespace Shifter
                     .WithActionCost(2)
                     .WithSoundEffect(Dawnsbury.Audio.SfxName.ScratchFlesh)
                     .WithSavingThrow(new(Defense.Fortitude, target => user.ClassOrSpellDC()))
-                    .WithEffectOnEachTarget(async delegate (CombatAction action, Creature user, Creature target, CheckResult result)
+                    .WithEffectOnEachTarget(async (CombatAction action, Creature user, Creature target, CheckResult result) =>
                     {
                         await CommonSpellEffects.DealBasicPersistentDamage(target, result, $"{(user.Level + 1) / 2}d4", DamageKind.Poison);
 
@@ -1599,7 +1603,8 @@ namespace Shifter
                 .WithActionCost(2)
                 .WithSoundEffect(Dawnsbury.Audio.SfxName.Grease)
                 .WithSavingThrow(new(Defense.Reflex, target => user.ClassOrSpellDC()))
-                .WithEffectOnEachTarget(async delegate (CombatAction breathWeapon, Creature user, Creature target, CheckResult result)
+                .WithProjectileCone(VfxStyle.BasicProjectileCone(IllustrationName.Grease))
+                .WithEffectOnEachTarget(async (CombatAction breathWeapon, Creature user, Creature target, CheckResult result) =>
                 {
                     if (result == CheckResult.Success && target.QEffects.All((q) => q.Name != "Ink Shot" && q.Name != "Ink Shot (critical failure)"))
                     {
@@ -1696,7 +1701,7 @@ namespace Shifter
             return new CombatAction(user, IllustrationName.Sneak64, "Into the Shadows", [ShifterTrait, ApexTrait], "You dash away and hide, preparing an ambush. You Stride, Hide, then Sneak.", Target.Self()) { ShortDescription = "You Stride, Hide, then Sneak." }
                 .WithActionCost(2)
                 //.WithSoundEffect(Dawnsbury.Audio.SfxName.Hide)
-                .WithEffectOnEachTarget(async delegate (CombatAction combatAction, Creature user, Creature target, CheckResult result)
+                .WithEffectOnEachTarget(async (CombatAction combatAction, Creature user, Creature target, CheckResult result) =>
                 {
                     await user.StrideAsync("Choose where to Stride with Into the Shadows.", allowPass: true);
                     await user.Battle.GameLoop.StateCheck();
@@ -1724,14 +1729,14 @@ namespace Shifter
                     }
 
                     //Sneak
-                    var sneak = new CombatAction(user, IllustrationName.Sneak64, "Sneak", new Trait[2]
-                    {
+                    var sneak = new CombatAction(user, IllustrationName.Sneak64, "Sneak",
+                    [
                         Trait.Move,
                         Trait.Basic
-                    }, "Become Undetected, then Stride up to half your Speed.\n\nRoll a Stealth check. For each enemy creature you were Hidden from at the start of your Sneak:\n• If you wouldn't have cover or concealment from that creature in the target square, you become Observed by that creature, and you become Detected.\n• Otherwise, you compare your Stealth check result against the enemy creature's Perception DC:\n  • On a failure, you become Detected.\n  • On a critical failure, unless you're invisible, you also become Observed to that creature.", Target.Tile((Creature cr, Tile t) => t.LooksFreeTo(cr) && cr.DetectionStatus.IsHiddenToAnEnemy, (Creature cr, Tile t) => -2.14748365E+09f).WithPathfindingGuidelines((Creature cr) => new PathfindingDescription
+                    ], "Become Undetected, then Stride up to half your Speed.\n\nRoll a Stealth check. For each enemy creature you were Hidden from at the start of your Sneak:\n• If you wouldn't have cover or concealment from that creature in the target square, you become Observed by that creature, and you become Detected.\n• Otherwise, you compare your Stealth check result against the enemy creature's Perception DC:\n  • On a failure, you become Detected.\n  • On a critical failure, unless you're invisible, you also become Observed to that creature.", Target.Tile((Creature cr, Tile t) => t.LooksFreeTo(cr) && cr.DetectionStatus.IsHiddenToAnEnemy, (Creature cr, Tile t) => -2.14748365E+09f).WithPathfindingGuidelines((Creature cr) => new PathfindingDescription
                     {
                         Squares = cr.Speed / 2
-                    })).WithActionId(ActionId.Sneak).WithEffectOnChosenTargets(async delegate (CombatAction action, Creature self2, ChosenTargets targets)
+                    })).WithActionId(ActionId.Sneak).WithActionCost(0).WithEffectOnChosenTargets(async (CombatAction action, Creature self2, ChosenTargets targets) =>
                     {
                         bool flag5 = false;
                         int roll2 = R.NextD20();
@@ -1806,9 +1811,10 @@ namespace Shifter
         {
             return new CombatAction(user, IllustrationName.TimberSentinel, $"{range * 5}-Foot Log Roll", [ShifterTrait, ApexTrait], $"You grow a massive log and roll it through your enemies. Creatures in a {range * 5}-foot line take {(user.Level + 1) / 2 + 1}d" + (user.Level >= 5 ? "8" : "6") + " bludgeoning damage with a basic reflex save.\n\nThe damage increases by 1d6 at 3rd level and every odd level thereafter.\n\nAt 5th level, the damage dice insrease to d8s and you can make the line 60 feet long.", Target.Line(range)) { ShortDescription = $"You grow a massive log and roll it through your enemies to deal {(user.Level + 1) / 2 + 1}d" + (user.Level >= 5 ? "8" : "6") + " bludgeoning damage." }
                 .WithActionCost(2)
-                .WithSoundEffect(Dawnsbury.Audio.SfxName.Healing)
+                .WithSoundEffect(Dawnsbury.Audio.SfxName.ElementalBlastWood)
                 .WithSavingThrow(new(Defense.Reflex, character => user.ClassOrSpellDC()))
-                .WithEffectOnEachTarget(async delegate (CombatAction logRoll, Creature user, Creature target, CheckResult result)
+                .WithProjectileCone(VfxStyle.BasicProjectileCone(IllustrationName.TimberSentinel))
+                .WithEffectOnEachTarget(async (CombatAction logRoll, Creature user, Creature target, CheckResult result) =>
                 {
                     await CommonSpellEffects.DealBasicDamage(logRoll, user, target, result, $"{(user.Level + 1) / 2 + 1}d" + (user.Level >= 5 ? "8" : "6"), DamageKind.Bludgeoning);
                 })
@@ -1834,7 +1840,8 @@ namespace Shifter
                 }, null))
                 .WithActionCost(2)
                 .WithSoundEffect(Dawnsbury.Audio.SfxName.Tremor)
-                .WithEffectOnChosenTargets(async delegate (CombatAction powerfulBeat, Creature user, ChosenTargets chosenTargets)
+                .WithProjectileCone(VfxStyle.BasicProjectileCone(IllustrationName.FourWinds))
+                .WithEffectOnChosenTargets(async (CombatAction powerfulBeat, Creature user, ChosenTargets chosenTargets) =>
                 {
                     if (chosenTargets.ChosenTile == null)
                     {
@@ -1881,7 +1888,7 @@ namespace Shifter
                 {
                     featUser.AddQEffect(new()
                     {
-                        ProvideMainAction = delegate (QEffect qEffect)
+                        ProvideMainAction = (QEffect qEffect) =>
                         {
                             if (qEffect.Owner.QEffects.Any(effect => effect.Name == $"{damageKind} Dragon Form"))
                             {
@@ -1892,7 +1899,7 @@ namespace Shifter
                                 .WithActionCost(1)
                                 .WithSoundEffect(Dawnsbury.Audio.SfxName.AuraExpansion)
                                 .WithActionId(ShiftID)
-                                .WithEffectOnSelf(async delegate (CombatAction unstable, Creature user)
+                                .WithEffectOnSelf(async (CombatAction unstable, Creature user) =>
                                 {
                                     user.RemoveAllQEffects(effect => effect.Id == FormID);
                                     user.AddQEffect(new($"{damageKind} Dragon Form", "Form of the dragon", ExpirationCondition.Never, user, IllustrationName.DragonClaws)
@@ -1900,11 +1907,11 @@ namespace Shifter
                                         Id = FormID,
                                         AdditionalUnarmedStrike = new Item(IllustrationName.Jaws, "dragon jaws", Trait.Unarmed, Trait.Sword).WithWeaponProperties(new WeaponProperties("1d8", DamageKind.Piercing).WithAdditionalDamage("1", damageKind)),
                                         //AddExtraWeaponDamage = (item) => (item.Name == "dragon jaws" && item.HasTrait(Trait.Unarmed)) ? (DiceFormula.FromText($"{item.WeaponProperties.DamageDieCount}"), damageKind) : null,
-                                        StateCheck = delegate (QEffect self)
+                                        StateCheck = (QEffect self) =>
                                         {
                                             self.Owner.WeaknessAndResistance.AddResistance(damageKind, 2 + user.Level / 2);
                                         },
-                                        ProvideActionIntoPossibilitySection = delegate (QEffect actionQEffect, PossibilitySection section)
+                                        ProvideActionIntoPossibilitySection = (QEffect actionQEffect, PossibilitySection section) =>
                                         {
                                             if (section.PossibilitySectionId != PossibilitySectionId.MainActions)
                                             {
@@ -1924,7 +1931,7 @@ namespace Shifter
                                                 ((ActionPossibility)BreathWeapon(actionQEffect.Owner, damageKind, 6)).WithPossibilityGroup("Breath Weapon")
                                             };
 
-                                            return new SubmenuPossibility(IllustrationName.TimberSentinel, "Breath Weapon")
+                                            return new SubmenuPossibility(IllustrationName.BreathWeapon, "Breath Weapon")
                                             {
                                                 Subsections =
                                                 {
