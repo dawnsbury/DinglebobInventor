@@ -2160,9 +2160,11 @@ namespace Inventor
                     if (construct == null)
                     {
                         user.Actions.RevertExpendingOfResources(action.ActuallySpentActions, action);
+
+                        return;
                     }
 
-                    var explodeAction = new CombatAction(construct, action.Illustration, name, [damageKind == DamageKind.Acid ? Trait.Acid : damageKind == DamageKind.Cold ? Trait.Cold : damageKind == DamageKind.Electricity ? Trait.Electricity : Trait.Fire, InventorTrait, UnstableTrait], "", Target.SelfExcludingEmanation(radius))
+                    var explodeAction = new CombatAction(construct, action.Illustration, name, [damageKind == DamageKind.Acid ? Trait.Acid : damageKind == DamageKind.Cold ? Trait.Cold : damageKind == DamageKind.Electricity ? Trait.Electricity : Trait.Fire, InventorTrait, UnstableTrait, Trait.UsableEvenWhenUnconsciousOrParalyzed], "", Target.SelfExcludingEmanation(radius))
                         .WithActionCost(0)
                         .WithSoundEffect(SfxName.Fireball)
                         .WithSavingThrow(new(Defense.Reflex, inventor.ClassOrSpellDC()))
