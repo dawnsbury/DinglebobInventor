@@ -1449,14 +1449,14 @@ namespace Shifter
 
                     user.AddQEffect(leapingFlying);
 
-                    await user.MoveTo(chosenTargets.ChosenTile, frogLeap, new MovementStyle()
+                    await user.SingleTileMove(chosenTargets.ChosenTile, frogLeap, new MovementStyle()
                     {
                         Insubstantial = true,
                         Shifting = false,
                         ShortestPath = true,
                         MaximumSquares = 100
                     });
-
+                    
                     var damageEffect = new List<Tile>();
                     foreach (Edge item in user.Occupies.Neighbours.ToList())
                     {
