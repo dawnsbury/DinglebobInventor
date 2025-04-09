@@ -1718,7 +1718,7 @@ namespace Necromancer
         public static Creature CreateThrall(Creature user, int spellLevel, Guid? identifier = null)
         {
             var thrall = new Creature(GetThrallIllustration(user), $"{user}'s Thrall",
-                [Trait.Undead, Trait.Mindless, Trait.Summoned, Trait.Minion, ThrallTrait], -1, user.Perception, 4, new(Checks.DetermineDefenseDC(null, null, user, Defense.AC).TotalNumber, user.Defenses.GetBaseValue(Defense.Fortitude), user.Defenses.GetBaseValue(Defense.Reflex), user.Defenses.GetBaseValue(Defense.Will)), 1, new(0, 0, 0, 0, 0, 0), new())
+                [Trait.Undead, Trait.Mindless, Trait.Summoned, Trait.Minion, ThrallTrait, Trait.Incorporeal], -1, user.Perception, 4, new(Checks.DetermineDefenseDC(null, null, user, Defense.AC).TotalNumber, user.Defenses.GetBaseValue(Defense.Fortitude), user.Defenses.GetBaseValue(Defense.Reflex), user.Defenses.GetBaseValue(Defense.Will)), 1, new(0, 0, 0, 0, 0, 0), new())
             { InitiativeControlledBy = user }.WithEntersInitiativeOrder(false);
 
             thrall.AddQEffect(new(ExpirationCondition.ExpiresAtEndOfSourcesTurn)
