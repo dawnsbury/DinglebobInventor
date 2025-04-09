@@ -355,7 +355,7 @@ namespace Inventor
                 var overdriveAction =
                 creature.AddQEffect(new()
                 {
-                    ProvideActionIntoPossibilitySection = delegate (QEffect overdriveQEffect, PossibilitySection possibilitySection)
+                    ProvideActionIntoPossibilitySection = (QEffect overdriveQEffect, PossibilitySection possibilitySection) =>
                     {
                         var user = overdriveQEffect.Owner;
                         if ((possibilitySection.PossibilitySectionId != PossibilitySectionId.OtherManeuvers && user.HasEffect(OverdrivedID)) || (possibilitySection.PossibilitySectionId != PossibilitySectionId.MainActions && !user.HasEffect(OverdrivedID)) || user.HasEffect(OverdriveFailedID) || !user.Actions.ActionHistoryThisTurn.All((CombatAction action) => action.Name != "Overdrive"))
@@ -366,10 +366,12 @@ namespace Inventor
                         return (ActionPossibility)new CombatAction(user, IllustrationName.Swords, "Overdrive", [InventorTrait, Trait.Manipulate], "Temporarily cranking the gizmos on your body into overdrive, you try to add greater power to your attacks. Attempt a Crafting check that has a standard DC for your level." + S.FourDegreesOfSuccess("You deal an extra " + (creature.Abilities.Intelligence + (creature.Level >= 3 ? creature.Level >= 7 ? 2 : 1 : 0)) + " damage with strikes.", "You deal an extra " + (creature.Abilities.Intelligence / 2 + (creature.Level >= 3 ? creature.Level >= 7 ? 2 : 1 : 0)) + " damage with strikes.", null, "You can't attempt to Overdrive again this combat."), Target.Self()) { ShortDescription = "Attempt a Crafting check to add extra damage to your attacks for the combat." }
                         .WithActionCost(1)
                         .WithSoundEffect(SfxName.ElectricBlast)
-                        .WithEffectOnSelf(async delegate (CombatAction overdrive, Creature user)
+                        .WithActiveRollSpecification(new ActiveRollSpecification(TaggedChecks.SkillCheck(Skill.Crafting), Checks.FlatDC(GetLevelDC(user.Level))))
+                        .WithEffectOnEachTarget(async (CombatAction overdrive, Creature user, Creature _, CheckResult result) =>
                         {
-                            var result = CommonSpellEffects.RollCheck("Overdrive", new ActiveRollSpecification(Checks.SkillCheck(Skill.Crafting), Checks.FlatDC(GetLevelDC(user.Level))), user, user);
-
+                            //var result = CommonSpellEffects.RollCheck("Overdrive", TaggedChecks.SkillCheck(Skill.Crafting), Checks.FlatDC(GetLevelDC(user.Level))), user, user);
+                            //var result = CommonSpellEffects.RollCheck("Overdrive", new ActiveRollSpecification(TaggedChecks.SkillCheck(Skill.Crafting), Checks.FlatDC(GetLevelDC(user.Level))), user, user);
+                            
                             var companion = user.HasFeat(constructInnovationFeatName) ? GetConstructCompanion(user) : null;
 
                             if (result == CheckResult.CriticalSuccess)
@@ -909,7 +911,7 @@ namespace Inventor
 
                             user.AddQEffect(leapingFlying);
 
-                            await user.MoveTo(chosenTargets.ChosenTile, explosiveLeap, new MovementStyle()
+                            await user.SingleTileMove(chosenTargets.ChosenTile, explosiveLeap, new MovementStyle()
                             {
                                 Insubstantial = true,
                                 Shifting = false,
