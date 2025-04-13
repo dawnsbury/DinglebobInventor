@@ -26,6 +26,7 @@ using Dawnsbury.Core.Mechanics.Treasure;
 using Dawnsbury.Core.Possibilities;
 using Dawnsbury.Core.Roller;
 using Dawnsbury.Core.Tiles;
+using Dawnsbury.Display.Illustrations;
 using Dawnsbury.Modding;
 using Dawnsbury.ThirdParty.SteamApi;
 using Microsoft.Xna.Framework;
@@ -247,7 +248,7 @@ namespace Shifter
                                 var damageType = defender.WeaknessAndResistance.WhatDamageKindIsBestAgainstMe(list);
 
                                 return (additionalDamage, damageType);
-                            },
+                            }
                         }.WithExpirationAtStartOfSourcesTurn(user, 0));
                     }
                 });
@@ -274,7 +275,7 @@ namespace Shifter
 
             #region Shift Feats
 
-            yield return new TrueFeat(berryBushFormFeat, 1, "You grow fruits and berries along your arms.", "You can Shift into berry bush form. While in berry bush form, you gain the following benefits:\n\n    1. You can make ranged apple unarmed attacks that deal 1d4 bludgeoning damage and have the propulsive trait and a range increment of 20 feet.\n\n    2. At the end of your turn, you make an additional flat check to recover from any sources of persistent bleed damage with the DC reduced to 10.\n\n    3. You gain the Healing Berry apex action.", [FormTrait]) { }
+            yield return new TrueFeat(berryBushFormFeat, 1, "You grow fruits and berries along your arms.", "You can Shift into berry bush form. While in berry bush form, you gain the following benefits:\n\n    1. You can make ranged apple unarmed attacks that deal 1d4 bludgeoning damage and have the propulsive trait and a range increment of 20 feet.\n\n    2. At the end of your turn, you make an additional flat check to recover from any sources of persistent bleed damage, with the DC reduced to 10.\n\n    3. You gain the Healing Berry apex action.", [FormTrait]) { }
                 .WithIllustration(IllustrationName.HappyTree256)
                 .WithRulesBlockForCombatAction(HealingBerry)
                 .WithOnCreature((Creature featUser) =>
@@ -296,7 +297,7 @@ namespace Shifter
                                 .WithEffectOnSelf(async (CombatAction unstable, Creature user) =>
                                 {
                                     user.RemoveAllQEffects(effect => effect.Id == FormID);
-                                    user.AddQEffect(new("Berry Bush Form", "Form of the berry bush", ExpirationCondition.Never, user, IllustrationName.HappyTree256)
+                                    user.AddQEffect(new("Berry Bush Form", "At the end of your turn, you make an additional flat check to recover from any sources of persistent bleed damage, with the DC reduced to 10.", ExpirationCondition.Never, user, IllustrationName.HappyTree256)
                                     {
                                         Id = FormID,
                                         AdditionalUnarmedStrike = new Item(IllustrationName.Apple, "apple", Trait.Unarmed, Trait.Hammer, Trait.Propulsive).WithWeaponProperties(new WeaponProperties("1d4", DamageKind.Bludgeoning).WithRangeIncrement(4)),
@@ -318,9 +319,9 @@ namespace Shifter
                     });
                 });
 
-            yield return new TrueFeat(catFormFeat, 1, "You become lithe and nimble, like a cat.", "You can Shift into cat form. While in cat form, you gain the following benefits:\n\n    1. You can make claw unarmed attacks that deal 1d6 slashing damage and have the agile, backstabber, and finesse traits.\n\n    2. You have a +1 circumstance bonus on Stealth checks. This bonus is cumulative with Skilled Influence.\n\n    3. You gain the Into The Shadows apex action.", [FormTrait]) { }
+            yield return new TrueFeat(catFormFeat, 1, "You become lithe and nimble, like a cat.", "You can Shift into cat form. While in cat form, you gain the following benefits:\n\n    1. You can make claw unarmed attacks that deal 1d6 slashing damage and have the agile, backstabber, and finesse traits.\n\n    2. You have a +1 circumstance bonus on Stealth checks and a +5-foot circumstance bonus to your speed. This bonus is cumulative with Skilled Influence.\n\n    3. You gain the Pounce apex action.", [FormTrait]) { }
                 .WithIllustration(IllustrationName.AnimalFormCat)
-                .WithRulesBlockForCombatAction(IntoTheShadows)
+                .WithRulesBlockForCombatAction(Pounce)
                 .WithOnCreature((Creature featUser) =>
                 {
                     featUser.AddQEffect(new()
@@ -332,7 +333,7 @@ namespace Shifter
                                 return null;
                             }
                             
-                            return ((ActionPossibility)new CombatAction(qEffect.Owner, IllustrationName.AnimalFormCat, "Cat Form", [ShifterTrait, Trait.Morph, ShiftTrait], "You Shift into cat form. While in cat form, you gain the following benefits:\n\n    1. You can make claw unarmed attacks that deal 1d6 slashing damage and have the agile, backstabber, and finesse traits.\n\n    2. You have a +1 circumstance bonus on Stealth checks. This bonus is cumulative with Skilled Influence.\n\n    3. You gain the Into The Shadows apex action.", Target.Self())
+                            return ((ActionPossibility)new CombatAction(qEffect.Owner, IllustrationName.AnimalFormCat, "Cat Form", [ShifterTrait, Trait.Morph, ShiftTrait], "You Shift into cat form. While in cat form, you gain the following benefits:\n\n    1. You can make claw unarmed attacks that deal 1d6 slashing damage and have the agile, backstabber, and finesse traits.\n\n    2. You have a +1 circumstance bonus on Stealth checks and a +5-foot circumstance bonus to your speed. This bonus is cumulative with Skilled Influence.\n\n    3. You gain the Pounce apex action.", Target.Self())
                                 { ShortDescription = "You become lithe and nimble, like a cat." }
                                 .WithActionCost(1)
                                 .WithSoundEffect(Dawnsbury.Audio.SfxName.AuraExpansion)
@@ -340,7 +341,7 @@ namespace Shifter
                                 .WithEffectOnSelf(async (CombatAction unstable, Creature user) =>
                                 {
                                     user.RemoveAllQEffects(effect => effect.Id == FormID);
-                                    user.AddQEffect(new("Cat Form", "Form of the cat", ExpirationCondition.Never, user, IllustrationName.AnimalFormCat)
+                                    user.AddQEffect(new("Cat Form", "You have a +1 circumstance bonus on Stealth checks and a +5-foot circumstance bonus to your speed.", ExpirationCondition.Never, user, IllustrationName.AnimalFormCat)
                                     {
                                         Id = FormID,
                                         AdditionalUnarmedStrike = new Item(IllustrationName.DragonClaws, "claw", Trait.Unarmed, Trait.Knife, Trait.Agile, Trait.Backstabber, Trait.Finesse).WithWeaponProperties(new WeaponProperties("1d6", DamageKind.Slashing)),
@@ -358,9 +359,10 @@ namespace Shifter
 
                                             return new Bonus(1, BonusType.Circumstance, "Cat Form", true);
                                         },
+                                        BonusToAllSpeeds = (_) => new Bonus(1, BonusType.Circumstance, "Cat Form", true),
                                         ProvideMainAction = (QEffect actionQEffect) =>
                                         {
-                                            return (ActionPossibility)IntoTheShadows(actionQEffect.Owner);
+                                            return (ActionPossibility)Pounce(actionQEffect.Owner);
                                         }
                                     });
 
@@ -369,14 +371,17 @@ namespace Shifter
                     });
                 });
 
-            var coldDragonFormFeat = GenerateDragonFormFeat(DamageKind.Cold);
-            yield return coldDragonFormFeat;
+            yield return GenerateDragonFormFeat(DamageKind.Cold);
 
-            var fireDragonFormFeat = GenerateDragonFormFeat(DamageKind.Fire);
-            yield return fireDragonFormFeat;
+            yield return GenerateDragonFormFeat(DamageKind.Electricity);
 
-            var electricityDragonFormFeat = GenerateDragonFormFeat(DamageKind.Electricity);
-            yield return electricityDragonFormFeat;
+            yield return GenerateDragonFormFeat(DamageKind.Fire);
+
+            yield return GenerateDragonFormFeat(DamageKind.Mental);
+
+            yield return GenerateDragonFormFeat(DamageKind.Poison);
+
+            yield return GenerateDragonFormFeat(DamageKind.Sonic);
 
             yield return new TrueFeat(dragonFormFeat, 1, "You take on the aspects of a mighty dragon.", "You can Shift into dragon form. While in dragon form, you gain the following benefits:\n\n    1. You can make jaws unarmed attacks that deal 1d8 piercing damage plus 1 elemental damage based on your elemental type.\n\n    2. You have resistance to your elemental type equal to half your level.\n\n    3. You gain the Breathe Element apex action.", [FormTrait])
                 .WithIllustration(IllustrationName.FaerieDragon256)
@@ -416,7 +421,7 @@ namespace Shifter
                                     };
                                     user.AddQEffect(swimming);
 
-                                    user.AddQEffect(new("Frog Form", "Form of the frog", ExpirationCondition.Never, user, IllustrationName.MonitorLizard256)
+                                    user.AddQEffect(new("Frog Form", "You have a +1 circumstance bonus on saving throws against Poison effects and you gain a swim speed equal to your normal speed.", ExpirationCondition.Never, user, IllustrationName.MonitorLizard256)
                                     {
                                         Id = FormID,
                                         AdditionalUnarmedStrike = new Item(IllustrationName.Tongue, "tongue", Trait.Unarmed, Trait.Brawling, Trait.Reach, Trait.Finesse, Trait.Backswing).WithWeaponProperties(new WeaponProperties("1d6", DamageKind.Bludgeoning)),
@@ -492,7 +497,7 @@ namespace Shifter
                                 .WithEffectOnSelf(async (CombatAction unstable, Creature user) =>
                                 {
                                     user.RemoveAllQEffects(effect => effect.Id == FormID);
-                                    user.AddQEffect(new("Hyena Form", "Form of the hyena", ExpirationCondition.Never, user, IllustrationName.BloodWolf256)
+                                    user.AddQEffect(new("Hyena Form", "You have a +1 circumstance bonus on Intimidation checks to Demoralize, and you don't take a penalty for not sharing a language.", ExpirationCondition.Never, user, IllustrationName.BloodWolf256)
                                     {
                                         Id = FormID,
                                         AdditionalUnarmedStrike = new Item(IllustrationName.Jaws, "jaws", Trait.Unarmed, Trait.Pick).WithWeaponProperties(new WeaponProperties("1d8", DamageKind.Piercing).WithAdditionalPersistentDamage("1", DamageKind.Bleed)),
@@ -556,7 +561,7 @@ namespace Shifter
                                 .WithEffectOnSelf(async (CombatAction unstable, Creature user) =>
                                 {
                                     user.RemoveAllQEffects(effect => effect.Id == FormID);
-                                    user.AddQEffect(new("Octopus Form", "Form of the octopus", ExpirationCondition.Never, user, IllustrationName.OceansBalm)
+                                    user.AddQEffect(new("Octopus Form", "You have a +1 circumstance bonus on Athletics checks to Disarm, Grapple, Shove, and Trip.", ExpirationCondition.Never, user, IllustrationName.OceansBalm)
                                     {
                                         Id = FormID,
                                         AdditionalUnarmedStrike = new Item(IllustrationName.Club, "tentacle", Trait.Unarmed, Trait.Brawling, Trait.Trip, Trait.Agile).WithWeaponProperties(new WeaponProperties("1d6", DamageKind.Bludgeoning)),
@@ -634,7 +639,7 @@ namespace Shifter
                                 .WithEffectOnSelf(async (CombatAction unstable, Creature user) =>
                                 {
                                     user.RemoveAllQEffects(effect => effect.Id == FormID);
-                                    user.AddQEffect(new("Tree Form", "Form of the tree", ExpirationCondition.Never, user, IllustrationName.Tree1)
+                                    user.AddQEffect(new("Tree Form", "You can use an action to Raise your Arm, gaining a +2 circumstance bonus to AC until your next turn or until you leave tree form.", ExpirationCondition.Never, user, IllustrationName.Tree1)
                                     {
                                         Id = FormID,
                                         AdditionalUnarmedStrike = new Item(IllustrationName.Tree3, "slam", Trait.Unarmed, Trait.Club, Trait.Sweep).WithWeaponProperties(new WeaponProperties("1d8", DamageKind.Bludgeoning)),
@@ -1130,7 +1135,7 @@ namespace Shifter
                                         Name = "Flying from Bird Form"
                                     });
 
-                                    user.AddQEffect(new("Bird Form", "Form of the bird", ExpirationCondition.Never, user, IllustrationName.Bird256)
+                                    user.AddQEffect(new("Bird Form", "You have a fly speed equal to your movement speed and have a +5-foot circumstance bonus to your speed.", ExpirationCondition.Never, user, IllustrationName.Bird256)
                                     {
                                         Id = FormID,
                                         AdditionalUnarmedStrike = new Item(IllustrationName.AngelicWings, "wind buffet", Trait.Unarmed, Trait.Club, Trait.Forceful).WithWeaponProperties(new WeaponProperties("1d6", DamageKind.Bludgeoning).WithRangeIncrement(6).WithAdditionalSplashDamage(2)),
@@ -1254,7 +1259,7 @@ namespace Shifter
                                     aoo.Name = "Attack of Opportunity from Scorpion Form";
                                     user.AddQEffect(aoo);
 
-                                    user.AddQEffect(new("Scorpion Form", "Form of the scorpion", ExpirationCondition.Never, user, IllustrationName.GiantDragonfly)
+                                    user.AddQEffect(new("Scorpion Form", "You have the Attack of Opportunity reaction.", ExpirationCondition.Never, user, IllustrationName.GiantDragonfly)
                                     {
                                         Id = FormID,
                                         AdditionalUnarmedStrike = new Item(IllustrationName.Spear, "stinger", Trait.Unarmed, Trait.Pick, Trait.Reach).WithWeaponProperties(new WeaponProperties("1d4", DamageKind.Poison).WithAdditionalDamage("1", DamageKind.Piercing)),
@@ -1824,6 +1829,55 @@ namespace Shifter
                 });
         }
 
+        private static CombatAction Pounce(Creature user)
+        {
+            return new CombatAction(user, new SideBySideIllustration(IllustrationName.Jump, IllustrationName.DragonClaws), "Pounce", [ShifterTrait, ApexTrait], "You pounce like a cat. You Leap up to your speed then Strike. Your strike deals an additional 2d6 damage. On a success, the target is knocked prone.\n\nThe additional damage increases to 4d6 at 5th level, to 6d6 at 11th level, and to 8d6 at 17th level.", Target.Self()) { ShortDescription = "You pounce on an enemy." }
+                .WithActionCost(3)
+                .WithEffectOnEachTarget(async (CombatAction combatAction, Creature user, Creature target, CheckResult result) =>
+                {
+                    if (await user.Battle.GameLoop.FullCast(CommonCombatActions.Leap(user, user.Speed).WithActionCost(0)) == false)
+                    {
+                        user.Actions.RevertExpendingOfResources(3, combatAction);
+
+                        return;
+                    }
+                    
+                    user.AddQEffect(new()
+                    {
+                        Name = "Pounce",
+                        DoNotShowUpOverhead = true,
+                        AddExtraStrikeDamage = (CombatAction attack, Creature defender) =>
+                        {
+                            if (attack.Item == null)
+                            {
+                                return null;
+                            }
+
+                            var additionalDamage = DiceFormula.FromText(user.Level < 5 ? "2d6" : user.Level < 10 ? "4d6" : user.Level < 17 ? "6d6" : "8d6", "Pounce");
+
+                            var list = attack.Item.DetermineDamageKinds();
+                            var damageType = defender.WeaknessAndResistance.WhatDamageKindIsBestAgainstMe(list);
+
+                            return (additionalDamage, damageType);
+                        },
+                        BeforeYourActiveRoll = async (QEffect _, CombatAction action, Creature _) =>
+                        {
+                            action.StrikeModifiers.OnEachTarget = async (Creature _, Creature target, CheckResult result) =>
+                            {
+                                if (result >= CheckResult.Success)
+                                {
+                                    target.AddQEffect(QEffect.Prone());
+                                }
+                            };
+                        }
+                    });
+                    
+                    await CommonCombatActions.StrikeAdjacentCreature(user);
+
+                    user.RemoveAllQEffects((effect) => effect.Name == "Pounce" || effect.Id == FormID);
+                });
+        }
+
         private static CombatAction PowerfulBeat(Creature user)
         {
             return new CombatAction(user, IllustrationName.FourWinds, "Powerful Beat", [ShifterTrait, ApexTrait, Trait.Move], $"You launch yourself into the air with a beat of your wings. Creatures adjacent to you take {(user.Level + 1) / 2}d6 damage, with a basic Reflex save. You then Fly up to your speed.\n\nThe damage increases by 1d6 at 7th level and every odd level thereafter.",
@@ -1902,7 +1956,7 @@ namespace Shifter
                                 .WithEffectOnSelf(async (CombatAction unstable, Creature user) =>
                                 {
                                     user.RemoveAllQEffects(effect => effect.Id == FormID);
-                                    user.AddQEffect(new($"{damageKind} Dragon Form", "Form of the dragon", ExpirationCondition.Never, user, IllustrationName.DragonClaws)
+                                    user.AddQEffect(new($"{damageKind} Dragon Form", $"You have resistance {2 + user.Level / 2} to {damageKind.ToString().ToLower()}.", ExpirationCondition.Never, user, IllustrationName.DragonClaws)
                                     {
                                         Id = FormID,
                                         AdditionalUnarmedStrike = new Item(IllustrationName.Jaws, "dragon jaws", Trait.Unarmed, Trait.Sword).WithWeaponProperties(new WeaponProperties("1d8", DamageKind.Piercing).WithAdditionalDamage("1", damageKind)),
