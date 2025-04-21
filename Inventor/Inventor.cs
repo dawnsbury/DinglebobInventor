@@ -252,23 +252,23 @@ namespace Inventor
                 armorInnovationFeat,
                 constructInnovationFeat,
                 weaponInnovationFeat
-            }).WithOnSheet(delegate (CalculatedCharacterSheetValues sheet)
+            }).WithOnSheet((CalculatedCharacterSheetValues sheet) =>
             {
                 sheet.GrantFeat(FeatName.Crafting);
                 sheet.GrantFeat(FeatName.ShieldBlock);
                 sheet.AddSelectionOption(new SingleFeatSelectionOption("InventorFeat1", "Inventor feat", 1, (Feat ft) => ft.HasTrait(InventorTrait) && !ft.HasTrait(modificationTrait)));
-                sheet.AddAtLevel(3, delegate (CalculatedCharacterSheetValues values)
+                sheet.AddAtLevel(3, (CalculatedCharacterSheetValues values) =>
                 {
                     sheet.GrantFeat(FeatName.ExpertCrafting);
                 });
-                sheet.AddAtLevel(5, delegate (CalculatedCharacterSheetValues values)
+                sheet.AddAtLevel(5, (CalculatedCharacterSheetValues values) =>
                 {
                     values.SetProficiency(Trait.Unarmed, Proficiency.Expert);
                     values.SetProficiency(Trait.Simple, Proficiency.Expert);
                     values.SetProficiency(Trait.Martial, Proficiency.Expert);
                     values.SetProficiency(Trait.Reflex, Proficiency.Expert);
                 });
-                sheet.AddAtLevel(7, delegate (CalculatedCharacterSheetValues values)
+                sheet.AddAtLevel(7, (CalculatedCharacterSheetValues values) =>
                 {
                     sheet.GrantFeat(FeatName.MasterCrafting);
 
@@ -285,11 +285,11 @@ namespace Inventor
                         values.AddSelectionOption(new SingleFeatSelectionOption("WeaponBreakthroughInnovation", "Breakthrough Weapon Innovation", 7, (Feat ft) => ft.HasTrait(weaponTrait) && (ft.HasTrait(breakthroughModificationTrait) || ft.HasTrait(initialModificationTrait))));
                     }
                 });
-            }).WithOnCreature(delegate (Creature creature)
+            }).WithOnCreature((Creature creature) =>
             {
                 creature.AddQEffect(new()
                 {
-                    ProvideActionIntoPossibilitySection = delegate (QEffect explodeQEffect, PossibilitySection possibilitySection)
+                    ProvideActionIntoPossibilitySection = (QEffect explodeQEffect, PossibilitySection possibilitySection) =>
                     {
                         if (possibilitySection.PossibilitySectionId != PossibilitySectionId.MainActions)
                         {
