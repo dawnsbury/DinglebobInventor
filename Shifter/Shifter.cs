@@ -53,6 +53,8 @@ namespace Shifter
 
         public static IEnumerable<Feat> LoadAll()
         {
+            ClassSelectionFeat.KeyAbilities[ShifterTrait] = [Ability.Dexterity, Ability.Strength];
+
             var bestialInstictsID = ModManager.RegisterEnumMember<QEffectId>("BestialInstictsID");
             var shifterFeat = ModManager.RegisterFeatName("ShifterFeat", "Shifter");
 
@@ -92,11 +94,9 @@ namespace Shifter
             var thickHideFeat = ModManager.RegisterFeatName("ShifterThickHide", "Thick Hide");
             var violentShiftFeat = ModManager.RegisterFeatName("ShifterViolentShift", "Violent Shift");
 
-            var advancedShiftingFeat = ModManager.RegisterFeatName("ShifterAdvancedShifting", "Advanced Shifting");
             var apexFormsFeat = ModManager.RegisterFeatName("ShifterApexForms", "Apex Forms");
             var basicInstictsFeat = ModManager.RegisterFeatName("ShifterBasicInstincts", "Basic Instincts");
             var shifterResiliencyFeat = ModManager.RegisterFeatName("ShifterShifterResiliency", "Shifter Resiliency");
-            var basicShiftingFeat = ModManager.RegisterFeatName("ShifterBasicShifting", "Basic Shifting");
 
             #region Class Description Strings
 
@@ -1435,7 +1435,7 @@ namespace Shifter
 
                             foreach (Creature target in enemiesInRange)
                             {
-                                CheckResult checkResult = CommonSpellEffects.RollSavingThrow(target, action, Defense.Reflex, user.ClassOrSpellDC());
+                                CheckResult checkResult = CommonSpellEffects.RollSavingThrow(target, action, Defense.Reflex, user.ClassDC(ShifterTrait));
                                 await CommonSpellEffects.DealBasicDamage(action, user, target, checkResult, $"{user.Level / 4}d4", DamageKind.Slashing);
                             }
 
@@ -1455,6 +1455,7 @@ namespace Shifter
                 {
                     sheet.AddSelectionOptionRightNow(new SingleFeatSelectionOption("ShifterDedicationForms1", "Shifter form", 1, (Feat ft) => ft.HasTrait(FormTrait) && !ft.HasTrait(Trait.Dragon) && !ft.HasTrait(ShifterTrait)));
                     sheet.TrainInThisOrSubstitute(Skill.Nature);
+                    sheet.SetProficiency(ShifterTrait, Proficiency.Trained);
                 }).WithOnCreature((Creature creature) =>
                 {
                     if (creature.UnarmedStrike.Name == "fist")
@@ -1472,25 +1473,14 @@ namespace Shifter
                     });
                 });
 
-            yield return new TrueFeat(basicShiftingFeat, 4, null, "You gain a 1st- or 2nd-level shifter feat.", [/*Trait.ClassFeat*/ShifterArchetypeTrait, Trait.General])
-                .WithAvailableAsArchetypeFeat(ShifterTrait)
-                .WithOnSheet((CalculatedCharacterSheetValues sheet) =>
-                {
-                    sheet.AddSelectionOptionRightNow(new SingleFeatSelectionOption("BasicShifting", "Shifter feat", 2, (Feat ft) => ft.HasTrait(ShifterTrait) && ft.HasTrait(Trait.ClassFeat)));
-                });
+            foreach (var feat in ArchetypeFeats.CreateBasicAndAdvancedMulticlassFeatGrantingArchetypeFeats(ShifterTrait, "Shifting"))
+            {
+                yield return feat;
+            }
 
             yield return MulticlassArchetypeFeats.CreateResiliencyFeat(ShifterTrait, 8);
 
-            yield return new TrueFeat(advancedShiftingFeat, 6, null, "You gain one shifter feat. For the purpose of meeting its prerequisites, your shifter level is equal to half your character level.\n\n{b}Special{/b} You can select this feat more than once. Each time you select it, you gain another shifter feat.", [Trait.ClassFeat, ShifterArchetypeTrait, Trait.Monk, Trait.Fighter, Trait.Barbarian])
-                .WithMultipleSelection()
-                .WithAvailableAsArchetypeFeat(ShifterTrait)
-                .WithPrerequisite(basicShiftingFeat, "Basic Shifting")
-                .WithOnSheet((CalculatedCharacterSheetValues sheet) =>
-                {
-                    sheet.AddSelectionOptionRightNow(new SingleFeatSelectionOption($"AdvancedShifting{sheet.CurrentLevel}", "Shifter feat", sheet.CurrentLevel / 2, (Feat ft) => ft.HasTrait(ShifterTrait) && ft.HasTrait(Trait.ClassFeat)));
-                });
-
-            yield return new TrueFeat(apexFormsFeat, 6, "You're becoming more capable of controlling your forms.", "You gain an additional form and you can use your forms' Apex actions.", [Trait.ClassFeat, ShifterArchetypeTrait, Trait.Monk, Trait.Fighter, Trait.Barbarian])
+            yield return new TrueFeat(apexFormsFeat, 6, "You're becoming more capable of controlling your forms.", "You gain an additional form and you can use your forms' Apex actions.", [Trait.ClassFeat, ShifterArchetypeTrait])
                 .WithAvailableAsArchetypeFeat(ShifterTrait)
                 .WithOnSheet((CalculatedCharacterSheetValues sheet) =>
                 {
@@ -1518,7 +1508,7 @@ namespace Shifter
             return new CombatAction(user, IllustrationName.BreathWeapon, $"Breathe {damageKind} {range * 5} feet", [ShifterTrait, ApexTrait, damageKind == DamageKind.Acid ? Trait.Acid : damageKind == DamageKind.Cold ? Trait.Cold : damageKind == DamageKind.Electricity ? Trait.Electricity : Trait.Fire], $"Deal {(user.Level + 1) / 2 + 1}d" + (user.Level >= 5 ? "8" : "6") + $" {damageKind} damage to all creatures in a {range * 5}-foot cone with a basic reflex save.\n\nThe damage increases by 1d6 at 3rd level and every odd level thereafter.\n\nAt 5th level, the damage dice insrease to d8s and you can make the cone 30 feet long.", Target.Cone(range)) { ShortDescription = $"Deal {(user.Level + 1) / 2 + 1}d" + (user.Level >= 5 ? "8" : "6") + $" {damageKind} damage to all creatures in a {range * 5}-foot cone." }
                 .WithActionCost(2)
                 .WithSoundEffect(Dawnsbury.Audio.SfxName.Fireball)
-                .WithSavingThrow(new(Defense.Reflex, target => user.ClassOrSpellDC()))
+                .WithSavingThrow(new(Defense.Reflex, target => user.ClassDC(ShifterTrait)))
                 .WithProjectileCone(VfxStyle.BasicProjectileCone(IllustrationName.BreathWeapon))
                 .WithEffectOnEachTarget(async (CombatAction breathWeapon, Creature user, Creature target, CheckResult result) =>
                 {
@@ -1585,7 +1575,7 @@ namespace Shifter
 
                     foreach (Creature target2 in user.Battle.AllCreatures.Where(cr => cr.DistanceTo(user) <= area && cr != user).ToList<Creature>())
                     {
-                        CheckResult checkResult = CommonSpellEffects.RollSavingThrow(target2, frogLeap, Defense.Reflex, user.ClassOrSpellDC());
+                        CheckResult checkResult = CommonSpellEffects.RollSavingThrow(target2, frogLeap, Defense.Reflex, user.ClassDC(ShifterTrait));
                         await CommonSpellEffects.DealBasicDamage(frogLeap, user, target2, checkResult, $"{(user.Level + 1) / 2}d" + (user.Level >= 5 ? "6" : "4"), DamageKind.Bludgeoning);
                     }
 
@@ -1623,7 +1613,7 @@ namespace Shifter
             return new CombatAction(user, IllustrationName.Demoralize, "Hyena Cackle", [ShifterTrait, ApexTrait, Trait.Mental, Trait.Fear, Trait.Auditory], "You cackle and laugh like a hyena, instilling fear in your enemies. All enemies within 30 feet of you must make a Will save or become frightened 1 (frightened 2 on a critical failure).\n\nStarting at 5th level, creatures that succeed on their saving throw have a -1 status penalty to their attack rolls until the end of their next turn.", Target.Emanation(6).WithIncludeOnlyIf((areaTarget, target) => !user.FriendOf(target))) { ShortDescription = "All enemies within 30 feet of you must make a Will save or become frightened." }
                     .WithActionCost(2)
                     .WithSoundEffect(Dawnsbury.Audio.SfxName.Fear)
-                    .WithSavingThrow(new(Defense.Will, target => user.ClassOrSpellDC()))
+                    .WithSavingThrow(new(Defense.Will, target => user.ClassDC(ShifterTrait)))
                     .WithProjectileCone(VfxStyle.BasicProjectileCone(IllustrationName.Demoralize))
                     .WithEffectOnEachTarget(async (CombatAction hyenaCackle, Creature user, Creature target, CheckResult result) =>
                     {
@@ -1654,7 +1644,7 @@ namespace Shifter
             return new CombatAction(user, IllustrationName.BloodVendetta, "Inject Venom", [ShifterTrait, ApexTrait], $"You inject potent venom into an enemy within 10 feet of you. The target takes {(user.Level + 1) / 2}d4 persistent poison damage, with a basic Fortitude save. The target also becomes sickened based on the result of its save.\n\n" + "{b}Success{/b}. The target becomes sickened 1.\n{b}Failure{/b}. The target becomes sickened 2.\n{b}Critical Failure.{/b} The target becomes sickened 3.\n\nRegardless of the target's result, it becomes inured to the venom. Its future saves against your inject venom improve by one step for the purpose of determining its sickened value.", Target.ReachWithWeaponOfTrait(Trait.Reach)) { ShortDescription = $"You inject potent venom into an enemy within 10 feet of you to sicken it and deal {(user.Level + 1) / 2}d4 persistent poison damage." }
                     .WithActionCost(2)
                     .WithSoundEffect(Dawnsbury.Audio.SfxName.ScratchFlesh)
-                    .WithSavingThrow(new(Defense.Fortitude, target => user.ClassOrSpellDC()))
+                    .WithSavingThrow(new(Defense.Fortitude, target => user.ClassDC(ShifterTrait)))
                     .WithEffectOnEachTarget(async (CombatAction action, Creature user, Creature target, CheckResult result) =>
                     {
                         await CommonSpellEffects.DealBasicPersistentDamage(target, result, $"{(user.Level + 1) / 2}d4", DamageKind.Poison);
@@ -1665,15 +1655,15 @@ namespace Shifter
 
                         if (result == CheckResult.Success && !inured)
                         {
-                            sickened = QEffect.Sickened(1, user.ClassOrSpellDC());
+                            sickened = QEffect.Sickened(1, user.ClassDC(ShifterTrait));
                         }
                         else if (result == CheckResult.Failure)
                         {
-                            sickened = QEffect.Sickened(inured ? 1 : 2, user.ClassOrSpellDC());
+                            sickened = QEffect.Sickened(inured ? 1 : 2, user.ClassDC(ShifterTrait));
                         }
                         else if (result == CheckResult.CriticalFailure)
                         {
-                            sickened = QEffect.Sickened(inured ? 2 : 3, user.ClassOrSpellDC());
+                            sickened = QEffect.Sickened(inured ? 2 : 3, user.ClassDC(ShifterTrait));
                         }
 
                         if (sickened != null)
@@ -1681,7 +1671,7 @@ namespace Shifter
                             sickened.ProvideContextualAction = (QEffect qf) =>
                             {
                                 QEffect qf3 = qf;
-                                return new ActionPossibility(new CombatAction(qf3.Owner, IllustrationName.Retch, "Retch", [], $"Make a fortitude save against DC {user.ClassOrSpellDC()}. On a success, the sickened value is reduced by 1 (or by 2 on a critical success).", Target.Self((Creature user, AI ai) => user.Actions.ActionHistoryThisTurn.FirstOrDefault((CombatAction ac) => ac.ActionId == ActionId.Retch) != null ? ai.GainBonusToAC(1) * 1.5f : ai.GainBonusToAC(1))).WithActionId(ActionId.Retch).WithSavingThrow(new SavingThrow(Defense.Fortitude, user.ClassOrSpellDC())).WithEffectOnEachTarget(async (CombatAction spell, Creature a, Creature cr, CheckResult ck) =>
+                                return new ActionPossibility(new CombatAction(qf3.Owner, IllustrationName.Retch, "Retch", [], $"Make a fortitude save against DC {user.ClassDC(ShifterTrait)}. On a success, the sickened value is reduced by 1 (or by 2 on a critical success).", Target.Self((Creature user, AI ai) => user.Actions.ActionHistoryThisTurn.FirstOrDefault((CombatAction ac) => ac.ActionId == ActionId.Retch) != null ? ai.GainBonusToAC(1) * 1.5f : ai.GainBonusToAC(1))).WithActionId(ActionId.Retch).WithSavingThrow(new SavingThrow(Defense.Fortitude, user.ClassDC(ShifterTrait))).WithEffectOnEachTarget(async (CombatAction spell, Creature a, Creature cr, CheckResult ck) =>
                                 {
                                     if (ck >= CheckResult.Success)
                                     {
@@ -1720,7 +1710,7 @@ namespace Shifter
             return new CombatAction(user, IllustrationName.Grease, $"{area * 5}-Foot Ink Shot", [ShifterTrait, ApexTrait, Trait.Manipulate], $"Fire a blast of ink in a {area * 5}-foot burst within {range * 5} feet. Creatures in the area must make a Fortitude save." + "\n\n{b}Success{/b}. The creature is dazzled until your next turn.\n{b}Failure{/b}. The creature is dazzled for the rest of the encounter.\n{b}Critical Failure.{/b} The creature is blinded for the rest of the encounter.\n\nTargets can end the condition early by using an interact action to wipe their eyes.\n\nAt 5th level, the range increases to 60 feet and you can shoot ink in a 15-foot burst.", Target.Burst(range, area)) { ShortDescription = $"Fire a blast of ink in a {area * 5}-foot burst within {range * 5} feet to dazzle enemies." }
                 .WithActionCost(2)
                 .WithSoundEffect(Dawnsbury.Audio.SfxName.Grease)
-                .WithSavingThrow(new(Defense.Reflex, target => user.ClassOrSpellDC()))
+                .WithSavingThrow(new(Defense.Reflex, target => user.ClassDC(ShifterTrait)))
                 .WithProjectileCone(VfxStyle.BasicProjectileCone(IllustrationName.Grease))
                 .WithEffectOnEachTarget(async (CombatAction breathWeapon, Creature user, Creature target, CheckResult result) =>
                 {
@@ -1930,7 +1920,7 @@ namespace Shifter
             return new CombatAction(user, IllustrationName.TimberSentinel, $"{range * 5}-Foot Log Roll", [ShifterTrait, ApexTrait], $"You grow a massive log and roll it through your enemies. Creatures in a {range * 5}-foot line take {(user.Level + 1) / 2 + 1}d" + (user.Level >= 5 ? "8" : "6") + " bludgeoning damage with a basic reflex save.\n\nThe damage increases by 1d6 at 3rd level and every odd level thereafter.\n\nAt 5th level, the damage dice insrease to d8s and you can make the line 60 feet long.", Target.Line(range)) { ShortDescription = $"You grow a massive log and roll it through your enemies to deal {(user.Level + 1) / 2 + 1}d" + (user.Level >= 5 ? "8" : "6") + " bludgeoning damage." }
                 .WithActionCost(2)
                 .WithSoundEffect(Dawnsbury.Audio.SfxName.ElementalBlastWood)
-                .WithSavingThrow(new(Defense.Reflex, character => user.ClassOrSpellDC()))
+                .WithSavingThrow(new(Defense.Reflex, character => user.ClassDC(ShifterTrait)))
                 .WithProjectileCone(VfxStyle.BasicProjectileCone(IllustrationName.TimberSentinel))
                 .WithEffectOnEachTarget(async (CombatAction logRoll, Creature user, Creature target, CheckResult result) =>
                 {
@@ -2025,7 +2015,7 @@ namespace Shifter
 
                     foreach (Creature target2 in user.Battle.AllCreatures.Where(cr => cr.DistanceTo(user) <= 1 && cr != user).ToList<Creature>())
                     {
-                        CheckResult checkResult = CommonSpellEffects.RollSavingThrow(target2, powerfulBeat, Defense.Reflex, user.ClassOrSpellDC());
+                        CheckResult checkResult = CommonSpellEffects.RollSavingThrow(target2, powerfulBeat, Defense.Reflex, user.ClassDC(ShifterTrait));
                         await CommonSpellEffects.DealBasicDamage(powerfulBeat, user, target2, checkResult, $"{(user.Level + 1) / 2}d6", DamageKind.Bludgeoning);
                     }
 
