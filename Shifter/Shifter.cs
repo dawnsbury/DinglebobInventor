@@ -8,6 +8,8 @@ using Dawnsbury.Core.CharacterBuilder.AbilityScores;
 using Dawnsbury.Core.CharacterBuilder.Feats;
 using Dawnsbury.Core.CharacterBuilder.FeatsDb.Common;
 using Dawnsbury.Core.CharacterBuilder.FeatsDb.Spellbook;
+using Dawnsbury.Core.CharacterBuilder.FeatsDb.TrueFeatDb.Archetypes;
+using Dawnsbury.Core.CharacterBuilder.FeatsDb.TrueFeatDb.Archetypes.Multiclass;
 using Dawnsbury.Core.CharacterBuilder.Selections.Options;
 using Dawnsbury.Core.CharacterBuilder.Spellcasting;
 using Dawnsbury.Core.CombatActions;
@@ -42,6 +44,8 @@ namespace Shifter
         public readonly static Trait ApexTrait = ModManager.RegisterTrait("Apex");
 
         public readonly static Trait ShifterTrait = ModManager.RegisterTrait("Shifter");
+
+        public readonly static Trait ShifterArchetypeTrait = ModManager.RegisterTrait("ShifterArchetype", new("Shifter", true));
 
         public readonly static Trait FormTrait = ModManager.RegisterTrait("Form");
 
@@ -87,7 +91,13 @@ namespace Shifter
             var terrifyingShiftFeat = ModManager.RegisterFeatName("ShifterTerrifyingShift", "Terrifying Shift");
             var thickHideFeat = ModManager.RegisterFeatName("ShifterThickHide", "Thick Hide");
             var violentShiftFeat = ModManager.RegisterFeatName("ShifterViolentShift", "Violent Shift");
-            
+
+            var advancedShiftingFeat = ModManager.RegisterFeatName("ShifterAdvancedShifting", "Advanced Shifting");
+            var apexFormsFeat = ModManager.RegisterFeatName("ShifterApexForms", "Apex Forms");
+            var basicInstictsFeat = ModManager.RegisterFeatName("ShifterBasicInstincts", "Basic Instincts");
+            var shifterResiliencyFeat = ModManager.RegisterFeatName("ShifterShifterResiliency", "Shifter Resiliency");
+            var basicShiftingFeat = ModManager.RegisterFeatName("ShifterBasicShifting", "Basic Shifting");
+
             #region Class Description Strings
 
             var abilityString = "{b}1. Animal Claws.{/b} You can shift your hands into claws. Your fists gain the versatile slashing trait and lose the nonlethal trait.\n\n" +
@@ -219,7 +229,14 @@ namespace Shifter
                 });
             }).WithOnCreature((Creature creature) =>
             {
-                creature.UnarmedStrike = new Item(IllustrationName.Fist, "fist", Trait.Unarmed, Trait.Agile, Trait.Finesse, Trait.VersatileS).WithWeaponProperties(new WeaponProperties("1d4", DamageKind.Bludgeoning));
+                if (creature.UnarmedStrike.Name == "fist")
+                {
+                    creature.UnarmedStrike.Traits.Add(Trait.VersatileS);
+                }
+                else if (creature.UnarmedStrike.Name != "fist")
+                {
+                    creature.WithAdditionalUnarmedStrike(new Item(IllustrationName.Fist, "fist", Trait.Unarmed, Trait.Agile, Trait.Finesse, Trait.VersatileS).WithWeaponProperties(new WeaponProperties("1d4", DamageKind.Bludgeoning)));
+                }
 
                 creature.AddQEffect(new("Bestial Instincts", "When you Shift, you briefly succumb to the insticts of your new form. Your unarmed attacks deal an additional " + (creature.Level >= 5 ? "2d6" : "1d6") + " damage until your next turn.")
                 {
@@ -303,6 +320,11 @@ namespace Shifter
                                         AdditionalUnarmedStrike = new Item(IllustrationName.Apple, "apple", Trait.Unarmed, Trait.Hammer, Trait.Propulsive).WithWeaponProperties(new WeaponProperties("1d4", DamageKind.Bludgeoning).WithRangeIncrement(4)),
                                         ProvideMainAction = (QEffect actionQEffect) =>
                                         {
+                                            if (actionQEffect.Owner.QEffects.FirstOrDefault((effect) => effect.Name == "Shifter Dedication") != null)
+                                            {
+                                                return null;
+                                            }
+
                                             return (ActionPossibility)HealingBerry(actionQEffect.Owner);
                                         },
                                         EndOfYourTurn = async (QEffect effect, Creature user) =>
@@ -362,6 +384,11 @@ namespace Shifter
                                         BonusToAllSpeeds = (_) => new Bonus(1, BonusType.Circumstance, "Cat Form", true),
                                         ProvideMainAction = (QEffect actionQEffect) =>
                                         {
+                                            if (actionQEffect.Owner.QEffects.FirstOrDefault((effect) => effect.Name == "Shifter Dedication") != null)
+                                            {
+                                                return null;
+                                            }
+
                                             return (ActionPossibility)Pounce(actionQEffect.Owner);
                                         }
                                     });
@@ -436,6 +463,11 @@ namespace Shifter
                                         },
                                         ProvideActionIntoPossibilitySection = (QEffect actionQEffect, PossibilitySection section) =>
                                         {
+                                            if (actionQEffect.Owner.QEffects.FirstOrDefault((effect) => effect.Name == "Shifter Dedication") != null)
+                                            {
+                                                return null;
+                                            }
+
                                             if (section.PossibilitySectionId != PossibilitySectionId.MainActions)
                                             {
                                                 return null;
@@ -530,6 +562,11 @@ namespace Shifter
                                         },
                                         ProvideMainAction = (QEffect actionQEffect) =>
                                         {
+                                            if (actionQEffect.Owner.QEffects.FirstOrDefault((effect) => effect.Name == "Shifter Dedication") != null)
+                                            {
+                                                return null;
+                                            }
+
                                             return (ActionPossibility)HyenaCackle(actionQEffect.Owner);
                                         }
                                     });
@@ -581,6 +618,11 @@ namespace Shifter
                                         },
                                         ProvideActionIntoPossibilitySection = (QEffect actionQEffect, PossibilitySection section) =>
                                         {
+                                            if (actionQEffect.Owner.QEffects.FirstOrDefault((effect) => effect.Name == "Shifter Dedication") != null)
+                                            {
+                                                return null;
+                                            }
+
                                             if (section.PossibilitySectionId != PossibilitySectionId.MainActions)
                                             {
                                                 return null;
@@ -645,6 +687,11 @@ namespace Shifter
                                         AdditionalUnarmedStrike = new Item(IllustrationName.Tree3, "slam", Trait.Unarmed, Trait.Club, Trait.Sweep).WithWeaponProperties(new WeaponProperties("1d8", DamageKind.Bludgeoning)),
                                         ProvideActionIntoPossibilitySection = (QEffect actionQEffect, PossibilitySection section) =>
                                         {
+                                            if (actionQEffect.Owner.QEffects.FirstOrDefault((effect) => effect.Name == "Shifter Dedication") != null)
+                                            {
+                                                return null;
+                                            }
+
                                             if (section.PossibilitySectionId != PossibilitySectionId.MainActions)
                                             {
                                                 return null;
@@ -1141,6 +1188,11 @@ namespace Shifter
                                         AdditionalUnarmedStrike = new Item(IllustrationName.AngelicWings, "wind buffet", Trait.Unarmed, Trait.Club, Trait.Forceful).WithWeaponProperties(new WeaponProperties("1d6", DamageKind.Bludgeoning).WithRangeIncrement(6).WithAdditionalSplashDamage(2)),
                                         ProvideMainAction = (QEffect actionQEffect) =>
                                         {
+                                            if (actionQEffect.Owner.QEffects.FirstOrDefault((effect) => effect.Name == "Shifter Dedication") != null)
+                                            {
+                                                return null;
+                                            }
+
                                             return (ActionPossibility)PowerfulBeat(actionQEffect.Owner);
                                         },
                                         BonusToAllSpeeds = (QEffect effect) => new Bonus(1, BonusType.Circumstance, "Bird Form", true),
@@ -1265,6 +1317,11 @@ namespace Shifter
                                         AdditionalUnarmedStrike = new Item(IllustrationName.Spear, "stinger", Trait.Unarmed, Trait.Pick, Trait.Reach).WithWeaponProperties(new WeaponProperties("1d4", DamageKind.Poison).WithAdditionalDamage("1", DamageKind.Piercing)),
                                         ProvideMainAction = (QEffect actionQEffect) =>
                                         {
+                                            if (actionQEffect.Owner.QEffects.FirstOrDefault((effect) => effect.Name == "Shifter Dedication") != null)
+                                            {
+                                                return null;
+                                            }
+
                                             return (ActionPossibility)InjectVenom(actionQEffect.Owner);
                                         },
                                         WhenExpires = (effect) =>
@@ -1272,7 +1329,6 @@ namespace Shifter
                                             effect.Owner.RemoveAllQEffects(effectToRemove => effectToRemove.Name == "Attack of Opportunity from Scorpion Form");
                                         }
                                     });
-
                                 })).WithPossibilityGroup("Shift");
                         }
                     });
@@ -1386,6 +1442,63 @@ namespace Shifter
                             effect.UsedThisTurn = true;
                         }
                     });
+                });
+
+            #endregion
+
+            #region Archetype
+            
+            yield return ArchetypeFeats.CreateMulticlassDedication(ShifterTrait, "You've studied nature long enough to shape your body into plants and animals.", "You become trained in Nature and shifter class DC, you gain the Animal Claws feature, and you gain one form. You can't use Apex actions granted by forms.")
+                .WithDemandsAbility14(Ability.Strength)
+                .WithDemandsAbility14(Ability.Dexterity)
+                .WithOnSheet((CalculatedCharacterSheetValues sheet) =>
+                {
+                    sheet.AddSelectionOptionRightNow(new SingleFeatSelectionOption("ShifterDedicationForms1", "Shifter form", 1, (Feat ft) => ft.HasTrait(FormTrait) && !ft.HasTrait(Trait.Dragon) && !ft.HasTrait(ShifterTrait)));
+                    sheet.TrainInThisOrSubstitute(Skill.Nature);
+                }).WithOnCreature((Creature creature) =>
+                {
+                    if (creature.UnarmedStrike.Name == "fist")
+                    {
+                        creature.UnarmedStrike.Traits.Add(Trait.VersatileS);
+                    }
+                    else if (creature.UnarmedStrike.Name != "fist")
+                    {
+                        creature.WithAdditionalUnarmedStrike(new Item(IllustrationName.Fist, "fist", Trait.Unarmed, Trait.Agile, Trait.Finesse, Trait.VersatileS).WithWeaponProperties(new WeaponProperties("1d4", DamageKind.Bludgeoning)));
+                    }
+
+                    creature.AddQEffect(new()
+                    {
+                        Name = "Shifter Dedication"
+                    });
+                });
+
+            yield return new TrueFeat(basicShiftingFeat, 4, null, "You gain a 1st- or 2nd-level shifter feat.", [/*Trait.ClassFeat*/ShifterArchetypeTrait, Trait.General])
+                .WithAvailableAsArchetypeFeat(ShifterTrait)
+                .WithOnSheet((CalculatedCharacterSheetValues sheet) =>
+                {
+                    sheet.AddSelectionOptionRightNow(new SingleFeatSelectionOption("BasicShifting", "Shifter feat", 2, (Feat ft) => ft.HasTrait(ShifterTrait) && ft.HasTrait(Trait.ClassFeat)));
+                });
+
+            yield return MulticlassArchetypeFeats.CreateResiliencyFeat(ShifterTrait, 8);
+
+            yield return new TrueFeat(advancedShiftingFeat, 6, null, "You gain one shifter feat. For the purpose of meeting its prerequisites, your shifter level is equal to half your character level.\n\n{b}Special{/b} You can select this feat more than once. Each time you select it, you gain another shifter feat.", [Trait.ClassFeat, ShifterArchetypeTrait, Trait.Monk, Trait.Fighter, Trait.Barbarian])
+                .WithMultipleSelection()
+                .WithAvailableAsArchetypeFeat(ShifterTrait)
+                .WithPrerequisite(basicShiftingFeat, "Basic Shifting")
+                .WithOnSheet((CalculatedCharacterSheetValues sheet) =>
+                {
+                    sheet.AddSelectionOptionRightNow(new SingleFeatSelectionOption($"AdvancedShifting{sheet.CurrentLevel}", "Shifter feat", sheet.CurrentLevel / 2, (Feat ft) => ft.HasTrait(ShifterTrait) && ft.HasTrait(Trait.ClassFeat)));
+                });
+
+            yield return new TrueFeat(apexFormsFeat, 6, "You're becoming more capable of controlling your forms.", "You gain an additional form and you can use your forms' Apex actions.", [Trait.ClassFeat, ShifterArchetypeTrait, Trait.Monk, Trait.Fighter, Trait.Barbarian])
+                .WithAvailableAsArchetypeFeat(ShifterTrait)
+                .WithOnSheet((CalculatedCharacterSheetValues sheet) =>
+                {
+                    sheet.AddSelectionOptionRightNow(new SingleFeatSelectionOption("ShifterDedicationForms1", "Shifter form", 1, (Feat ft) => ft.HasTrait(FormTrait) && !ft.HasTrait(Trait.Dragon) && !ft.HasTrait(ShifterTrait)));
+                })
+                .WithOnCreature((Creature creature) =>
+                {
+                    creature.RemoveAllQEffects((effect) => effect.Name == "Shifter Dedication");
                 });
 
             #endregion
@@ -1967,6 +2080,11 @@ namespace Shifter
                                         },
                                         ProvideActionIntoPossibilitySection = (QEffect actionQEffect, PossibilitySection section) =>
                                         {
+                                            if (actionQEffect.Owner.QEffects.FirstOrDefault((effect) => effect.Name == "Shifter Dedication") != null)
+                                            {
+                                                return null;
+                                            }
+
                                             if (section.PossibilitySectionId != PossibilitySectionId.MainActions)
                                             {
                                                 return null;
