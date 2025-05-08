@@ -5,6 +5,7 @@ using Dawnsbury.Core.CharacterBuilder;
 using Dawnsbury.Core.CharacterBuilder.AbilityScores;
 using Dawnsbury.Core.CharacterBuilder.Feats;
 using Dawnsbury.Core.CharacterBuilder.FeatsDb.Common;
+using Dawnsbury.Core.CharacterBuilder.FeatsDb.TrueFeatDb.Archetypes;
 using Dawnsbury.Core.CharacterBuilder.Selections.Options;
 using Dawnsbury.Core.CombatActions;
 using Dawnsbury.Core.Creatures;
@@ -56,6 +57,8 @@ namespace Inventor
 
         public static IEnumerable<Feat> LoadAll()
         {
+            ClassSelectionFeat.KeyAbilities[InventorTrait] = [Ability.Intelligence];
+
             var inventorFeat = ModManager.RegisterFeatName("InventorFeat", "Inventor");
 
             var modificationTrait = ModManager.RegisterTrait("Modification");
@@ -66,61 +69,68 @@ namespace Inventor
             var constructTrait = ModManager.RegisterTrait("Construct Modification");
             var weaponTrait = ModManager.RegisterTrait("Weapon Modification");
 
-            var armorInnovationFeatName = ModManager.RegisterFeatName("ArmorInnovation", "Armor Innovation");
-            var constructInnovationFeatName = ModManager.RegisterFeatName("ConstructInnovation", "Construct Innovation");
-            var weaponInnovationFeatName = ModManager.RegisterFeatName("WeaponInnovation", "Weapon Innovation");
+            var armorInnovationFeatName = ModManager.RegisterFeatName("InventorArmorInnovation", "Armor Innovation");
+            var constructInnovationFeatName = ModManager.RegisterFeatName("InventorConstructInnovation", "Construct Innovation");
+            var weaponInnovationFeatName = ModManager.RegisterFeatName("InventorWeaponInnovation", "Weapon Innovation");
 
-            var acceleratedMobilityFeat = ModManager.RegisterFeatName("AcceleratedMobility", "Accelerated Mobility");
-            var advancedRangefinderFeat = ModManager.RegisterFeatName("AdvancedRangefinder", "Advanced Rangefinder");
-            var flightChassisFeat = ModManager.RegisterFeatName("FlightChassis", "Flight Chassis");
-            var hamperingStrikesFeat = ModManager.RegisterFeatName("HamperingStrikes", "Hampering Strikes");
-            var harmonicOscillatorFeat = ModManager.RegisterFeatName("HarmonicOscillator", "Harmonic Oscillator");
-            var heftyCompositionFeat = ModManager.RegisterFeatName("HeftyComposition", "Hefty Composition");
-            var metallicReactanceFeat = ModManager.RegisterFeatName("metallicReactance", "Metallic Reactance");
-            var muscularExoskeletonFeat = ModManager.RegisterFeatName("MuscularExoskeleton", "Muscular Exoskeleton");
-            var otherworldlyProtectionFeat = ModManager.RegisterFeatName("OtherworldlyProtection", "Otherworldly Protection");
-            var phlogistonicRegulatorFeat = ModManager.RegisterFeatName("PhlogistonicRegulator", "Phlogistonic Regulator");
-            var projectileLauncherFeat = ModManager.RegisterFeatName("ProjectileLauncher", "Projectile Launcher");
-            var razorProngsFeat = ModManager.RegisterFeatName("RazorProngs", "Razor Prongs");
-            var speedBoostersFeat = ModManager.RegisterFeatName("SpeedBoosters", "Speed Boosters");
-            var subtleDampenersFeat = ModManager.RegisterFeatName("SubtleDampeners", "Subtle Dampeners");
-            var wonderGearsFeat = ModManager.RegisterFeatName("WonderGears", "Wonder Gears");
+            var armorInnovationArchetypeFeatName = ModManager.RegisterFeatName("InventorArchetypeArmorInnovation", "Armor Innovation");
+            var constructInnovationArchetypeFeatName = ModManager.RegisterFeatName("InventorArchetypeConstructInnovation", "Construct Innovation");
+            var weaponInnovationArchetypeFeatName = ModManager.RegisterFeatName("InventorArchetypeWeaponInnovation", "Weapon Innovation");
 
-            var aerodynamicConstructionFeat = ModManager.RegisterFeatName("AerodynamicConstruction", "Aerodynamic Construction");
-            var antimagicConstructionFeat = ModManager.RegisterFeatName("AntimagicConstruction", "Antimagic Construction");
-            var antimagicPlatingFeat = ModManager.RegisterFeatName("AntimagicPlating", "Antimagic Plating");
-            var densePlatingFeat = ModManager.RegisterFeatName("DensePlating", "Dense Plating");
-            var durableConstructionFeat = ModManager.RegisterFeatName("DurableConstruction", "Durable Construction");
-            //var enhancedResistanceFeat = ModManager.RegisterFeatName("EnhancedResistance", "Enhanced Resistance");
-            var hyperBoostersFeat = ModManager.RegisterFeatName("HyperBoosters", "Hyper Boosters");
-            var inconspicuousAppearanceFeat = ModManager.RegisterFeatName("InconspicuousAppearance", "Inconspicuous Appearance");
-            var layeredMeshFeat = ModManager.RegisterFeatName("LayeredMesh", "Layered Mesh");
-            var marvelousGearsFeat = ModManager.RegisterFeatName("MarvelousGears", "Marvelous Gears");
-            var omnirangeStabilizersFeat = ModManager.RegisterFeatName("OmnirangeStabilizers", "Omnirange Stabilizers");
-            var tensileAbsorptionFeat = ModManager.RegisterFeatName("TensileAbsorption", "Tensile Absorption");
-            var turretConfigurationFeat = ModManager.RegisterFeatName("TurretConfiguration", "Turret Configuration");
+            var acceleratedMobilityFeat = ModManager.RegisterFeatName("InventorAcceleratedMobility", "Accelerated Mobility");
+            var advancedRangefinderFeat = ModManager.RegisterFeatName("InventorAdvancedRangefinder", "Advanced Rangefinder");
+            var flightChassisFeat = ModManager.RegisterFeatName("InventorFlightChassis", "Flight Chassis");
+            var hamperingStrikesFeat = ModManager.RegisterFeatName("InventorHamperingStrikes", "Hampering Strikes");
+            var harmonicOscillatorFeat = ModManager.RegisterFeatName("InventorHarmonicOscillator", "Harmonic Oscillator");
+            var heftyCompositionFeat = ModManager.RegisterFeatName("InventorHeftyComposition", "Hefty Composition");
+            var metallicReactanceFeat = ModManager.RegisterFeatName("InventorMetallicReactance", "Metallic Reactance");
+            var muscularExoskeletonFeat = ModManager.RegisterFeatName("InventorMuscularExoskeleton", "Muscular Exoskeleton");
+            var otherworldlyProtectionFeat = ModManager.RegisterFeatName("InventorOtherworldlyProtection", "Otherworldly Protection");
+            var phlogistonicRegulatorFeat = ModManager.RegisterFeatName("InventorPhlogistonicRegulator", "Phlogistonic Regulator");
+            var projectileLauncherFeat = ModManager.RegisterFeatName("InventorProjectileLauncher", "Projectile Launcher");
+            var razorProngsFeat = ModManager.RegisterFeatName("InventorRazorProngs", "Razor Prongs");
+            var speedBoostersFeat = ModManager.RegisterFeatName("InventorSpeedBoosters", "Speed Boosters");
+            var subtleDampenersFeat = ModManager.RegisterFeatName("InventorSubtleDampeners", "Subtle Dampeners");
+            var wonderGearsFeat = ModManager.RegisterFeatName("InventorWonderGears", "Wonder Gears");
 
-            var advancedConstructCompanionFeat = ModManager.RegisterFeatName("AdvancedConstructCompanion", "Advanced Construct Companion");
-            var constructCompanionFeat = ModManager.RegisterFeatName("ConstructCompanion", "Construct Companion");
-            var explosiveLeapFeat = ModManager.RegisterFeatName("ExplosiveLeap", "Explosive Leap");
-            var flingAcidFeat = ModManager.RegisterFeatName("FlingAcid", "Fling Acid");
-            var flyingShieldFeat = ModManager.RegisterFeatName("FlyingShield", "Flying Shield");
-            var gigatonStrikeFeat = ModManager.RegisterFeatName("GigatonStrike", "Gigaton Strike");
-            var incredibleConstructCompanionFeat = ModManager.RegisterFeatName("IncredibleConstructCompanion", "Incredible Construct Companion");
-            var manifoldModificationsFeat = ModManager.RegisterFeatName("ManifoldModifications", "Manifold Modifications");
-            var modifiedShieldFeat = ModManager.RegisterFeatName("ModifiedShield", "Modified Shield");
-            var megatonStrikeFeat = ModManager.RegisterFeatName("MegatonStrike", "Megaton Strike");
-            var megavoltFeat = ModManager.RegisterFeatName("Megavolt", "Megavolt");
-            var overdriveAllyFeat = ModManager.RegisterFeatName("OverdriveAlly", "Overdrive Ally");
-            var reactiveShieldFeat = ModManager.RegisterFeatName("ReactiveShieldInventor", "Reactive Shield");
-            var searingRestorationFeat = ModManager.RegisterFeatName("SearingRestoration", "Searing Restoration");
-            var soaringArmorFeat = ModManager.RegisterFeatName("SoaringArmor", "Soaring Armor");
-            var tamperFeat = ModManager.RegisterFeatName("Tamper", "Tamper");
-            var variableCoreFeat = ModManager.RegisterFeatName("VariableCore", "Variable Core");
-            var visualFidelityFeat = ModManager.RegisterFeatName("VisualFidelity", "Visual Fidelity");
+            var aerodynamicConstructionFeat = ModManager.RegisterFeatName("InventorAerodynamicConstruction", "Aerodynamic Construction");
+            var antimagicConstructionFeat = ModManager.RegisterFeatName("InventorAntimagicConstruction", "Antimagic Construction");
+            var antimagicPlatingFeat = ModManager.RegisterFeatName("InventorAntimagicPlating", "Antimagic Plating");
+            var densePlatingFeat = ModManager.RegisterFeatName("InventorDensePlating", "Dense Plating");
+            var durableConstructionFeat = ModManager.RegisterFeatName("InventorDurableConstruction", "Durable Construction");
+            //var enhancedResistanceFeat = ModManager.RegisterFeatName("InventorEnhancedResistance", "Enhanced Resistance");
+            var hyperBoostersFeat = ModManager.RegisterFeatName("InventorHyperBoosters", "Hyper Boosters");
+            var inconspicuousAppearanceFeat = ModManager.RegisterFeatName("InventorInconspicuousAppearance", "Inconspicuous Appearance");
+            var layeredMeshFeat = ModManager.RegisterFeatName("InventorLayeredMesh", "Layered Mesh");
+            var marvelousGearsFeat = ModManager.RegisterFeatName("InventorMarvelousGears", "Marvelous Gears");
+            var omnirangeStabilizersFeat = ModManager.RegisterFeatName("InventorOmnirangeStabilizers", "Omnirange Stabilizers");
+            var tensileAbsorptionFeat = ModManager.RegisterFeatName("InventorTensileAbsorption", "Tensile Absorption");
+            var turretConfigurationFeat = ModManager.RegisterFeatName("InventorTurretConfiguration", "Turret Configuration");
 
-            var constructCompanionFusionAutomotonFeat = ModManager.RegisterFeatName("FusionAutomotonCompanion", "Fusion Automoton");
-            var constructCompanionTrainingDummyFeat = ModManager.RegisterFeatName("TrainingDummyCompanion", "Training Dummy");
+            var advancedConstructCompanionFeat = ModManager.RegisterFeatName("InventorAdvancedConstructCompanion", "Advanced Construct Companion");
+            var constructCompanionFeat = ModManager.RegisterFeatName("InventorConstructCompanion", "Construct Companion");
+            var explosiveLeapFeat = ModManager.RegisterFeatName("InventorExplosiveLeap", "Explosive Leap");
+            var flingAcidFeat = ModManager.RegisterFeatName("InventorFlingAcid", "Fling Acid");
+            var flyingShieldFeat = ModManager.RegisterFeatName("InventorFlyingShield", "Flying Shield");
+            var gigatonStrikeFeat = ModManager.RegisterFeatName("InventorGigatonStrike", "Gigaton Strike");
+            var incredibleConstructCompanionFeat = ModManager.RegisterFeatName("InventorIncredibleConstructCompanion", "Incredible Construct Companion");
+            var manifoldModificationsFeat = ModManager.RegisterFeatName("InventorManifoldModifications", "Manifold Modifications");
+            var modifiedShieldFeat = ModManager.RegisterFeatName("InventorModifiedShield", "Modified Shield");
+            var megatonStrikeFeat = ModManager.RegisterFeatName("InventorMegatonStrike", "Megaton Strike");
+            var megavoltFeat = ModManager.RegisterFeatName("InventorMegavolt", "Megavolt");
+            var overdriveAllyFeat = ModManager.RegisterFeatName("InventorOverdriveAlly", "Overdrive Ally");
+            var reactiveShieldFeat = ModManager.RegisterFeatName("InventorReactiveShieldInventor", "Reactive Shield");
+            var searingRestorationFeat = ModManager.RegisterFeatName("InventorSearingRestoration", "Searing Restoration");
+            var soaringArmorFeat = ModManager.RegisterFeatName("InventorSoaringArmor", "Soaring Armor");
+            var tamperFeat = ModManager.RegisterFeatName("InventorTamper", "Tamper");
+            var variableCoreFeat = ModManager.RegisterFeatName("InventorVariableCore", "Variable Core");
+            var visualFidelityFeat = ModManager.RegisterFeatName("InventorVisualFidelity", "Visual Fidelity");
+
+            var constructCompanionFusionAutomotonFeat = ModManager.RegisterFeatName("InventorFusionAutomotonCompanion", "Fusion Automoton");
+            var constructCompanionTrainingDummyFeat = ModManager.RegisterFeatName("InventorTrainingDummyCompanion", "Training Dummy");
+
+            var basicModificationFeat = ModManager.RegisterFeatName("InventorBasicModification", "Basic Modification");
+            var explosionFeat = ModManager.RegisterFeatName("InventorExplosion", "Explosion");
 
             #region Construct Companion Feats
 
@@ -1415,7 +1425,7 @@ namespace Inventor
             {
                 var user = megatonQEffect.Owner;
 
-                if (user.HasFeat(constructInnovationFeatName))
+                if (user.HasFeat(constructInnovationFeatName) || user.HasFeat(constructInnovationArchetypeFeatName))
                 {
                     return;
                 }
@@ -1472,7 +1482,7 @@ namespace Inventor
             })
             .WithOnSheet((CalculatedCharacterSheetValues sheet) =>
             {
-                if (!sheet.HasFeat(constructInnovationFeatName))
+                if (!sheet.HasFeat(constructInnovationFeatName) && !sheet.HasFeat(constructInnovationArchetypeFeatName))
                 {
                     return;
                 }
@@ -1537,7 +1547,7 @@ namespace Inventor
             .WithActionCost(2)
             .WithOnCreature(delegate (Creature creature)
             {
-                if (!creature.HasFeat(constructInnovationFeatName))
+                if (!creature.HasFeat(constructInnovationFeatName) && !creature.HasFeat(constructInnovationArchetypeFeatName))
                 {
                     creature.AddQEffect(new()
                     {
@@ -1546,7 +1556,7 @@ namespace Inventor
                             return (ActionPossibility)new CombatAction(qEffect.Owner, IllustrationName.LightningBolt, "Megavolt", [Trait.Electricity, InventorTrait, Trait.Manipulate], $"You bleed off some electric power from your innovation in the shape of a damaging bolt. The explosion deals {qEffect.Owner.Level / 2}d4 electricity damage with a basic Reflex save to all creatures in a 20-foot line.", Target.Line(4)) { ShortDescription = $"Deal {qEffect.Owner.Level / 2}d4 electricity damage with a basic Reflex save to all creatures in a 20-foot line." }
                                 .WithActionCost(2)
                                 .WithSoundEffect(SfxName.ElectricBlast)
-                                .WithSavingThrow(new SavingThrow(Defense.Reflex, qEffect.Owner.ClassOrSpellDC()))
+                                .WithSavingThrow(new SavingThrow(Defense.Reflex, qEffect.Owner.ClassDC(InventorTrait)))
                                 .WithEffectOnEachTarget(async delegate (CombatAction explode, Creature user, Creature target, CheckResult result)
                                 {
                                     await CommonSpellEffects.DealBasicDamage(explode, user, target, result, $"{user.Level / 2}d4", DamageKind.Electricity);
@@ -1603,7 +1613,7 @@ namespace Inventor
                                 return (ActionPossibility)new CombatAction(qEffect.Owner, IllustrationName.LightningBolt, "Megavolt", [Trait.Electricity, InventorTrait, Trait.Manipulate], $"You bleed off some electric power from your innovation in the shape of a damaging bolt. The explosion deals {qEffect.Owner.Level / 2}d4 electricity damage with a basic Reflex save to all creatures in a 20-foot line.", Target.Line(4)) { ShortDescription = $"Deal {qEffect.Owner.Level / 2}d4 electricity damage with a basic Reflex save to all creatures in a 20-foot line." }
                                     .WithActionCost(2)
                                     .WithSoundEffect(SfxName.ElectricBlast)
-                                    .WithSavingThrow(new SavingThrow(Defense.Reflex, (Creature? megavoltUser) => GetInventor(megavoltUser) != null ? GetInventor(megavoltUser)!.ClassOrSpellDC() : 10))
+                                    .WithSavingThrow(new SavingThrow(Defense.Reflex, (Creature? megavoltUser) => GetInventor(megavoltUser) != null ? GetInventor(megavoltUser)!.ClassDC(InventorTrait) : 10))
                                     .WithEffectOnEachTarget(async delegate (CombatAction explode, Creature user, Creature target, CheckResult result)
                                     {
                                         await CommonSpellEffects.DealBasicDamage(explode, user, target, result, $"{user.Level / 2}d4", DamageKind.Electricity);
@@ -1675,7 +1685,7 @@ namespace Inventor
             .WithPrerequisite((CalculatedCharacterSheetValues values) => values.AllFeatNames.Contains(megatonStrikeFeat), "You have Megaton Strike.")
             .WithOnCreature(delegate (Creature creature)
             {
-                if (creature.HasFeat(constructInnovationFeatName))
+                if (creature.HasFeat(constructInnovationFeatName) || creature.HasFeat(constructInnovationArchetypeFeatName))
                 {
                     return;
                 }
@@ -1884,6 +1894,123 @@ namespace Inventor
 
             #endregion
 
+            #region Archetype
+
+            var dedication = ArchetypeFeats.CreateMulticlassDedication(InventorTrait, "After a long period of hard work and study, you've created a technological masterpiece.", "You become trained in Crafting and inventor class DC. Choose an innovation. You gain that innovation, though you don't gain any other abilities that modify or use that innovation, such as modifications or Explode. If you choose an armor innovation, you become trained in all armor. If you choose a weapon innovation, you become proficient in martial weapons.")
+                .WithDemandsAbility14(Ability.Intelligence)
+                .WithOnSheet((CalculatedCharacterSheetValues sheet) =>
+                {
+                    sheet.TrainInThisOrSubstitute(Skill.Crafting);
+                    sheet.SetProficiency(InventorTrait, Proficiency.Trained);
+                })
+                .WithOnCreature((Creature creature) =>
+                {
+                    creature.AddQEffect(new()
+                    {
+                        Name = "Inventor Dedication"
+                    });
+                });
+
+            var armorArchetypeFeat = new Feat(armorInnovationArchetypeFeatName, "Your innovation is a cutting-edge suit of medium armor with a variety of attached gizmos and devices.", "You become trained in all armor.", [], null)
+                    .WithOnSheet((CalculatedCharacterSheetValues sheet) =>
+                    {
+                        sheet.SetProficiency(Trait.LightArmor, Proficiency.Trained);
+                        sheet.SetProficiency(Trait.MediumArmor, Proficiency.Trained);
+                        sheet.SetProficiency(Trait.HeavyArmor, Proficiency.Trained);
+                    });
+
+            yield return armorArchetypeFeat;
+
+            var constructArchetypeFeat = new Feat(constructInnovationArchetypeFeatName, "Your innovation is a mechanical creature, such as a clockwork construct made of cogs and gears.", "You gain a construct companion.", [], null)
+                    .WithOnSheet((CalculatedCharacterSheetValues sheet) =>
+                    {
+                        sheet.AddSelectionOptionRightNow(new SingleFeatSelectionOption("ConstructCompanionSelection", "Construct Companion", 1, (Feat ft) => ft.FeatName == constructCompanionFeat));
+                    });
+
+            yield return constructArchetypeFeat;
+
+            var weaponArchetypeFeat = new Feat(weaponInnovationArchetypeFeatName, "Your innovation is an impossible-looking weapon augmented by numerous unusual mechanisms.", "You become trained in simple and marital weapons.", [], null)
+                    .WithOnSheet((CalculatedCharacterSheetValues sheet) =>
+                    {
+                        sheet.SetProficiency(Trait.Simple, Proficiency.Trained);
+                        sheet.SetProficiency(Trait.Martial, Proficiency.Trained);
+                    });
+
+            yield return weaponArchetypeFeat;
+
+            dedication.Subfeats =
+                [
+                    armorArchetypeFeat,
+                    constructArchetypeFeat,
+                    weaponArchetypeFeat
+                ];
+
+            yield return dedication;
+
+            yield return ArchetypeFeats.DuplicateFeatAsArchetypeFeat(advancedConstructCompanionFeat, InventorTrait, 4);
+
+            foreach (var feat in ArchetypeFeats.CreateBasicAndAdvancedMulticlassFeatGrantingArchetypeFeats(InventorTrait, "Breakthrough"))
+            {
+                yield return feat;
+            }
+
+            yield return new TrueFeat(explosionFeat, 6, "Your innovation can explode on command.", "You gain the Explode action.", [Trait.ClassFeat])
+                .WithAvailableAsArchetypeFeat(InventorTrait)
+                .WithRulesBlockForCombatAction((Creature creature) => CreateExplodeAction("Explode", creature, 1, DamageKind.Fire))
+                .WithOnCreature((Creature creature) =>
+                {
+                    creature.AddQEffect(new()
+                    {
+                        ProvideActionIntoPossibilitySection = (QEffect explodeQEffect, PossibilitySection possibilitySection) =>
+                        {
+                            if (possibilitySection.PossibilitySectionId != PossibilitySectionId.MainActions)
+                            {
+                                return null;
+                            }
+
+                            var user = explodeQEffect.Owner;
+
+                            var variableCore = user.QEffects.Where((effect) => effect.Id == VariableCoreEffectID).FirstOrDefault();
+                            var damageKind = DamageKind.Fire;
+
+                            if (variableCore != null && variableCore.Tag != null)
+                            {
+                                damageKind = (DamageKind)variableCore.Tag!;
+                            }
+
+                            if (user.HasFeat(constructInnovationArchetypeFeatName))
+                            {
+                                return ((ActionPossibility)CreateConstructExplodeAction("Explode", user, 1, damageKind)).WithPossibilityGroup("Unstable");
+                            }
+                            else
+                            {
+                                return ((ActionPossibility)CreateExplodeAction("Explode", user, 1, damageKind)).WithPossibilityGroup("Unstable");
+                            }
+                        }
+                    });
+                });
+
+            yield return new TrueFeat(basicModificationFeat, 8, "You've learned to modify your innovation in order to enhance its capabilities beyond what an ordinary piece of equipment can accomplish.", "You gain a basic modification of your choice for your innovation. Your innovation must meet any requirements for the modification you choose, as normal.", [Trait.ClassFeat])
+                .WithAvailableAsArchetypeFeat(InventorTrait)
+                .WithOnSheet((CalculatedCharacterSheetValues sheet) =>
+                {
+                    Trait traitToSelectOn = armorTrait;
+
+                    if (sheet.HasFeat(constructInnovationArchetypeFeatName))
+                    {
+                        traitToSelectOn = constructTrait;
+                    }
+                    else if (sheet.HasFeat(weaponInnovationFeatName))
+                    {
+                        traitToSelectOn = weaponTrait;
+                    }
+                    
+                    sheet.AddSelectionOptionRightNow(new SingleFeatSelectionOption("BasicModification", "Basic modification", 1, (Feat ft) => ft.HasTrait(traitToSelectOn) && ft.HasTrait(initialModificationTrait)));
+                });
+
+            yield return ArchetypeFeats.DuplicateFeatAsArchetypeFeat(incredibleConstructCompanionFeat, InventorTrait, 8);
+
+            #endregion
         }
 
         #region Construct Companion Support Methods
@@ -1910,7 +2037,7 @@ namespace Inventor
                 CalculatedCharacterSheetValues sheet2 = sheet;
                 inventor2.AddQEffect(new QEffect
                 {
-                    StartOfCombat = async delegate (QEffect qfinventorTechnical)
+                    StartOfCombat = async (QEffect qfinventorTechnical) =>
                     {
                         if (inventor2.PersistentUsedUpResources.UsedUpActions.Contains("ConstructCompanionIsDead"))
                         {
@@ -1934,7 +2061,7 @@ namespace Inventor
                             inventor2.Battle.SpawnCreature(creature2, inventor2.OwningFaction, inventor2.Occupies);
                         }
                     },
-                    EndOfYourTurnBeneficialEffect = async delegate (QEffect qfinventor, Creature self)
+                    EndOfYourTurnBeneficialEffect = async (QEffect qfinventor, Creature self) =>
                     {
                         if (!qfinventor.UsedThisTurn)
                         {
@@ -1945,11 +2072,11 @@ namespace Inventor
                             }
                         }
                     },
-                    ProvideActionIntoPossibilitySection = delegate (QEffect commandQEffect, PossibilitySection section)
+                    ProvideActionIntoPossibilitySection = (QEffect commandQEffect, PossibilitySection section) =>
                     {
                         var user = commandQEffect.Owner;
 
-                        if (section.PossibilitySectionId != PossibilitySectionId.MainActions || !user.HasFeat(constructInnovationFeat))
+                        if (section.PossibilitySectionId != PossibilitySectionId.MainActions || !user.HasFeat(constructInnovationFeat) || user.QEffects.FirstOrDefault((effect) => effect.Name == "Inventor Dedication") != null)
                         {
                             return null;
                         }
@@ -1996,9 +2123,9 @@ namespace Inventor
                             }
                         };
                     },
-                    ProvideMainAction = delegate (QEffect qfinventor)
+                    ProvideMainAction = (QEffect qfinventor) =>
                     {
-                        if (qfinventor.Owner.HasFeat(constructInnovationFeat) || GetConstructCompanion(qfinventor.Owner) == null || GetConstructCompanion(qfinventor.Owner)!.HP <= 0)
+                        if ((qfinventor.Owner.HasFeat(constructInnovationFeat) && qfinventor.Owner.QEffects.FirstOrDefault((effect) => effect.Name == "Inventor Dedication") == null) || GetConstructCompanion(qfinventor.Owner) == null || GetConstructCompanion(qfinventor.Owner)!.HP <= 0)
                         {
                             return null;
                         }
@@ -2121,7 +2248,7 @@ namespace Inventor
                     var explodeAction = new CombatAction(construct, action.Illustration, name, [damageKind == DamageKind.Acid ? Trait.Acid : damageKind == DamageKind.Cold ? Trait.Cold : damageKind == DamageKind.Electricity ? Trait.Electricity : Trait.Fire, InventorTrait, UnstableTrait, Trait.UsableEvenWhenUnconsciousOrParalyzed], "", Target.SelfExcludingEmanation(radius))
                         .WithActionCost(0)
                         .WithSoundEffect(SfxName.Fireball)
-                        .WithSavingThrow(new(Defense.Reflex, inventor.ClassOrSpellDC()))
+                        .WithSavingThrow(new(Defense.Reflex, inventor.ClassDC(InventorTrait)))
                         .WithProjectileCone(VfxStyle.BasicProjectileCone(action.Illustration))
                         .WithEffectOnEachTarget(async (CombatAction action, Creature user2, Creature target2, CheckResult result) =>
                         {
@@ -2145,7 +2272,7 @@ namespace Inventor
                 .WithActionCost(2)
                 .WithSoundEffect(SfxName.Fireball)
                 .WithProjectileCone(VfxStyle.BasicProjectileCone(IllustrationName.BurningHands))
-                .WithSavingThrow(new SavingThrow(Defense.Reflex, inventor.ClassOrSpellDC()))
+                .WithSavingThrow(new SavingThrow(Defense.Reflex, inventor.ClassDC(InventorTrait)))
                 .WithEffectOnEachTarget(async (CombatAction explode, Creature user, Creature target, CheckResult result) =>
                 {
                     await CommonSpellEffects.DealBasicDamage(explode, user, target, result, user.Level == 1 ? "2d6" : user.Level + "d6", damageKind);
@@ -2161,7 +2288,7 @@ namespace Inventor
             return new CombatAction(inventor, IllustrationName.LightningBolt, name, [Trait.Electricity, InventorTrait, Trait.Manipulate, UnstableTrait], $"You bleed off some electric power from your innovation in the shape of a damaging bolt. The explosion deals {inventor.Level / 2}d12 electricity damage with a basic Reflex save to all creatures in a {length * 5}-foot line.", Target.Line(length)) { ShortDescription = $"Deal {inventor.Level / 2}d12 electricity damage with a basic Reflex save to all creatures in a {length * 5}-foot line." }
                 .WithActionCost(2)
                 .WithSoundEffect(SfxName.ElectricBlast)
-                .WithSavingThrow(new(Defense.Reflex, inventor.ClassOrSpellDC()))
+                .WithSavingThrow(new(Defense.Reflex, inventor.ClassDC(InventorTrait)))
                 .WithEffectOnEachTarget(async (CombatAction explode, Creature user, Creature target, CheckResult result) =>
                 {
                     await CommonSpellEffects.DealBasicDamage(explode, user, target, result, $"{user.Level / 2}d12", DamageKind.Electricity);
@@ -2177,7 +2304,7 @@ namespace Inventor
             return new CombatAction(construct, IllustrationName.LightningBolt, name, [Trait.Electricity, InventorTrait, Trait.Manipulate, UnstableTrait], $"You bleed off some electric power from your innovation in the shape of a damaging bolt. The explosion deals {inventor.Level / 2}d12 electricity damage with a basic Reflex save to all creatures in a {length * 5}-foot line.", Target.Line(length)) { ShortDescription = $"Deal {inventor.Level / 2}d12 electricity damage with a basic Reflex save to all creatures in a {length * 5}-foot line." }
                 .WithActionCost(2)
                 .WithSoundEffect(SfxName.ElectricBlast)
-                .WithSavingThrow(new(Defense.Reflex, inventor.ClassOrSpellDC()))
+                .WithSavingThrow(new(Defense.Reflex, inventor.ClassDC(InventorTrait)))
                 .WithEffectOnEachTarget(async (CombatAction explode, Creature user, Creature target, CheckResult result) =>
                 {
                     await CommonSpellEffects.DealBasicDamage(explode, user, target, result, $"{user.Level / 2}d12", DamageKind.Electricity);
