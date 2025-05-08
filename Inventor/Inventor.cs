@@ -50,60 +50,12 @@ namespace Inventor
 
         public static QEffectId VariableCoreEffectID = ModManager.RegisterEnumMember<QEffectId>("VariableCoreEffect");
 
-        //The crafting feats here were taken from DawnniExpanded, for integration. It's duplicated here so that that mod is not required.
-        //https://github.com/AurixVirlym/DawnniExpanded/blob/main/Misc/Skills.cs
-        /*public static Feat Crafting = new SkillSelectionFeat(FeatName.CustomFeat, Skill.Crafting, Trait.Crafting).WithCustomName("Crafting");
-
-        public static Feat ExpertCrafting = new SkillIncreaseFeat(FeatName.CustomFeat, Skill.Crafting, Trait.Crafting, Proficiency.Expert).WithCustomName("Expert in Crafting");
-
-        public static Feat MasterCrafting = new SkillIncreaseFeat(FeatName.CustomFeat, Skill.Crafting, Trait.Crafting, Proficiency.Master).WithCustomName("Master in Crafting");*/
-
         public readonly static Trait InventorTrait = ModManager.RegisterTrait("Inventor");
 
         public readonly static Trait UnstableTrait = ModManager.RegisterTrait("Unstable");
 
         public static IEnumerable<Feat> LoadAll()
         {
-            //If DawnniExpanded is installed, I need to find which feat I need to add and use.
-            /*if (AllFeats.All.All((Feat feat) => feat.CustomName != "Crafting" || feat.Name == "Crafting"))
-            {
-                ModManager.AddFeat(Crafting);
-            }
-            else
-            {
-                var craftingFeat = AllFeats.All.Find((Feat feat) => feat.Name == "Crafting");
-                if (craftingFeat != null)
-                {
-                    Crafting = craftingFeat;
-                }
-            }
-
-            if (AllFeats.All.All((Feat feat) => feat.CustomName != "Expert in Crafting" || feat.Name == "Expert in Crafting"))
-            {
-                ModManager.AddFeat(ExpertCrafting);
-            }
-            else
-            {
-                var craftingFeat = AllFeats.All.Find((Feat feat) => feat.Name == "Expert in Crafting");
-                if (craftingFeat != null)
-                {
-                    ExpertCrafting = craftingFeat;
-                }
-            }
-
-            if (AllFeats.All.All((Feat feat) => feat.CustomName != "Master in Crafting" || feat.Name == "Master in Crafting"))
-            {
-                ModManager.AddFeat(MasterCrafting);
-            }
-            else
-            {
-                var craftingFeat = AllFeats.All.Find((Feat feat) => feat.Name == "Master in Crafting");
-                if (craftingFeat != null)
-                {
-                    MasterCrafting = craftingFeat;
-                }
-            }*/
-
             var inventorFeat = ModManager.RegisterFeatName("InventorFeat", "Inventor");
 
             var modificationTrait = ModManager.RegisterTrait("Modification");
@@ -1148,7 +1100,7 @@ namespace Inventor
 
                         var user = flingAcidQEffect.Owner;
 
-                        return ((ActionPossibility)new CombatAction(user, IllustrationName.AcidSplash, "Fling Acid", [Trait.Acid, InventorTrait, Trait.Manipulate, UnstableTrait], $"Your innovation generates an acidic goo, which you fing at an enemy in 30 feet. The target takes {(user.Level - 1) / 2 + 1}d6 acid damage plus {(user.Level - 1) / 2 + 1}d6 bludgeoning damage, with a basic Reflex save. Enemies that fail take {(user.Level - 1) / 4 + 1}d4 persistent acid damage.", Target.RangedCreature(6)) { ShortDescription = $"Fling acidic goo at an enemy in 30 feet to deal {(user.Level - 1) / 2 + 1}d6 acid damage plus {(user.Level - 1) / 2 + 1}d6 bludgeoning damage, with a basic Reflex save." }
+                        return ((ActionPossibility)new CombatAction(user, IllustrationName.AcidSplash, "Fling Acid", [Trait.Acid, InventorTrait, Trait.Manipulate, UnstableTrait], $"Your innovation generates an acidic goo, which you fing at an enemy in 30 feet. The target takes {(user.Level - 1) / 2 + 1}d6 acid damage plus {(user.Level - 1) / 2 + 1}d6 bludgeoning damage, with a basic Reflex save. Enemies that fail take {(user.Level - 1) / 4 + 1}d4 persistent acid damage.", Target.Ranged(6)) { ShortDescription = $"Fling acidic goo at an enemy in 30 feet to deal {(user.Level - 1) / 2 + 1}d6 acid damage plus {(user.Level - 1) / 2 + 1}d6 bludgeoning damage, with a basic Reflex save." }
                         .WithActionCost(2)
                         .WithSoundEffect(SfxName.AcidSplash)
                         .WithSavingThrow(new SavingThrow(Defense.Reflex, (Creature? explodeUser) => explodeUser!.ProficiencyLevel + explodeUser!.Abilities.Intelligence + 12))
@@ -2201,7 +2153,6 @@ namespace Inventor
                 .WithEffectOnSelf(async (CombatAction unstable, Creature user) =>
                 {
                     await MakeUnstableCheck(unstable, user);
-
                 });
         }
 
