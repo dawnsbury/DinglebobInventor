@@ -29,6 +29,8 @@ using Dawnsbury.Core.Tiles;
 using Dawnsbury.Core.Animations;
 using System.Text;
 using Dawnsbury.Core.Creatures.Parts;
+using Dawnsbury.Core.CharacterBuilder.FeatsDb.TrueFeatDb.Archetypes;
+using Dawnsbury.Core.CharacterBuilder.FeatsDb.TrueFeatDb.Archetypes.Multiclass;
 
 namespace Necromancer
 {
@@ -71,6 +73,8 @@ namespace Necromancer
 
         public static IEnumerable<Feat> LoadAll()
         {
+            ClassSelectionFeat.KeyAbilities[NecromancerTrait] = [Ability.Intelligence];
+
             var necromancerFeat = ModManager.RegisterFeatName("NecromancerFeat", "Necromancer");
 
             var boneShaperFeat = ModManager.RegisterFeatName("NecromancerBoneShaper", "Bone Shaper");
@@ -173,7 +177,8 @@ namespace Necromancer
                 sheet.AddAtLevel(7, delegate (CalculatedCharacterSheetValues values)
                 {
                     values.SetProficiency(Trait.Perception, Proficiency.Expert);
-                    sheet.SetProficiency(Trait.Spell, Proficiency.Expert);
+                    values.SetProficiency(Trait.Spell, Proficiency.Expert);
+                    values.SetProficiency(NecromancerTrait, Proficiency.Expert);
                 });
             }).WithOnCreature(delegate (Creature creature)
             {
@@ -209,59 +214,7 @@ namespace Necromancer
                     PreventTakingAction = (CombatAction action) => action.Name == "Consume Thrall" && action.Owner.Spellcasting != null && action.Owner.Spellcasting.FocusPoints >= action.Owner.Spellcasting.FocusPointsMaximum ? "You have your maximum number of focus points" : null
                 });
 
-                #region Thrall Management Actions
-
-                creature.AddQEffect(new()
-                {
-                    ProvideActionIntoPossibilitySection = (effect, section) =>
-                    {
-                        if (section.PossibilitySectionId != PossibilitySectionId.OtherManeuvers)
-                        {
-                            return null;
-                        }
-
-                        var user = effect.Owner;
-
-                        var targets = new CreatureTarget[10];
-
-                        for (int i = 0; i < 10; i++)
-                        {
-                            targets[i] = CreateThrallTarget(requireLineOfEffect: false);
-                        }
-
-                        return (ActionPossibility)new CombatAction(user, IllustrationName.DisruptUndead, "Destroy Thralls", [Trait.Basic, Trait.Concentrate, Trait.Occult, NecromancerTrait], "Destroy up to 10 of your thralls.", Target.MultipleCreatureTargets(targets).WithSimultaneousAnimation().WithMustBeDistinct().WithMinimumTargets(1))
-                        .WithActionCost(1)
-                        .WithEffectOnEachTarget(async (action, user, target, result) =>
-                        {
-                            await KillThrall(target);
-                        });
-                    }
-                });
-
-                creature.AddQEffect(new()
-                {
-                    ProvideActionIntoPossibilitySection = (effect, section) =>
-                    {
-                        if (section.PossibilitySectionId != PossibilitySectionId.OtherManeuvers)
-                        {
-                            return null;
-                        }
-
-                        var user = effect.Owner;
-
-                        return (ActionPossibility)new CombatAction(user, IllustrationName.FleetStep, "Move Thrall", [Trait.Basic, Trait.Concentrate, Trait.Occult, NecromancerTrait], "Command a thrall to move up to 20 feet.", CreateThrallTarget(requireLineOfEffect: false))
-                        .WithActionCost(1)
-                        .WithEffectOnEachTarget(async (action, user, target, result) =>
-                        {
-                            if (await target.StrideAsync("Select where you want to stride.", allowCancel: true, allowPass: true) == false)
-                            {
-                                user.Actions.RevertExpendingOfResources(1, action);
-                            }
-                        });
-                    }
-                });
-
-                #endregion
+                AddThrallManagementActions(creature);
 
                 if (creature.Level >= 3)
                 {
@@ -472,6 +425,7 @@ namespace Necromancer
                                 }
 
                                 var destroyAction = new CombatAction(user, action.Illustration, "Drain Thralls", [], "You use your thralls to draw the life out of your target.", Target.MultipleCreatureTargets(targets).WithSimultaneousAnimation().WithMustBeDistinct().WithMinimumTargets(1))
+                                .WithActionCost(0)
                                 .WithEffectOnChosenTargets(async (necromancer, chosenTargets) =>
                                 {
                                     var destroyedThrallCount = chosenTargets.ChosenCreatures.Count;
@@ -822,6 +776,43 @@ namespace Necromancer
                 });
 
             #endregion
+
+            #region Archetype
+
+            yield return ArchetypeFeats.CreateMulticlassDedication(NecromancerTrait, "You've become capable at raising simulacrums of dead creatures.", "You become trained in Occultism. You gain occult prepared spellcasting: You can cast spells and you can prepare 1 occult cantrip — a weak spell that automatically heighten as you level up. You can gain spell slots from further archetype feats. Your spellcasting ability is Intelligence. You know the Create Thrall focus spell.")
+                .WithDemandsAbility14(Ability.Intelligence)
+                .WithOnSheet((CalculatedCharacterSheetValues sheet) =>
+                {
+                    sheet.TrainInThisOrSubstitute(Skill.Occultism);
+
+                    sheet.SpellTraditionsKnown.Add(Trait.Occult);
+                    sheet.SetProficiency(Trait.Spell, Proficiency.Trained);
+                    sheet.SetProficiency(NecromancerTrait, Proficiency.Trained);
+
+                    PreparedSpellSlots preparedSpellSlots = new PreparedSpellSlots(Ability.Intelligence, Trait.Occult);
+                    if (sheet.PreparedSpells.TryAdd(NecromancerTrait, preparedSpellSlots))
+                    {
+                        preparedSpellSlots.Slots.Add(new FreePreparedSpellSlot(0, "NecromancerArchetypeCantrip"));
+
+                        preparedSpellSlots.Slots.Add(new EnforcedPreparedSpellSlot(0, "Create Thrall", AllSpells.CreateModernSpellTemplate(NecromancerSpells[NecromancerSpell.CreateThrall], NecromancerTrait), "NecromancerArchetypeCreateThrall"));
+                    }
+                })
+                .WithOnCreature((Creature creature) =>
+                {
+                    AddThrallManagementActions(creature);
+                });
+
+            foreach (Feat item in MulticlassArchetypeFeats.CreateSpellcastingFeats(NecromancerTrait, Trait.Prepared, "Occult"))
+            {
+                yield return item;
+            }
+
+            foreach (var feat in ArchetypeFeats.CreateBasicAndAdvancedMulticlassFeatGrantingArchetypeFeats(NecromancerTrait, "Necromancy"))
+            {
+                yield return feat;
+            }
+
+            #endregion
         }
 
         #region Focus Spells
@@ -1013,7 +1004,7 @@ namespace Necromancer
                         return;
                     }
 
-                    if (user.Proficiencies.Get(Trait.Spell) >= Proficiency.Expert)
+                    if (user.Proficiencies.Get(NecromancerTrait) >= Proficiency.Expert)
                     {
                         await user.Battle.GameLoop.FullCast(createThrallCombatAction);
                     }
@@ -1715,6 +1706,59 @@ namespace Necromancer
             return creature;
         }
 
+        public static void AddThrallManagementActions(Creature creature)
+        {
+            creature.AddQEffect(new()
+            {
+                ProvideActionIntoPossibilitySection = (effect, section) =>
+                {
+                    if (section.PossibilitySectionId != PossibilitySectionId.OtherManeuvers)
+                    {
+                        return null;
+                    }
+
+                    var user = effect.Owner;
+
+                    var targets = new CreatureTarget[10];
+
+                    for (int i = 0; i < 10; i++)
+                    {
+                        targets[i] = CreateThrallTarget(requireLineOfEffect: false);
+                    }
+
+                    return (ActionPossibility)new CombatAction(user, IllustrationName.DisruptUndead, "Destroy Thralls", [Trait.Basic, Trait.Concentrate, Trait.Occult, NecromancerTrait], "Destroy up to 10 of your thralls.", Target.MultipleCreatureTargets(targets).WithSimultaneousAnimation().WithMustBeDistinct().WithMinimumTargets(1))
+                    .WithActionCost(1)
+                    .WithEffectOnEachTarget(async (action, user, target, result) =>
+                    {
+                        await KillThrall(target);
+                    });
+                }
+            });
+
+            creature.AddQEffect(new()
+            {
+                ProvideActionIntoPossibilitySection = (effect, section) =>
+                {
+                    if (section.PossibilitySectionId != PossibilitySectionId.OtherManeuvers)
+                    {
+                        return null;
+                    }
+
+                    var user = effect.Owner;
+
+                    return (ActionPossibility)new CombatAction(user, IllustrationName.FleetStep, "Move Thrall", [Trait.Basic, Trait.Concentrate, Trait.Occult, NecromancerTrait], "Command a thrall to move up to 20 feet.", CreateThrallTarget(requireLineOfEffect: false))
+                    .WithActionCost(1)
+                    .WithEffectOnEachTarget(async (action, user, target, result) =>
+                    {
+                        if (await target.StrideAsync("Select where you want to stride.", allowCancel: true, allowPass: true) == false)
+                        {
+                            user.Actions.RevertExpendingOfResources(1, action);
+                        }
+                    });
+                }
+            });
+        }
+
         public static Creature CreateThrall(Creature user, int spellLevel, Guid? identifier = null)
         {
             var thrall = new Creature(GetThrallIllustration(user), $"{user}'s Thrall",
@@ -1849,7 +1893,7 @@ namespace Necromancer
             {
                 return null;
             }
-
+            
             var spellSource = necromancer.Spellcasting.Sources.Find((source) => source.ClassOfOrigin == NecromancerTrait);
 
             if (spellSource == null)
