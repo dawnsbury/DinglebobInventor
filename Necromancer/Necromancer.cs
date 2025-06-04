@@ -71,6 +71,11 @@ namespace Necromancer
 
         public readonly static Trait ThrallTrait = ModManager.RegisterTrait("Thrall");
 
+        public static readonly QEffect UnmovableThrall = new(ExpirationCondition.Never)
+        {
+            Name = "Unmovable Thrall"
+        };
+
         public static IEnumerable<Feat> LoadAll()
         {
             ClassSelectionFeat.KeyAbilities[NecromancerTrait] = [Ability.Intelligence];
@@ -96,6 +101,8 @@ namespace Necromancer
             var reaperWeaponFamiliarityFeat = ModManager.RegisterFeatName("NecromancerReaperWeaponFamiliarity", "Reaper's Weapon Familiarity");
             var vitalThrallsFeat = ModManager.RegisterFeatName("NecromancerVitalThralls", "Vital Thralls");
             var zombieHordeFeat = ModManager.RegisterFeatName("NecromancerZombieHorde", "Zombie Horde");
+
+            var inevitableReturnFeat = ModManager.RegisterFeatName("NecromancerArchetypeInevitableReturn", "Inevitable Return");
 
             #region Class Description Strings
 
@@ -640,7 +647,7 @@ namespace Necromancer
                     sheet.AddFocusSpellAndFocusPoint(NecromancerTrait, Ability.Intelligence, NecromancerSpells[NecromancerSpell.ConglomerateOfLimbs]);
                 }).WithRulesBlockForSpell(NecromancerSpells[NecromancerSpell.ConglomerateOfLimbs], NecromancerTrait).WithIllustration(IllustrationName.RouseSkeletons);
 
-            yield return new TrueFeat(vitalThrallsFeat, 8, "You can imbue your thralls with nodes of positive energy.", "When one of your thralls dies, it explodes in a burst of positive energy. Each friendly living reature within 15 feet of it gains a number of temporary Hit Points equal to half your level. Also, whenever one of your thralls would take positive damage from an effect requiring a Fortitude save, it attempts a DC 15 flat check to take no damage.", [NecromancerTrait, Trait.ClassFeat])
+            yield return new TrueFeat(vitalThrallsFeat, 8, "You can imbue your thralls with nodes of positive energy.", "When one of your thralls dies, it explodes in a burst of positive energy. Each friendly living creature within 15 feet of it gains a number of temporary Hit Points equal to half your level. Also, whenever one of your thralls would take positive damage from an effect requiring a Fortitude save, it attempts a DC 15 flat check to take no damage.", [NecromancerTrait, Trait.ClassFeat])
                 .WithIllustration(IllustrationName.Bless)
                 .WithOnCreature((Creature creature) =>
                 {
@@ -812,6 +819,61 @@ namespace Necromancer
                 yield return feat;
             }
 
+            yield return new TrueFeat(inevitableReturnFeat, 6, null, "When an enemy within 60 feet dies, you can use your reaction to raise it as a thrall.", [Trait.ClassFeat])
+                .WithAvailableAsArchetypeFeat(NecromancerTrait)
+                .WithOnCreature((Creature creature) =>
+                {
+                    creature.AddQEffect(new("Inevitable Return", "When an enemy within 60 feet dies, you can use your reaction to raise it as a thrall.")
+                    {
+                        StateCheck = (inevitableReturnEffect) =>
+                        {
+                            var necromancer = inevitableReturnEffect.Owner;
+                            foreach (Creature creature in necromancer.Battle.AllCreatures)
+                            {
+                                if (creature.EnemyOf(necromancer))
+                                {
+                                    creature.AddQEffect(new(ExpirationCondition.Ephemeral)
+                                    {
+                                        Source = necromancer,
+                                        WhenCreatureDiesAtStateCheckAsync = async (QEffect effect) =>
+                                        {
+                                            var enemy = effect.Owner;
+                                            var necromancer2 = effect.Source;
+
+                                            if (necromancer2 == null || creature.DistanceTo(necromancer) > 12 || necromancer.HasLineOfEffectTo(creature.Occupies) >= CoverKind.Blocked)
+                                            {
+                                                return;
+                                            }
+
+                                            var tileToSpawnIn = enemy.Occupies;
+
+                                            if (enemy.QEffects.All((e) => e.Name != "Inevitable Return") && await necromancer2.AskToUseReaction($"{enemy.Name} has died. Do you want to use your reaction to summon it as a thrall?"))
+                                            {
+                                                enemy.AddQEffect(new(ExpirationCondition.Never)
+                                                {
+                                                    Name = "Inevitable Return"
+                                                });
+
+                                                necromancer2.AddQEffect(new(ExpirationCondition.Ephemeral)
+                                                {
+                                                    StateCheckWithVisibleChanges = async (QEffect irEffect) =>
+                                                    {
+                                                        if (tileToSpawnIn.PrimaryOccupant == null)
+                                                        {
+                                                            necromancer2.Battle.SpawnCreature(CreateThrall(necromancer2, necromancer2.MaximumSpellRank), necromancer2.OwningFaction, tileToSpawnIn);
+                                                            irEffect.ExpiresAt = ExpirationCondition.Immediately;
+                                                        }
+                                                    }
+                                                });
+                                            }
+                                        }
+                                    });
+                                }
+                            }
+                        }
+                    });
+                });
+
             #endregion
         }
 
@@ -968,7 +1030,7 @@ namespace Necromancer
 
             #region Create Thrall
 
-            var createCreateThrallCombatAction = (Creature user, int spellLevel, Guid identifier) =>
+            var createCreateThrallCombatAction = (Creature user, int spellLevel, Guid identifier, bool movable = true) =>
             {
                 return new CombatAction(user, GetThrallIllustration(user), "Summon Thrall", [NecromancerTrait], "", Target.RangedEmptyTileForSummoning(6))
                 .WithActionCost(0)
@@ -980,7 +1042,7 @@ namespace Necromancer
                         return;
                     }
 
-                    user.Battle.SpawnCreature(CreateThrall(user, spellLevel, identifier), user.OwningFaction, target.ChosenTile);
+                    user.Battle.SpawnCreature(CreateThrall(user, spellLevel, identifier, movable), user.OwningFaction, target.ChosenTile);
                 });
             };
 
@@ -1084,7 +1146,7 @@ namespace Necromancer
                 {
                     var identifier = Guid.NewGuid();
 
-                    var createThrall = createCreateThrallCombatAction(user, user.MaximumSpellRank, identifier);
+                    var createThrall = createCreateThrallCombatAction(user, user.MaximumSpellRank, identifier, false);
                     createThrall.Target = Target.RangedEmptyTileForSummoning(12);
 
                     if (await user.Battle.GameLoop.FullCast(createThrall) == false)
@@ -1194,7 +1256,7 @@ namespace Necromancer
                                 return null;
                             }
 
-                            return (ActionPossibility)new CombatAction(effect.Owner, IllustrationName.RouseSkeletons, $"Sustain Conglomerate of Limbs {conglomerateCount + 1}", [Trait.Basic, Trait.Concentrate, Trait.SustainASpell], "Command you conglomerate thrall to move up to 15 feet.", Target.Self())
+                            return (ActionPossibility)new CombatAction(effect.Owner, IllustrationName.RouseSkeletons, $"Sustain Conglomerate of Limbs {conglomerateCount + 1}", [Trait.Basic, Trait.Concentrate, Trait.SustainASpell], "Command your conglomerate thrall to move up to 15 feet.", Target.Self())
                             .WithActionCost(1)
                             .WithEffectOnSelf(async (Creature user) =>
                             {
@@ -1746,7 +1808,7 @@ namespace Necromancer
 
                     var user = effect.Owner;
 
-                    return (ActionPossibility)new CombatAction(user, IllustrationName.FleetStep, "Move Thrall", [Trait.Basic, Trait.Concentrate, Trait.Occult, NecromancerTrait], "Command a thrall to move up to 20 feet.", CreateThrallTarget(requireLineOfEffect: false))
+                    return (ActionPossibility)new CombatAction(user, IllustrationName.FleetStep, "Move Thrall", [Trait.Basic, Trait.Concentrate, Trait.Occult, NecromancerTrait], "Command a thrall to move up to 20 feet.", CreateThrallTarget(requireLineOfEffect: false).WithAdditionalConditionOnTargetCreature((user, target) => target.QEffects.Contains(UnmovableThrall) ? Usability.NotUsableOnThisCreature("this thrall can't be moved with this action") : Usability.Usable))
                     .WithActionCost(1)
                     .WithEffectOnEachTarget(async (action, user, target, result) =>
                     {
@@ -1759,18 +1821,23 @@ namespace Necromancer
             });
         }
 
-        public static Creature CreateThrall(Creature user, int spellLevel, Guid? identifier = null)
+        public static Creature CreateThrall(Creature user, int spellLevel, Guid? identifier = null, bool movable = true)
         {
             var thrall = new Creature(GetThrallIllustration(user), $"{user}'s Thrall",
                 [Trait.Undead, Trait.Mindless, Trait.Summoned, Trait.Minion, ThrallTrait, Trait.Incorporeal], -1, user.Perception, 4, new(Checks.DetermineDefenseDC(null, null, user, Defense.AC).TotalNumber, user.Defenses.GetBaseValue(Defense.Fortitude), user.Defenses.GetBaseValue(Defense.Reflex), user.Defenses.GetBaseValue(Defense.Will)), 1, new(0, 0, 0, 0, 0, 0), new())
             { InitiativeControlledBy = user }.WithEntersInitiativeOrder(false);
 
-            thrall.AddQEffect(new(ExpirationCondition.ExpiresAtEndOfSourcesTurn)
+            thrall.AddQEffect(new(ExpirationCondition.Never)
             {
                 Name = "IdentifierQEffect",
                 Source = user,
                 Tag = identifier
             });
+
+            if (!movable)
+            {
+                thrall.AddQEffect(UnmovableThrall);
+            }
 
             //TODO: Fix the attack section to result in a success instead of critical success.
             thrall.AddQEffect(new()
