@@ -435,7 +435,10 @@ namespace Inventor
             {
                 sheet.RangerBenefitsToCompanion += (companion, inventor) =>
                 {
-                    companion.BaseSpeed = 8;
+                    if (IsConstructCompanion(companion) && inventor.HasFeat(constructInnovationFeatName))
+                    {
+                        companion.BaseSpeed = 8;
+                    }
                 };
             });
 
@@ -463,7 +466,10 @@ namespace Inventor
             {
                 sheet.RangerBenefitsToCompanion += (companion, inventor) =>
                 {
-                    companion.AddQEffect(QEffect.Flying());
+                    if (IsConstructCompanion(companion) && inventor.HasFeat(constructInnovationFeatName))
+                    {
+                        companion.AddQEffect(QEffect.Flying());
+                    }
                 };
             });
 
@@ -542,7 +548,10 @@ namespace Inventor
             {
                 sheet.RangerBenefitsToCompanion += (companion, inventor) =>
                 {
-                    companion.WithAdditionalUnarmedStrike(new Item(IllustrationName.Bomb, "cannon", Trait.Unarmed, Trait.Ranged, Trait.Propulsive).WithWeaponProperties(new WeaponProperties("1d4", DamageKind.Bludgeoning).WithRangeIncrement(6)));
+                    if (IsConstructCompanion(companion) && inventor.HasFeat(constructInnovationFeatName))
+                    {
+                        companion.WithAdditionalUnarmedStrike(new Item(IllustrationName.Bomb, "cannon", Trait.Unarmed, Trait.Ranged, Trait.Propulsive).WithWeaponProperties(new WeaponProperties("1d4", DamageKind.Bludgeoning).WithRangeIncrement(6)));
+                    }
                 };
             });
 
@@ -584,42 +593,45 @@ namespace Inventor
             {
                 sheet.RangerBenefitsToCompanion += (Creature companion, Creature inventor) =>
                 {
-                    if (companion.Proficiencies.Get(Trait.Survival) == Proficiency.Trained)
+                    if (IsConstructCompanion(companion) && inventor.HasFeat(constructInnovationFeatName))
                     {
-                        sheet.SetProficiency(Trait.Survival, Proficiency.Expert);
-                        companion.Proficiencies.Set(Trait.Survival, Proficiency.Expert);
-                    }
-                    else if (companion.Proficiencies.Get(Trait.Survival) == Proficiency.Untrained)
-                    {
-                        sheet.SetProficiency(Trait.Survival, Proficiency.Trained);
-                        companion.Proficiencies.Set(Trait.Survival, Proficiency.Trained);
-                    }
+                        if (companion.Proficiencies.Get(Trait.Survival) == Proficiency.Trained)
+                        {
+                            sheet.SetProficiency(Trait.Survival, Proficiency.Expert);
+                            companion.Proficiencies.Set(Trait.Survival, Proficiency.Expert);
+                        }
+                        else if (companion.Proficiencies.Get(Trait.Survival) == Proficiency.Untrained)
+                        {
+                            sheet.SetProficiency(Trait.Survival, Proficiency.Trained);
+                            companion.Proficiencies.Set(Trait.Survival, Proficiency.Trained);
+                        }
 
-                    if (companion.Proficiencies.Get(Trait.Intimidation) == Proficiency.Trained)
-                    {
-                        sheet.SetProficiency(Trait.Intimidation, Proficiency.Expert);
-                        companion.Proficiencies.Set(Trait.Intimidation, Proficiency.Expert);
-                    }
-                    else if (companion.Proficiencies.Get(Trait.Intimidation) == Proficiency.Untrained)
-                    {
-                        sheet.SetProficiency(Trait.Intimidation, Proficiency.Trained);
-                        companion.Proficiencies.Set(Trait.Intimidation, Proficiency.Trained);
-                    }
+                        if (companion.Proficiencies.Get(Trait.Intimidation) == Proficiency.Trained)
+                        {
+                            sheet.SetProficiency(Trait.Intimidation, Proficiency.Expert);
+                            companion.Proficiencies.Set(Trait.Intimidation, Proficiency.Expert);
+                        }
+                        else if (companion.Proficiencies.Get(Trait.Intimidation) == Proficiency.Untrained)
+                        {
+                            sheet.SetProficiency(Trait.Intimidation, Proficiency.Trained);
+                            companion.Proficiencies.Set(Trait.Intimidation, Proficiency.Trained);
+                        }
 
-                    if (companion.Proficiencies.Get(Trait.Stealth) == Proficiency.Trained)
-                    {
-                        sheet.SetProficiency(Trait.Stealth, Proficiency.Expert);
-                        companion.Proficiencies.Set(Trait.Stealth, Proficiency.Expert);
-                    }
-                    else if (companion.Proficiencies.Get(Trait.Stealth) == Proficiency.Untrained)
-                    {
-                        sheet.SetProficiency(Trait.Stealth, Proficiency.Trained);
-                        companion.Proficiencies.Set(Trait.Stealth, Proficiency.Trained);
-                    }
+                        if (companion.Proficiencies.Get(Trait.Stealth) == Proficiency.Trained)
+                        {
+                            sheet.SetProficiency(Trait.Stealth, Proficiency.Expert);
+                            companion.Proficiencies.Set(Trait.Stealth, Proficiency.Expert);
+                        }
+                        else if (companion.Proficiencies.Get(Trait.Stealth) == Proficiency.Untrained)
+                        {
+                            sheet.SetProficiency(Trait.Stealth, Proficiency.Trained);
+                            companion.Proficiencies.Set(Trait.Stealth, Proficiency.Trained);
+                        }
 
-                    companion.Skills.Set(Skill.Intimidation, companion.Abilities.Charisma + companion.Proficiencies.Get(Trait.Intimidation).ToNumber(companion.Level));
-                    companion.Skills.Set(Skill.Stealth, companion.Abilities.Dexterity + companion.Proficiencies.Get(Trait.Stealth).ToNumber(companion.Level));
-                    companion.Skills.Set(Skill.Survival, companion.Abilities.Wisdom + companion.Proficiencies.Get(Trait.Survival).ToNumber(companion.Level));
+                        companion.Skills.Set(Skill.Intimidation, companion.Abilities.Charisma + companion.Proficiencies.Get(Trait.Intimidation).ToNumber(companion.Level));
+                        companion.Skills.Set(Skill.Stealth, companion.Abilities.Dexterity + companion.Proficiencies.Get(Trait.Stealth).ToNumber(companion.Level));
+                        companion.Skills.Set(Skill.Survival, companion.Abilities.Wisdom + companion.Proficiencies.Get(Trait.Survival).ToNumber(companion.Level));
+                    }
                 };
             });
 
@@ -649,10 +661,13 @@ namespace Inventor
             {
                 sheet.RangerBenefitsToCompanion += (companion, inventor) =>
                 {
-                    companion.AddQEffect(new("Antimagic Construction", "Your construct innovation gains a +2 circumstance bonus to all saving throws and AC against spells.")
+                    if (IsConstructCompanion(companion) && inventor.HasFeat(constructInnovationFeatName))
                     {
-                        BonusToDefenses = (QEffect qf, CombatAction? combatAction, Defense defense) => combatAction != null && combatAction.HasTrait(Trait.Spell) && (defense == Defense.AC || defense == Defense.Fortitude || defense == Defense.Reflex || defense == Defense.Will) ? new Bonus(2, BonusType.Circumstance, "Antimagic Construction", true) : null
-                    });
+                        companion.AddQEffect(new("Antimagic Construction", "Your construct innovation gains a +2 circumstance bonus to all saving throws and AC against spells.")
+                        {
+                            BonusToDefenses = (QEffect qf, CombatAction? combatAction, Defense defense) => combatAction != null && combatAction.HasTrait(Trait.Spell) && (defense == Defense.AC || defense == Defense.Fortitude || defense == Defense.Reflex || defense == Defense.Will) ? new Bonus(2, BonusType.Circumstance, "Antimagic Construction", true) : null
+                        });
+                    }
                 };
             });
 
@@ -673,7 +688,10 @@ namespace Inventor
             {
                 sheet.RangerBenefitsToCompanion += (companion, inventor) =>
                 {
-                    companion.MaxHP += inventor.Level;
+                    if (IsConstructCompanion(companion) && inventor.HasFeat(constructInnovationFeatName))
+                    {
+                        companion.MaxHP += inventor.Level;
+                    }
                 };
             });
 
@@ -712,36 +730,39 @@ namespace Inventor
             {
                 sheet.RangerBenefitsToCompanion += (Creature companion, Creature inventor) =>
                 {
-                    if (companion.Proficiencies.AllProficiencies[Trait.Intimidation] == Proficiency.Expert)
+                    if (IsConstructCompanion(companion) && inventor.HasFeat(constructInnovationFeatName))
                     {
-                        companion.Proficiencies.Set(Trait.Intimidation, Proficiency.Master);
-                    }
-                    else
-                    {
-                        companion.Proficiencies.Set(Trait.Intimidation, Proficiency.Expert);
-                    }
+                        if (companion.Proficiencies.AllProficiencies[Trait.Intimidation] == Proficiency.Expert)
+                        {
+                            companion.Proficiencies.Set(Trait.Intimidation, Proficiency.Master);
+                        }
+                        else
+                        {
+                            companion.Proficiencies.Set(Trait.Intimidation, Proficiency.Expert);
+                        }
 
-                    if (companion.Proficiencies.AllProficiencies[Trait.Stealth] == Proficiency.Expert)
-                    {
-                        companion.Proficiencies.Set(Trait.Stealth, Proficiency.Master);
-                    }
-                    else
-                    {
-                        companion.Proficiencies.Set(Trait.Stealth, Proficiency.Expert);
-                    }
+                        if (companion.Proficiencies.AllProficiencies[Trait.Stealth] == Proficiency.Expert)
+                        {
+                            companion.Proficiencies.Set(Trait.Stealth, Proficiency.Master);
+                        }
+                        else
+                        {
+                            companion.Proficiencies.Set(Trait.Stealth, Proficiency.Expert);
+                        }
 
-                    if (companion.Proficiencies.AllProficiencies[Trait.Survival] == Proficiency.Expert)
-                    {
-                        companion.Proficiencies.Set(Trait.Survival, Proficiency.Master);
-                    }
-                    else
-                    {
-                        companion.Proficiencies.Set(Trait.Survival, Proficiency.Expert);
-                    }
+                        if (companion.Proficiencies.AllProficiencies[Trait.Survival] == Proficiency.Expert)
+                        {
+                            companion.Proficiencies.Set(Trait.Survival, Proficiency.Master);
+                        }
+                        else
+                        {
+                            companion.Proficiencies.Set(Trait.Survival, Proficiency.Expert);
+                        }
 
-                    companion.Skills.Set(Skill.Intimidation, companion.Abilities.Charisma + companion.Proficiencies.Get(Trait.Intimidation).ToNumber(companion.Level));
-                    companion.Skills.Set(Skill.Stealth, companion.Abilities.Dexterity + companion.Proficiencies.Get(Trait.Stealth).ToNumber(companion.Level));
-                    companion.Skills.Set(Skill.Survival, companion.Abilities.Wisdom + companion.Proficiencies.Get(Trait.Survival).ToNumber(companion.Level));
+                        companion.Skills.Set(Skill.Intimidation, companion.Abilities.Charisma + companion.Proficiencies.Get(Trait.Intimidation).ToNumber(companion.Level));
+                        companion.Skills.Set(Skill.Stealth, companion.Abilities.Dexterity + companion.Proficiencies.Get(Trait.Stealth).ToNumber(companion.Level));
+                        companion.Skills.Set(Skill.Survival, companion.Abilities.Wisdom + companion.Proficiencies.Get(Trait.Survival).ToNumber(companion.Level));
+                    }
                 };
             }).WithPrerequisite((CalculatedCharacterSheetValues values) => values.AllFeatNames.Contains(wonderGearsFeat), "You must have the Wonder Gears modification.");
 
@@ -774,47 +795,50 @@ namespace Inventor
             {
                 sheet.RangerBenefitsToCompanion += (companion, inventor) =>
                 {
-                    companion.AddQEffect(new()
+                    if (IsConstructCompanion(companion) && inventor.HasFeat(constructInnovationFeatName))
                     {
-                        ProvideMainAction = delegate (QEffect turretConfigurationQEffect)
+                        companion.AddQEffect(new()
                         {
-                            var user = turretConfigurationQEffect.Owner;
-
-                            if (!user.HasEffect(TurretConfigurationID))
+                            ProvideMainAction = delegate (QEffect turretConfigurationQEffect)
                             {
-                                return (ActionPossibility)new CombatAction(user, new SideBySideIllustration(IllustrationName.Camp, IllustrationName.Bomb), "Turret Configuration", [InventorTrait], "You transform into a turret, becoming immobilized but improving your projectile's damage die by one step and increasing its range increment to 60 feet.", Target.Self()) { ShortDescription = "You turn into a turret." }
+                                var user = turretConfigurationQEffect.Owner;
+
+                                if (!user.HasEffect(TurretConfigurationID))
+                                {
+                                    return (ActionPossibility)new CombatAction(user, new SideBySideIllustration(IllustrationName.Camp, IllustrationName.Bomb), "Turret Configuration", [InventorTrait], "You transform into a turret, becoming immobilized but improving your projectile's damage die by one step and increasing its range increment to 60 feet.", Target.Self()) { ShortDescription = "You turn into a turret." }
+                                    .WithActionCost(1)
+                                    .WithSoundEffect(Dawnsbury.Audio.SfxName.AuraExpansion)
+                                    .WithEffectOnSelf(async delegate (CombatAction transform, Creature user)
+                                    {
+                                        companion.RemoveAllQEffects((effect) => effect.AdditionalUnarmedStrike != null && effect.AdditionalUnarmedStrike.Name == "cannon");
+                                        companion.WithAdditionalUnarmedStrike(new Item(IllustrationName.Bomb, "cannon", Trait.Unarmed, Trait.Ranged, Trait.Propulsive).WithWeaponProperties(new WeaponProperties($"{user.UnarmedStrike.WeaponProperties.DamageDieCount}d6", DamageKind.Bludgeoning).WithRangeIncrement(12)));
+
+                                        user.AddQEffect(new()
+                                        {
+                                            Name = "Turret",
+                                            Id = TurretConfigurationID,
+                                            Illustration = new SideBySideIllustration(IllustrationName.Camp, IllustrationName.Bomb),
+                                            Owner = user,
+                                            Source = user,
+                                            Description = "You're in your turret configuration.",
+                                            PreventTakingAction = (CombatAction ca) => (!ca.HasTrait(Trait.Move)) ? null : "You're immobilized.",
+                                        });
+                                    });
+                                }
+
+                                return (ActionPossibility)new CombatAction(user, new SideBySideIllustration(IllustrationName.Walk, IllustrationName.Bomb), "Turret Configuration", [InventorTrait], "You transform into a turret, becoming immobilized but improving your projectile's damage die by one step and increasing its range increment to 60 feet.", Target.Self()) { ShortDescription = "You turn into a turret." }
                                 .WithActionCost(1)
                                 .WithSoundEffect(Dawnsbury.Audio.SfxName.AuraExpansion)
                                 .WithEffectOnSelf(async delegate (CombatAction transform, Creature user)
                                 {
-                                    companion.RemoveAllQEffects((effect) => effect.AdditionalUnarmedStrike != null && effect.AdditionalUnarmedStrike.Name == "cannon");
-                                    companion.WithAdditionalUnarmedStrike(new Item(IllustrationName.Bomb, "cannon", Trait.Unarmed, Trait.Ranged, Trait.Propulsive).WithWeaponProperties(new WeaponProperties($"{user.UnarmedStrike.WeaponProperties.DamageDieCount}d6", DamageKind.Bludgeoning).WithRangeIncrement(12)));
+                                    user.RemoveAllQEffects((effect) => effect.AdditionalUnarmedStrike != null && effect.AdditionalUnarmedStrike.Name == "cannon");
+                                    user.WithAdditionalUnarmedStrike(new Item(IllustrationName.Bomb, "cannon", Trait.Unarmed, Trait.Ranged, Trait.Propulsive).WithWeaponProperties(new WeaponProperties($"{user.UnarmedStrike.WeaponProperties.DamageDieCount}d4", DamageKind.Bludgeoning).WithRangeIncrement(6)));
 
-                                    user.AddQEffect(new()
-                                    {
-                                        Name = "Turret",
-                                        Id = TurretConfigurationID,
-                                        Illustration = new SideBySideIllustration(IllustrationName.Camp, IllustrationName.Bomb),
-                                        Owner = user,
-                                        Source = user,
-                                        Description = "You're in your turret configuration.",
-                                        PreventTakingAction = (CombatAction ca) => (!ca.HasTrait(Trait.Move)) ? null : "You're immobilized.",
-                                    });
+                                    user.RemoveAllQEffects((effect) => effect.Id == TurretConfigurationID);
                                 });
                             }
-
-                            return (ActionPossibility)new CombatAction(user, new SideBySideIllustration(IllustrationName.Walk, IllustrationName.Bomb), "Turret Configuration", [InventorTrait], "You transform into a turret, becoming immobilized but improving your projectile's damage die by one step and increasing its range increment to 60 feet.", Target.Self()) { ShortDescription = "You turn into a turret." }
-                            .WithActionCost(1)
-                            .WithSoundEffect(Dawnsbury.Audio.SfxName.AuraExpansion)
-                            .WithEffectOnSelf(async delegate (CombatAction transform, Creature user)
-                            {
-                                user.RemoveAllQEffects((effect) => effect.AdditionalUnarmedStrike != null && effect.AdditionalUnarmedStrike.Name == "cannon");
-                                user.WithAdditionalUnarmedStrike(new Item(IllustrationName.Bomb, "cannon", Trait.Unarmed, Trait.Ranged, Trait.Propulsive).WithWeaponProperties(new WeaponProperties($"{user.UnarmedStrike.WeaponProperties.DamageDieCount}d4", DamageKind.Bludgeoning).WithRangeIncrement(6)));
-
-                                user.RemoveAllQEffects((effect) => effect.Id == TurretConfigurationID);
-                            });
-                        }
-                    });
+                        });
+                    }
                 };
             }).WithPrerequisite((CalculatedCharacterSheetValues values) => values.AllFeatNames.Contains(projectileLauncherFeat), "You must have the Projectile Launcher modification.");
 
@@ -891,7 +915,7 @@ namespace Inventor
             {
                 sheet.RangerBenefitsToCompanion += (companion, inventor) =>
                 {
-                    if (!companion.HasFeat(constructInnovationFeatName))
+                    if (IsConstructCompanion(companion) && inventor.HasFeat(constructInnovationFeatName))
                     {
                         companion.AddQEffect(new()
                         {
@@ -1097,7 +1121,9 @@ namespace Inventor
 
             #region Level 2 Feats
 
-            yield return new TrueFeat(flingAcidFeat, 2, "Your innovation generates an acidic goo.", "You fling acidic goo at an enemy in 30 feet. The target takes 1d6 acid damage plus 1d6 bludgeoning damage, with a basic Reflex save. Enemies that fail take 1d4 persistent acid damage. The initial acid and bludgeoning damage each increase by 1d6 at 3rd level and every odd level thereafter.", [Trait.Acid, InventorTrait, Trait.Manipulate, UnstableTrait, Trait.ClassFeat]).WithActionCost(2).WithOnCreature(delegate (Creature creature)
+            yield return new TrueFeat(flingAcidFeat, 2, "Your innovation generates an acidic goo.", "You fling acidic goo at an enemy in 30 feet. The target takes 1d6 acid damage plus 1d6 bludgeoning damage, with a basic Reflex save. Enemies that fail take 1d4 persistent acid damage. The initial acid and bludgeoning damage each increase by 1d6 at 3rd level and every odd level thereafter.\n\n{b}Special{/b} If your innovation is a minion, it can take this action rather than you.", [Trait.Acid, InventorTrait, Trait.Manipulate, UnstableTrait, Trait.ClassFeat])
+            .WithActionCost(2)
+            .WithOnCreature(delegate (Creature creature)
             {
                 creature.AddQEffect(new()
                 {
@@ -1113,7 +1139,7 @@ namespace Inventor
                         return ((ActionPossibility)new CombatAction(user, IllustrationName.AcidSplash, "Fling Acid", [Trait.Acid, InventorTrait, Trait.Manipulate, UnstableTrait], $"Your innovation generates an acidic goo, which you fing at an enemy in 30 feet. The target takes {(user.Level - 1) / 2 + 1}d6 acid damage plus {(user.Level - 1) / 2 + 1}d6 bludgeoning damage, with a basic Reflex save. Enemies that fail take {(user.Level - 1) / 4 + 1}d4 persistent acid damage.", Target.Ranged(6)) { ShortDescription = $"Fling acidic goo at an enemy in 30 feet to deal {(user.Level - 1) / 2 + 1}d6 acid damage plus {(user.Level - 1) / 2 + 1}d6 bludgeoning damage, with a basic Reflex save." }
                         .WithActionCost(2)
                         .WithSoundEffect(SfxName.AcidSplash)
-                        .WithSavingThrow(new SavingThrow(Defense.Reflex, (Creature? explodeUser) => explodeUser!.ProficiencyLevel + explodeUser!.Abilities.Intelligence + 12))
+                        .WithSavingThrow(new(Defense.Reflex, user.ClassDC(InventorTrait)))
                         .WithEffectOnEachTarget(async delegate (CombatAction flingAcid, Creature user, Creature target, CheckResult result)
                         {
                             await CommonSpellEffects.DealBasicDamage(flingAcid, user, target, result, new KindedDamage(DiceFormula.FromText($"{(user.Level - 1) / 2 + 1}d6"), DamageKind.Bludgeoning), new KindedDamage(DiceFormula.FromText($"{(user.Level - 1) / 2 + 1}d6"), DamageKind.Acid));
@@ -1129,6 +1155,47 @@ namespace Inventor
                         })).WithPossibilityGroup("Unstable");
                     }
                 });
+            })
+            .WithOnSheet((CalculatedCharacterSheetValues sheet) =>
+            {
+                sheet.RangerBenefitsToCompanion += (companion, inventor) =>
+                {
+                    if (!IsConstructCompanion(companion) || !inventor.HasFeat(constructInnovationFeatName))
+                    {
+                        return;
+                    }
+
+                    companion.AddQEffect(new()
+                    {
+                        ProvideActionIntoPossibilitySection = delegate (QEffect qEffect, PossibilitySection possibilitySection)
+                        {
+                            if (possibilitySection.PossibilitySectionId != PossibilitySectionId.MainActions)
+                            {
+                                return null;
+                            }
+
+                            var user = qEffect.Owner;
+
+                            return ((ActionPossibility)new CombatAction(user, IllustrationName.AcidSplash, "Fling Acid", [Trait.Acid, InventorTrait, Trait.Manipulate, UnstableTrait], $"Your innovation generates an acidic goo, which you fing at an enemy in 30 feet. The target takes {(user.Level - 1) / 2 + 1}d6 acid damage plus {(user.Level - 1) / 2 + 1}d6 bludgeoning damage, with a basic Reflex save. Enemies that fail take {(user.Level - 1) / 4 + 1}d4 persistent acid damage.", Target.Ranged(6)) { ShortDescription = $"Fling acidic goo at an enemy in 30 feet to deal {(user.Level - 1) / 2 + 1}d6 acid damage plus {(user.Level - 1) / 2 + 1}d6 bludgeoning damage, with a basic Reflex save." }
+                            .WithActionCost(2)
+                            .WithSoundEffect(SfxName.AcidSplash)
+                            .WithSavingThrow(new(Defense.Reflex, inventor.ClassDC(InventorTrait)))
+                            .WithEffectOnEachTarget(async delegate (CombatAction flingAcid, Creature user, Creature target, CheckResult result)
+                            {
+                                await CommonSpellEffects.DealBasicDamage(flingAcid, user, target, result, new KindedDamage(DiceFormula.FromText($"{(user.Level - 1) / 2 + 1}d6"), DamageKind.Bludgeoning), new KindedDamage(DiceFormula.FromText($"{(user.Level - 1) / 2 + 1}d6"), DamageKind.Acid));
+
+                                if (result == CheckResult.Failure || result == CheckResult.CriticalFailure)
+                                {
+                                    target.AddQEffect(QEffect.PersistentDamage($"{(user.Level - 1) / 4 + 1}d4", DamageKind.Acid));
+                                }
+                            })
+                            .WithEffectOnSelf(async delegate (CombatAction unstable, Creature user)
+                            {
+                                await MakeUnstableCheck(unstable, inventor, user);
+                            })).WithPossibilityGroup("Unstable");
+                        }
+                    });
+                };
             });
 
             yield return new TrueFeat(modifiedShieldFeat, 2, "You've added blades to your shield, turning it into a weapon and improving its defenses.", "Shields you hold at the start of combat have +2 hardness and the versatile slashing trait.", [InventorTrait, Trait.ClassFeat], null).WithOnCreature(delegate (Creature creature)
@@ -1192,7 +1259,7 @@ namespace Inventor
             {
                 sheet.RangerBenefitsToCompanion += (companion, inventor) =>
                 {
-                    if (!companion.HasFeat(constructInnovationFeatName))
+                    if (IsConstructCompanion(companion) && inventor.HasFeat(constructInnovationFeatName))
                     {
                         companion.AddQEffect(new()
                         {
@@ -1249,6 +1316,11 @@ namespace Inventor
             {
                 sheet.RangerBenefitsToCompanion += (companion, ranger) =>
                 {
+                    if (!IsConstructCompanion(companion))
+                    {
+                        return;
+                    }
+
                     companion.MaxHP += companion.Level;
                     companion.Abilities.Strength += 1;
                     companion.Abilities.Dexterity += 1;
@@ -1489,6 +1561,11 @@ namespace Inventor
 
                 sheet.RangerBenefitsToCompanion += (companion, inventor) =>
                 {
+                    if (!IsConstructCompanion(companion) || !inventor.HasFeat(constructInnovationFeatName))
+                    {
+                        return;
+                    }
+
                     companion.AddQEffect(new QEffect
                     {
                         ProvideStrikeModifier = delegate (Item item)
@@ -1604,7 +1681,7 @@ namespace Inventor
             {
                 sheet.RangerBenefitsToCompanion += (companion, inventor) =>
                 {
-                    if (!companion.HasFeat(constructInnovationFeatName))
+                    if (IsConstructCompanion(companion) && inventor.HasFeat(constructInnovationFeatName))
                     {
                         companion.AddQEffect(new()
                         {
@@ -1729,6 +1806,11 @@ namespace Inventor
 
                 sheet.RangerBenefitsToCompanion += (Creature construct, Creature inventor) =>
                 {
+                    if (!IsConstructCompanion(construct))
+                    {
+                        return;
+                    }
+
                     construct.AddQEffect(new("Gigaton Strike", "When you use a full-power Megaton Strike, you can knock your foe back.")
                     {
                         AfterYouTakeAction = async (QEffect qEffect, CombatAction action) =>
@@ -1772,6 +1854,11 @@ namespace Inventor
             {
                 sheet.RangerBenefitsToCompanion += (companion, ranger) =>
                 {
+                    if (!IsConstructCompanion(companion))
+                    {
+                        return;
+                    }
+
                     companion.MaxHP += companion.Level * 2;
                     companion.Abilities.Strength += 2;
                     companion.Abilities.Dexterity += 2;
@@ -2057,6 +2144,7 @@ namespace Inventor
                                     inventor2.PersistentUsedUpResources.UsedUpActions.Add("ConstructCompanionIsDead");
                                 }
                             });
+
                             sheet2.RangerBenefitsToCompanion?.Invoke(creature2, inventor2);
                             inventor2.Battle.SpawnCreature(creature2, inventor2.OwningFaction, inventor2.Occupies);
                         }
@@ -2212,6 +2300,11 @@ namespace Inventor
         private static Creature? GetInventor(Creature companion)
         {
             return companion.QEffects.FirstOrDefault((QEffect qf) => qf.Id == ConstructCompanionID)?.Source;
+        }
+
+        public static bool IsConstructCompanion(Creature companion)
+        {
+            return companion.HasEffect(ConstructCompanionID);
         }
 
         #endregion
