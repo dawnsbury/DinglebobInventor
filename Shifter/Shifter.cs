@@ -1505,7 +1505,7 @@ namespace Shifter
 
         private static CombatAction BreathWeapon(Creature user, DamageKind damageKind, int range)
         {
-            return new CombatAction(user, IllustrationName.BreathWeapon, $"Breathe {damageKind} {range * 5} feet", [ShifterTrait, ApexTrait, damageKind == DamageKind.Acid ? Trait.Acid : damageKind == DamageKind.Cold ? Trait.Cold : damageKind == DamageKind.Electricity ? Trait.Electricity : Trait.Fire], $"Deal {(user.Level + 1) / 2 + 1}d" + (user.Level >= 5 ? "8" : "6") + $" {damageKind} damage to all creatures in a {range * 5}-foot cone with a basic reflex save.\n\nThe damage increases by 1d6 at 3rd level and every odd level thereafter.\n\nAt 5th level, the damage dice insrease to d8s and you can make the cone 30 feet long.", Target.Cone(range)) { ShortDescription = $"Deal {(user.Level + 1) / 2 + 1}d" + (user.Level >= 5 ? "8" : "6") + $" {damageKind} damage to all creatures in a {range * 5}-foot cone." }
+            return new CombatAction(user, IllustrationName.BreathWeapon, $"Breathe {damageKind} {range * 5} feet", [ShifterTrait, ApexTrait, damageKind == DamageKind.Acid ? Trait.Acid : damageKind == DamageKind.Cold ? Trait.Cold : damageKind == DamageKind.Electricity ? Trait.Electricity : damageKind == DamageKind.Mental ? Trait.Mental : damageKind == DamageKind.Poison ? Trait.Poison : damageKind == DamageKind.Sonic ? Trait.Sonic : Trait.Fire], $"Deal {(user.Level + 1) / 2 + 1}d" + (user.Level >= 5 ? "8" : "6") + $" {damageKind} damage to all creatures in a {range * 5}-foot cone with a basic reflex save.\n\nThe damage increases by 1d6 at 3rd level and every odd level thereafter.\n\nAt 5th level, the damage dice increase to d8s and you can make the cone 30 feet long.", Target.Cone(range)) { ShortDescription = $"Deal {(user.Level + 1) / 2 + 1}d" + (user.Level >= 5 ? "8" : "6") + $" {damageKind} damage to all creatures in a {range * 5}-foot cone." }
                 .WithActionCost(2)
                 .WithSoundEffect(Dawnsbury.Audio.SfxName.Fireball)
                 .WithSavingThrow(new(Defense.Reflex, target => user.ClassDC(ShifterTrait)))
@@ -1529,7 +1529,7 @@ namespace Shifter
 
         private static CombatAction FrogSlam(Creature user, int area)
         {
-            return new CombatAction(user, IllustrationName.Tremor, $"{area * 5}-Foot Frog Slam", [ShifterTrait, ApexTrait, Trait.Move], $"You Leap up to your speed and slam into the ground. Creatures adjacent to you when you land take {(user.Level + 1) / 2}d" + (user.Level >= 5 ? "6" : "4") + " damage, with a basic Reflex save.\n\nThe damage increases by 1d4 at 3rd level and every odd level thereafter.\n\nAt 5th level, the damage dice insrease to d6s and you can choose to deal damage to all creatures within 10 feet of where you land.",
+            return new CombatAction(user, IllustrationName.Tremor, $"{area * 5}-Foot Frog Slam", [ShifterTrait, ApexTrait, Trait.Move], $"You Leap up to your speed and slam into the ground. Creatures adjacent to you when you land take {(user.Level + 1) / 2}d" + (user.Level >= 5 ? "6" : "4") + " damage, with a basic Reflex save.\n\nThe damage increases by 1d4 at 3rd level and every odd level thereafter.\n\nAt 5th level, the damage dice increase to d6s and you can choose to deal damage to all creatures within 10 feet of where you land.",
                 new TileTarget((Creature user, Tile tile) =>
                 {
                     int? test = user.Occupies?.DistanceTo(tile);
@@ -1917,7 +1917,7 @@ namespace Shifter
         
         private static CombatAction LogRoll(Creature user, int range)
         {
-            return new CombatAction(user, IllustrationName.TimberSentinel, $"{range * 5}-Foot Log Roll", [ShifterTrait, ApexTrait], $"You grow a massive log and roll it through your enemies. Creatures in a {range * 5}-foot line take {(user.Level + 1) / 2 + 1}d" + (user.Level >= 5 ? "8" : "6") + " bludgeoning damage with a basic reflex save.\n\nThe damage increases by 1d6 at 3rd level and every odd level thereafter.\n\nAt 5th level, the damage dice insrease to d8s and you can make the line 60 feet long.", Target.Line(range)) { ShortDescription = $"You grow a massive log and roll it through your enemies to deal {(user.Level + 1) / 2 + 1}d" + (user.Level >= 5 ? "8" : "6") + " bludgeoning damage." }
+            return new CombatAction(user, IllustrationName.TimberSentinel, $"{range * 5}-Foot Log Roll", [ShifterTrait, ApexTrait], $"You grow a massive log and roll it through your enemies. Creatures in a {range * 5}-foot line take {(user.Level + 1) / 2 + 1}d" + (user.Level >= 5 ? "8" : "6") + " bludgeoning damage with a basic reflex save.\n\nThe damage increases by 1d6 at 3rd level and every odd level thereafter.\n\nAt 5th level, the damage dice increase to d8s and you can make the line 60 feet long.", Target.Line(range)) { ShortDescription = $"You grow a massive log and roll it through your enemies to deal {(user.Level + 1) / 2 + 1}d" + (user.Level >= 5 ? "8" : "6") + " bludgeoning damage." }
                 .WithActionCost(2)
                 .WithSoundEffect(Dawnsbury.Audio.SfxName.ElementalBlastWood)
                 .WithSavingThrow(new(Defense.Reflex, character => user.ClassDC(ShifterTrait)))
