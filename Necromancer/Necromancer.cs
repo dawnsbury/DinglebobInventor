@@ -455,7 +455,8 @@ namespace Necromancer
                                         await KillThrall(thrall);
                                     }
 
-                                    action.WithEffectOnEachTarget(necromancer.CreateStrike(weapon).EffectOnOneTarget!);
+                                    action.EffectOnOneTarget = necromancer.CreateStrike(weapon).EffectOnOneTarget!;
+                                    //action.WithEffectOnEachTarget(necromancer.CreateStrike(weapon).EffectOnOneTarget!);
                                 });
 
                                 await user.Battle.GameLoop.FullCast(destroyAction);
