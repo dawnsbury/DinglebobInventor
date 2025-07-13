@@ -37,6 +37,8 @@ namespace Shifter
 {
     public static class Shifter
     {
+        public readonly static QEffectId IncreasedInfluenceID = ModManager.RegisterEnumMember<QEffectId>("ShifterIncreasedInfluence");
+
         public readonly static QEffectId FormID = ModManager.RegisterEnumMember<QEffectId>("ShifterForm");
 
         public readonly static ActionId ShiftID = ModManager.RegisterEnumMember<ActionId>("ShifterShift");
@@ -108,40 +110,73 @@ namespace Shifter
                 "{b}6. Shifter Feat.{/b} \n\n" +
                 "{b}At higher levels:{/b}\n" +
                 "{b}Level 2:{/b} Shifter feat\n" +
-                "{b}Level 3:{/b} General feat, skill increase, animal senses ({i}You become an expert in Perception and you gain the Incredible Initiative feat){/i}\n" +
+                "{b}Level 3:{/b} General feat, skill increase, animal senses {i}(You become an expert in Perception and you gain the Incredible Initiative feat){/i}\n" +
                 "{b}Level 4:{/b} Shifter feat\n" +
                 "{b}Level 5:{/b} Ability boosts, ancestry feat, bestial insticts 2d6, expert strikes, natural specialization {i}(You gain the {tooltip:criteffect}critical specialization effects{/} of unarmed attacks.){/i}, skill increase\n" +
                 "{b}Level 6:{/b} Shifter feat\n" +
                 "{b}Level 7:{/b} Expert shifter {i}(Your shifter class DC increases to expert, and you gain an additional form. The additional form can be either a starting form or a form feat of your level or lower.){/i}, general feat, skill increase, weapon specialization {i}(You deal 2 additional damage with weapons and unarmed attacks in which you are an expert; this damage increases to 3 if you're a master, and to 4 if you're legendary){/i}, physical malleability {i}(Your proficiency rank for Fortitude saves increases to master. When you roll a success on a Fortitude save, you get a critical success instead.){/i}\n" +
-                "{b}Level 8:{/b} Shifter feat";
+                "{b}Level 8:{/b} Shifter feat\n" +
+                "{b}Level 9:{/b} Ancestry feat, animal reflex {i}(You become an expert in Reflex){/i}, increased influence {i}(Your animal influence grants an additional effect when you Shift){/i}, skill increase";
 
             #endregion
 
             #region Influences
 
-            var trueDurableInfluenceFeat = new Feat(durableInfluenceFeat, "Your animal influence allows you to endure more pain than a normal adventurer.", "When you Shift, you gain 2 temporary Hit Points. You gain an additional 1 temporary Hit Point at level 3 and every level thereafter.", [influenceTrait], null)
+            var trueDurableInfluenceFeat = new Feat(durableInfluenceFeat, "Your animal influence allows you to endure more pain than a normal adventurer.", "When you Shift for the first time each turn, you gain 2 temporary Hit Points. You gain an additional 1 temporary Hit Point at level 3 and every level thereafter.\n\n{b}Increased Influence (9th){/b} When you Shift for the first time each turn, you make a flat check to recover from all sources of persistent damage, and you make a Fortitude save to recover from the sickened condition.", [influenceTrait], null)
                 .WithOnCreature((Creature featUser) =>
                 {
-                    featUser.AddQEffect(new("Durable Influence", $"When you Shift, you gain " + (featUser.Level > 1 ? featUser.Level : 2) + " temporary Hit Points.")
+                    featUser.AddQEffect(new("Durable Influence", $"When you Shift for the first time each turn, you gain " + (featUser.Level > 1 ? featUser.Level : 2) + " temporary Hit Points.")
                     {
                         AfterYouTakeAction = async (QEffect effect, CombatAction action) =>
                         {
-                            if (action.ActionId != ShiftID)
+                            var user = effect.Owner;
+
+                            if (action.ActionId != ShiftID || !user.QEffects.All(qEffect => qEffect.Name != "Durable Influence Immunity"))
                             {
                                 return;
                             }
-
-                            var user = effect.Owner;
+                            
                             user.GainTemporaryHP(featUser.Level > 1 ? featUser.Level : 2);
+
+                            if (user.HasEffect(IncreasedInfluenceID))
+                            {
+                                foreach (var persistentEffect in user.QEffects.Where((QEffect qEffect) => qEffect.Id == QEffectId.PersistentDamage))
+                                {
+                                    persistentEffect.RollPersistentDamageRecoveryCheck(false);
+                                }
+
+                                var sickened = user.QEffects.FirstOrDefault((QEffect qEffect) => qEffect.Id == QEffectId.Sickened);
+                                if (sickened != null && sickened.Tag != null)
+                                {
+                                    var dc = (int)sickened.Tag;
+                                    var result = CommonSpellEffects.RollSavingThrow(user, new CombatAction(user, IllustrationName.Retch, "Retch", [], "", Target.Self()), Defense.Fortitude, dc);
+
+                                    if (result == CheckResult.Success)
+                                    {
+                                        sickened.Value -= 1;
+                                    }
+                                    else if (result == CheckResult.CriticalSuccess)
+                                    {
+                                        sickened.Value -= 2;
+                                    }
+
+                                    if (sickened.Value <= 0)
+                                    {
+                                        sickened.ExpiresAt = ExpirationCondition.Immediately;
+                                    }
+                                }
+                            }
+
+                            user.AddQEffect(new QEffect("Durable Influence Immunity", "You can only use durable influence once per round.") { Owner = user }.WithExpirationAtStartOfOwnerTurn());
                         }
                     });
                 });
             yield return trueDurableInfluenceFeat;
 
-            var trueMobileInfluenceFeat = new Feat(mobileInfluenceFeat, "Your animal influence makes you jumpy and energetic.", "When you Shift for the first time each turn, you can Stride up to half your speed.", [influenceTrait], null)
+            var trueMobileInfluenceFeat = new Feat(mobileInfluenceFeat, "Your animal influence makes you jumpy and energetic.", "When you Shift for the first time each turn, you can Stride up to half your speed.\n\n{b}Increased Influence (9th){/b} This movement doesn't trigger reactions.", [influenceTrait], null)
                 .WithOnCreature((Creature featUser) =>
                 {
-                    featUser.AddQEffect(new("Mobile Influence", "When you Shift for the first time each turn, you can Stride up to half your speed.")
+                    featUser.AddQEffect(new("Mobile Influence", $"When you Shift for the first time each turn, you can Stride up to half your speed.")
                     {
                         AfterYouTakeAction = async (QEffect effect, CombatAction action) =>
                         {
@@ -151,29 +186,40 @@ namespace Shifter
                             {
                                 return;
                             }
-
-                            if (await user.StrideAsync("Stride up to half your speed.", allowCancel:true, allowPass: true, maximumHalfSpeed:true))
+                            
+                            if (user.HasEffect(IncreasedInfluenceID))
                             {
-                                user.AddQEffect(new QEffect("Mobile Influence Immunity", "You can only use mobile influce once per round.") { Owner = user }.WithExpirationAtStartOfOwnerTurn());
+                                user.AddQEffect(new(ExpirationCondition.Never)
+                                {
+                                    Id = QEffectId.Mobility,
+                                    Name = "Temporary Mobility"
+                                });
                             }
+
+                            if (await user.StrideAsync("Stride up to half your speed.", allowCancel:true, allowPass:true, maximumHalfSpeed:true))
+                            {
+                                user.AddQEffect(new QEffect("Mobile Influence Immunity", "You can only use mobile influence once per round.") { Owner = user }.WithExpirationAtStartOfOwnerTurn());
+                            }
+
+                            user.RemoveAllQEffects((effect) => effect.Name == "Temporary Mobility" && effect.Id == QEffectId.Mobility);
                         }
                     });
                 });
             yield return trueMobileInfluenceFeat;
 
-            var trueSkilledInfluenceFeat = new Feat(skilledInfluenceFeat, "Your animal influence heightens your senses and strengthens your body.", "When you Shift, you gain a +1 circumstance bonus to skill checks until your next turn.", [influenceTrait], null)
+            var trueSkilledInfluenceFeat = new Feat(skilledInfluenceFeat, "Your animal influence heightens your senses and strengthens your body.", "When you Shift for the first time each turn, you gain a +1 circumstance bonus to skill checks until your next turn.\n\n{b}Increased Influence (9th){/b} When you Shift for the first time each turn, you can Step as a free action.", [influenceTrait], null)
                 .WithOnCreature((Creature featUser) =>
                 {
-                    featUser.AddQEffect(new("Skilled Influence", $"When you Shift, you gain a +1 circumstance bonus to skill checks until your next turn.")
+                    featUser.AddQEffect(new("Skilled Influence", "When you Shift for the first time each turn, you gain a +1 circumstance bonus to skill checks until your next turn.")
                     {
                         AfterYouTakeAction = async (QEffect effect, CombatAction action) =>
                         {
-                            if (action.ActionId != ShiftID)
+                            var user = effect.Owner;
+
+                            if (action.ActionId != ShiftID || !user.QEffects.All(qEffect => qEffect.Name != "Skilled Influence Immunity"))
                             {
                                 return;
-                            }
-
-                            var user = effect.Owner;
+                            }                            
 
                             user.AddQEffect(new("Skilled Influence", "You have a +1 circumstance bonus to skill checks.", ExpirationCondition.ExpiresAtStartOfYourTurn, user, IllustrationName.Guidance)
                             {
@@ -182,6 +228,13 @@ namespace Shifter
                                     return new Bonus(1, BonusType.Circumstance, "Skilled Influence", true);
                                 }
                             });
+
+                            if (user.HasEffect(IncreasedInfluenceID))
+                            {
+                                await user.StepAsync("Choose where to step.", true, true);
+                            }
+
+                            user.AddQEffect(new QEffect("Skilled Influence Immunity", "You can only use skilled influence once per round.") { Owner = user }.WithExpirationAtStartOfOwnerTurn());
                         }
                     });
                 });
@@ -226,6 +279,10 @@ namespace Shifter
                     values.SetProficiency(ShifterTrait, Proficiency.Expert);
 
                     sheet.AddSelectionOption(new SingleFeatSelectionOption("ShifterForm2", "Additional form", 7, (Feat ft) => ft.HasTrait(FormTrait) && !ft.HasTrait(Trait.Dragon)));
+                });
+                sheet.AddAtLevel(9, (CalculatedCharacterSheetValues values) =>
+                {
+                    values.SetProficiency(Trait.Reflex, Proficiency.Expert);
                 });
             }).WithOnCreature((Creature creature) =>
             {
@@ -285,6 +342,14 @@ namespace Shifter
                         AdjustSavingThrowCheckResult = (QEffect _, Defense defense, CombatAction _, CheckResult checkResult) => (defense != Defense.Fortitude || checkResult != CheckResult.Success) ? checkResult : CheckResult.CriticalSuccess
                     });
                     creature.AddQEffect(QEffect.WeaponSpecialization());
+                }
+
+                if (creature.Level >= 9)
+                {
+                    creature.AddQEffect(new QEffect()
+                    {
+                        Id = IncreasedInfluenceID
+                    });
                 }
             });
 
@@ -1369,6 +1434,8 @@ namespace Shifter
             {
                 var callAnimal = Level1Spells.LoadModernSpell(SpellId.SummonAnimal, spellcaster, spellLevel, inCombat, spellInformation);
                 callAnimal.Name = "Call Animal";
+                callAnimal.Traits.Remove(Trait.Arcane);
+                callAnimal.Traits.Remove(Trait.Primal);
                 callAnimal.Traits.AddRange([ShifterTrait, Trait.Focus]);
 
                 return callAnimal;
