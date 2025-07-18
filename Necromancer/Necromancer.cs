@@ -117,7 +117,8 @@ namespace Necromancer
                 "{b}Level 5:{/b} Ability boosts, ancestry feat, skill increase, reflex expertise\n" +
                 "{b}Level 6:{/b} Necromancer feat\n" +
                 "{b}Level 7:{/b} Expert necromancy {i}(You wield the necromantic arts with greater finesse. Your proficiency ranks for spell attack modifier and spell DC increase to expert.){/i}, general feat, skill increase, perception expertise\n" +
-                "{b}Level 8:{/b} Necromancer feat";
+                "{b}Level 8:{/b} Necromancer feat\n" +
+                "{b}Level 9:{/b} Ancestry feat, skill increase";
 
             #endregion
 
@@ -1575,8 +1576,46 @@ namespace Necromancer
                     Target.Burst(12, 2), 3, null)
                 .WithActionCost(2)
                 .WithHeighteningOfDamageEveryLevel(spellLevel, 3, inCombat, "1d4")
-                .WithEffectOnSelf(async (CombatAction spell, Creature user) =>
+                .WithEffectOnEachTile(async delegate (CombatAction spell, Creature user, IReadOnlyList<Tile> chosenTiles)
                 {
+                    var thrallList = new List<Creature>();
+
+                    foreach (var tile in chosenTiles)
+                    {
+                        if (tile.PrimaryOccupant != null && IsThrallTo(user, tile.PrimaryOccupant))
+                        {
+                            thrallList.Add(tile.PrimaryOccupant);
+                        }
+                    }
+
+                    if (thrallList.Count == 0)
+                    {
+                        user.Actions.RevertExpendingOfResources(2, spell);
+
+                        if (user.Spellcasting != null)
+                        {
+                            user.Spellcasting.FocusPoints++;
+                        }
+
+                        return;
+                    }
+
+                    var chosenThrall = thrallList.Count == 1 ? thrallList[0] : await user.Battle.AskToChooseACreature(user, thrallList, spell.Illustration, "Choose a thrall to destroy.", "Destroy", "Decline");
+
+                    if (chosenThrall == null)
+                    {
+                        user.Actions.RevertExpendingOfResources(2, spell);
+
+                        if (user.Spellcasting != null)
+                        {
+                            user.Spellcasting.FocusPoints++;
+                        }
+
+                        return;
+                    }
+
+                    await KillThrall(chosenThrall);
+
                     spell.Tag = Guid.NewGuid();
 
                     user.AddQEffect(new()
@@ -1585,6 +1624,27 @@ namespace Necromancer
                         Tag = new Tuple<Guid, int, Point, int>((Guid)spell.Tag, 2, spell.ChosenTargets.ChosenPointOfOrigin, user.QEffects.Where((qEffect) => qEffect.Name == "Zombie Horde Info").Count() + 1),
                         DoNotShowUpOverhead = true
                     });
+
+                    foreach (var tile in chosenTiles)
+                    {
+                        tile.AddQEffect(new(tile)
+                        {
+                            Name = $"{user.Name}'s Zombie Horde ({spell.Tag})",
+                            Illustration = new ScrollIllustration(IllustrationName.Rubble, IllustrationName.ZombieShambler256),
+                            TransformsTileIntoDifficultTerrain = true,
+                            AfterCreatureBeginsItsTurnHere = async (Creature occupant) =>
+                            {
+                                if (occupant.HasTrait(ThrallTrait))
+                                {
+                                    return;
+                                }
+
+                                var damageKind = user.HasEffect(GhostlyThrallID) ? occupant.WeaknessAndResistance.WhatDamageKindIsBestAgainstMe([DamageKind.Negative, DamageKind.Bludgeoning]) : DamageKind.Bludgeoning;
+
+                                await CommonSpellEffects.DealBasicDamage(spell, user, occupant, CommonSpellEffects.RollSavingThrow(occupant, spell, Defense.Fortitude, GetNecromancerSpellDC(user) ?? 0), $"{spell.SpellLevel}d4", damageKind);
+                            }
+                        });
+                    }
 
                     user.AddQEffect(new()
                     {
@@ -1624,7 +1684,6 @@ namespace Necromancer
                                 var tileList = new List<Tile>(chosenTiles);
 
                                 var chosenThrall = thrallList.Count == 0 ? null : await creature.Battle.AskToChooseACreature(creature, thrallList, spell.Illustration, "Choose a thrall to destroy.", "Destroy", "Decline");
-
 
                                 foreach (var tile in creature.Battle.Map.AllTiles)
                                 {
@@ -1682,55 +1741,6 @@ namespace Necromancer
                     {
                         PreventTakingAction = (CombatAction action) => action.Name == $"Sustain {spell.Name} {user.QEffects.Where((qEffect) => qEffect.Name == "Zombie Horde Info").Count()}" ? "You can't sustain this spell on the turn you cast it." : null
                     });
-                })
-                .WithEffectOnEachTile(async delegate (CombatAction spell, Creature user, IReadOnlyList<Tile> chosenTiles)
-                {
-                    var thrallList = new List<Creature>();
-
-                    foreach (var tile in chosenTiles)
-                    {
-                        if (tile.PrimaryOccupant != null && IsThrallTo(user, tile.PrimaryOccupant))
-                        {
-                            thrallList.Add(tile.PrimaryOccupant);
-                        }
-                    }
-
-                    if (thrallList.Count == 0)
-                    {
-                        user.Actions.RevertExpendingOfResources(2, spell);
-                        return;
-                    }
-
-                    var chosenThrall = thrallList.Count == 1 ? thrallList[0] : await user.Battle.AskToChooseACreature(user, thrallList, spell.Illustration, "Choose a thrall to destroy.", "Destroy", "Decline");
-
-                    if (chosenThrall == null)
-                    {
-                        user.Actions.RevertExpendingOfResources(2, spell);
-                        return;
-                    }
-
-                    await KillThrall(chosenThrall);
-
-                    foreach (var tile in chosenTiles)
-                    {
-                        tile.AddQEffect(new(tile)
-                        {
-                            Name = $"{user.Name}'s Zombie Horde ({spell.Tag})",
-                            Illustration = new ScrollIllustration(IllustrationName.Rubble, IllustrationName.ZombieShambler256),
-                            TransformsTileIntoDifficultTerrain = true,
-                            AfterCreatureBeginsItsTurnHere = async (Creature occupant) =>
-                            {
-                                if (occupant.HasTrait(ThrallTrait))
-                                {
-                                    return;
-                                }
-
-                                var damageKind = user.HasEffect(GhostlyThrallID) ? occupant.WeaknessAndResistance.WhatDamageKindIsBestAgainstMe([DamageKind.Negative, DamageKind.Bludgeoning]) : DamageKind.Bludgeoning;
-
-                                await CommonSpellEffects.DealBasicDamage(spell, user, occupant, CommonSpellEffects.RollSavingThrow(occupant, spell, Defense.Fortitude, GetNecromancerSpellDC(user) ?? 0), $"{spell.SpellLevel}d4", damageKind);
-                            }
-                        });
-                    }
                 });
             });
             
