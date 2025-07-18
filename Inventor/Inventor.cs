@@ -144,14 +144,47 @@ namespace Inventor
 
             #region Variable Core Feats
 
-            var veriableCoreAcidFeat = GenerateVariableCoreFeat(DamageKind.Acid);
-            yield return veriableCoreAcidFeat;
+            var variableCoreAcidFeat = GenerateVariableCoreFeat(DamageKind.Acid);
+            yield return variableCoreAcidFeat;
 
-            var veriableCoreColdFeat = GenerateVariableCoreFeat(DamageKind.Cold);
-            yield return veriableCoreColdFeat;
+            var variableCoreColdFeat = GenerateVariableCoreFeat(DamageKind.Cold);
+            yield return variableCoreColdFeat;
 
-            var veriableCoreElectricityFeat = GenerateVariableCoreFeat(DamageKind.Electricity);
-            yield return veriableCoreElectricityFeat;
+            var variableCoreElectricityFeat = GenerateVariableCoreFeat(DamageKind.Electricity);
+            yield return variableCoreElectricityFeat;
+
+            #endregion
+
+            #region Offensive Boost Feats
+
+            yield return GenerateOffensiveBoostFeat(DamageKind.Acid, "Your innovation releases spurts of caustic acid.");
+
+            yield return GenerateOffensiveBoostFeat(DamageKind.Bludgeoning, "Your innovation slams into foes with added momentum.");
+
+            yield return GenerateOffensiveBoostFeat(DamageKind.Cold, "Your innovation rapidly absorbs heat, creating an intense chill.");
+
+            yield return GenerateOffensiveBoostFeat(DamageKind.Electricity, "Your innovation jolts foes with charges of electricity.");
+
+            yield return GenerateOffensiveBoostFeat(DamageKind.Fire, "Your innovation shoots out jets of searing flame.");
+
+            yield return GenerateOffensiveBoostFeat(DamageKind.Piercing, "Your innovation reveals wicked spikes during your attacks.");
+
+            yield return GenerateOffensiveBoostFeat(DamageKind.Slashing, "Your innovation reveals spinning sawblades during your attacks.");
+
+
+            yield return GenerateConstructOffensiveBoostFeat(DamageKind.Acid, "Your innovation releases spurts of caustic acid.", constructInnovationFeatName);
+
+            yield return GenerateConstructOffensiveBoostFeat(DamageKind.Bludgeoning, "Your innovation slams into foes with added momentum.", constructInnovationFeatName);
+
+            yield return GenerateConstructOffensiveBoostFeat(DamageKind.Cold, "Your innovation rapidly absorbs heat, creating an intense chill.", constructInnovationFeatName);
+
+            yield return GenerateConstructOffensiveBoostFeat(DamageKind.Electricity, "Your innovation jolts foes with charges of electricity.", constructInnovationFeatName);
+
+            yield return GenerateConstructOffensiveBoostFeat(DamageKind.Fire, "Your innovation shoots out jets of searing flame.", constructInnovationFeatName);
+
+            yield return GenerateConstructOffensiveBoostFeat(DamageKind.Piercing, "Your innovation reveals wicked spikes during your attacks.", constructInnovationFeatName);
+
+            yield return GenerateConstructOffensiveBoostFeat(DamageKind.Slashing, "Your innovation reveals spinning sawblades during your attacks.", constructInnovationFeatName);
 
             #endregion
 
@@ -164,8 +197,13 @@ namespace Inventor
                 "{b}5. Shield block {icon:Reaction}.{/b}You can use your shield to reduce damage you take.\n\n" +
                 "{b}At higher levels:{/b}\n" +
                 "{b}Level 2:{/b} Inventor feat\n" +
-                "{b}Level 3:{/b} Expert Overdrive {i}(you become an expert in Crafting and you deal an additional damage when you overdrive){/i}, general feat, skill increase\n" +
-                "{b}Level 4:{/b} Inventor feat";
+                "{b}Level 3:{/b} Expert overdrive {i}(you become an expert in Crafting and you deal an additional damage when you overdrive){/i}, general feat, skill increase\n" +
+                "{b}Level 4:{/b} Inventor feat\n" +
+                "{b}Level 5:{/b} Ability boosts, ancestry feat, expert strikes {i}(You become an expert in all weapons. If your innovation is a weapon, you gain the {tooltip:criteffect}critical specialization effects{/} of your weapons.){/i}, skill increase\n" +
+                "{b}Level 6:{/b} Inventor feat\n" +
+                "{b}Level 7:{/b} Breakthough innovation, expert reflexes, general feat, master overdrive {i}(you become a master in Crafting and you deal an additional damage when you overdrive){/i}, skill increase, weapon specialization {i}(you deal 2 additional damage with weapons and unarmed attacks in which you are an expert; this damage increases to 3 if you're a master, and to 4 if you're legendary){/i}\n" +
+                "{b}Level 8:{/b} Inventor feat\n" +
+                "{b}Level 9:{/b} Ancestry feat, inventive expertise {i}(your inventor class DC increases to expert){/i}, offensive boost {i}(your strikes deal an additional 1d6 damage of a type of your choice){/i}, skill increase";
 
             #endregion
 
@@ -245,6 +283,20 @@ namespace Inventor
                     else if (values.HasFeat(weaponInnovationFeat))
                     {
                         values.AddSelectionOption(new SingleFeatSelectionOption("WeaponBreakthroughInnovation", "Breakthrough Weapon Innovation", 7, (Feat ft) => ft.HasTrait(weaponTrait) && (ft.HasTrait(breakthroughModificationTrait) || ft.HasTrait(initialModificationTrait))));
+                    }
+                });
+                sheet.AddAtLevel(9, (CalculatedCharacterSheetValues values) =>
+                {
+                    values.GrantFeat(FeatName.MasterCrafting);
+                    values.SetProficiency(InventorTrait, Proficiency.Expert);
+
+                    if (values.HasFeat(constructInnovationFeat))
+                    {
+                        values.AddSelectionOption(new SingleFeatSelectionOption("ConstructOffensiveBoost", "Offensive Boost", 9, (Feat ft) => ft.ToTechnicalName().StartsWith("ConstructOffensiveBoost:")));
+                    }
+                    else
+                    {
+                        values.AddSelectionOption(new SingleFeatSelectionOption("OffensiveBoost", "Offensive Boost", 9, (Feat ft) => ft.ToTechnicalName().StartsWith("OffensiveBoost:")));
                     }
                 });
             }).WithOnCreature((Creature creature) =>
@@ -344,11 +396,11 @@ namespace Inventor
                                 {
                                     Name = "Critical Overdrive",
                                     Illustration = IllustrationName.Swords,
-                                    Description = $"You deal an extra {creature.Abilities.Intelligence + (creature.Level >= 3 ? creature.Level >= 7 ? 2 : 1 : 0)} damage with strikes.",
+                                    Description = $"You deal an extra {creature.Abilities.Intelligence + (creature.Level >= 3 ? (creature.Level >= 7 ? (creature.Level >= 15 ? 3 : 2) : 1) : 0)} damage with strikes.",
                                     Id = OverdrivedID,
                                     YouDealDamageWithStrike = (QEffect effect, CombatAction action, DiceFormula diceFormula, Creature target) =>
                                     {
-                                        return diceFormula.Add(DiceFormula.FromText($"{creature.Abilities.Intelligence + (creature.Level >= 3 ? creature.Level >= 7 ? 2 : 1 : 0)}", "Overdrive"));
+                                        return diceFormula.Add(DiceFormula.FromText($"{creature.Abilities.Intelligence + (creature.Level >= 3 ? (creature.Level >= 7 ? (creature.Level >= 15 ? 3 : 2) : 1) : 0)}", "Overdrive"));
                                     }
                                 };
 
@@ -370,11 +422,11 @@ namespace Inventor
                                 {
                                     Name = "Overdrive",
                                     Illustration = new SideBySideIllustration(IllustrationName.GravityWeapon, IllustrationName.Swords),
-                                    Description = $"You deal an extra {creature.Abilities.Intelligence / 2 + (creature.Level >= 3 ? creature.Level >= 7 ? 2 : 1 : 0)} damage with strikes.",
+                                    Description = $"You deal an extra {creature.Abilities.Intelligence / 2 + (creature.Level >= 3 ? (creature.Level >= 7 ? (creature.Level >= 15 ? 3 : 2) : 1) : 0)} damage with strikes.",
                                     Id = OverdrivedID,
                                     YouDealDamageWithStrike = (QEffect effect, CombatAction action, DiceFormula diceFormula, Creature target) =>
                                     {
-                                        return diceFormula.Add(DiceFormula.FromText($"{creature.Abilities.Intelligence / 2 + (creature.Level >= 3 ? creature.Level >= 7 ? 2 : 1 : 0)}", "Overdrive"));
+                                        return diceFormula.Add(DiceFormula.FromText($"{creature.Abilities.Intelligence / 2 + (creature.Level >= 3 ? (creature.Level >= 7 ? (creature.Level >= 15 ? 3 : 2) : 1) : 0)}", "Overdrive"));
                                     }
                                 };
 
@@ -420,6 +472,14 @@ namespace Inventor
                         });
                     }
                 });
+
+                if (creature.Level >= 5 && creature.HasFeat(weaponInnovationFeatName))
+                {
+                    creature.AddQEffect(new QEffect("Critical Specialization", "You gain the {tooltip:criteffect}critical specialization effects{/} of your weapons.")
+                    {
+                        YouHaveCriticalSpecialization = (QEffect effect, Item item, CombatAction action, Creature defender) => !item.HasTrait(Trait.Unarmed)
+                    });
+                }
 
                 if (creature.Level >= 7)
                 {
@@ -1112,9 +1172,9 @@ namespace Inventor
 
             yield return new TrueFeat(variableCoreFeat, 1, "You adjust your innovation's core, changing the way it explodes.", "When you choose this feat, select acid, cold, or electricity. Your innovation's core runs on that power source. When using the Explode action, or any time your innovation explodes on a critical failure and damages you, change the damage type from fire damage to the type you chose.", [InventorTrait, Trait.ClassFeat],
             [
-                veriableCoreAcidFeat,
-                veriableCoreColdFeat,
-                veriableCoreElectricityFeat
+                variableCoreAcidFeat,
+                variableCoreColdFeat,
+                variableCoreElectricityFeat
             ]);
 
             #endregion
@@ -1778,7 +1838,7 @@ namespace Inventor
 
                         if (action.ChosenTargets.ChosenCreature != null && action.ChosenTargets.ChosenCreature.HP > 0 && await action.Owner.Battle.AskForConfirmation(action.Owner, IllustrationName.KiBlast, "Do you want to use Gigaton Strike to knock the enemy back?", "Yes", "No"))
                         {
-                            var checkResult = CommonSpellEffects.RollSavingThrow(action.ChosenTargets.ChosenCreature!, action, Defense.Fortitude, GetClassDC(creature));
+                            var checkResult = CommonSpellEffects.RollSavingThrow(action.ChosenTargets.ChosenCreature!, action, Defense.Fortitude, creature.ClassDC(InventorTrait));
 
                             if (checkResult == CheckResult.Success)
                             {
@@ -1822,7 +1882,7 @@ namespace Inventor
 
                             if (action.ChosenTargets.ChosenCreature != null && action.ChosenTargets.ChosenCreature.HP > 0 && await action.Owner.Battle.AskForConfirmation(action.Owner, IllustrationName.KiBlast, "Do you want to use Gigaton Strike to knock the enemy back?", "Yes", "No"))
                             {
-                                var checkResult = CommonSpellEffects.RollSavingThrow(action.ChosenTargets.ChosenCreature!, action, Defense.Fortitude, GetClassDC(GetInventor(action.Owner)));
+                                var checkResult = CommonSpellEffects.RollSavingThrow(action.ChosenTargets.ChosenCreature!, action, Defense.Fortitude, GetInventor(action.Owner) == null ? 0 : GetInventor(action.Owner)!.ClassDC(InventorTrait));
 
                                 if (checkResult == CheckResult.Success)
                                 {
@@ -2408,9 +2468,54 @@ namespace Inventor
                 });
         }
 
-        private static int GetClassDC(Creature inventor)
+        private static Feat GenerateOffensiveBoostFeat(DamageKind damageKind, string description)
         {
-            return inventor!.ProficiencyLevel + inventor!.Abilities.Intelligence + 12;
+            var name = ModManager.RegisterFeatName($"OffensiveBoost:{damageKind}", $"{damageKind} Offensive Boost");
+
+            return new Feat(name, description, $"Your strikes deal an additional 1d6 {damageKind.ToString().ToLower()} damage.", [], null)
+                .WithOnCreature((Creature featUser) =>
+                {
+                    featUser.AddQEffect(new($"{damageKind} Offensive Boost", $"Your strikes deal an additional 1d6 {damageKind.ToString().ToLower()} damage.")
+                    {
+                        AddExtraKindedDamageOnStrike = (_, _) =>
+                        {
+                            return new KindedDamage(DiceFormula.FromText("1d6", "Offensive Boost"), damageKind);
+                        }
+                    });
+                });
+        }
+
+        private static Feat GenerateConstructOffensiveBoostFeat(DamageKind damageKind, string description, FeatName constructInnovationFeatName)
+        {
+            var name = ModManager.RegisterFeatName($"ConstructOffensiveBoost:{damageKind}", $"{damageKind} Offensive Boost");
+
+            return new Feat(name, description, $"Your construct's strikes deal an additional 1d6 {damageKind.ToString().ToLower()} damage.", [], null)
+                .WithOnSheet((CalculatedCharacterSheetValues sheet) =>
+                {
+                    sheet.RangerBenefitsToCompanion += (Creature companion, Creature inventor) =>
+                    {
+                        if (IsConstructCompanion(companion) && inventor.HasFeat(constructInnovationFeatName))
+                        {
+                            companion.AddQEffect(new($"{damageKind} Offensive Boost", $"Your strikes deal an additional 1d6 {damageKind.ToString().ToLower()} damage.")
+                            {
+                                AddExtraKindedDamageOnStrike = (_, _) =>
+                                {
+                                    return new KindedDamage(DiceFormula.FromText("1d6", "Offensive Boost"), damageKind);
+                                }
+                            });
+                        }
+                    };
+                });
+        }
+
+        private static Feat GenerateVariableCoreFeat(DamageKind damageKind)
+        {
+            var name = ModManager.RegisterFeatName($"VariableCore:{damageKind}", $"{damageKind} Core");
+            return new Feat(name, "You adjust your innovation's core, changing the way it explodes.", $"When using the Explode action, or any time your innovation explodes on a critical failure and damages you, change the damage type from fire damage to {damageKind}.", [], null) { }
+                .WithOnCreature((Creature user) =>
+                {
+                    user.AddQEffect(new("Variable Core", $"Your explosions deal {damageKind} damage.") { Id = VariableCoreEffectID, Tag = damageKind });
+                });
         }
 
         public static int GetLevelDC(int level)
@@ -2466,16 +2571,6 @@ namespace Inventor
             }
         }
 
-        private static Feat GenerateVariableCoreFeat(DamageKind damageKind)
-        {
-            var name = ModManager.RegisterFeatName($"VariableCore:{damageKind}", $"{damageKind} Core");
-            return new Feat(name, "You adjust your innovation's core, changing the way it explodes.", $"When using the Explode action, or any time your innovation explodes on a critical failure and damages you, change the damage type from fire damage to {damageKind}.", [], null) { }
-                .WithOnCreature((Creature user) =>
-                {
-                    user.AddQEffect(new("Variable Core", $"Your explosions deal {damageKind} damage.") { Id = VariableCoreEffectID, Tag = damageKind });
-                });
-        }
-
         private static async Task MakeUnstableCheck(CombatAction unstable, Creature user, CheckResult? unstableResult = null)
         {
             unstableResult = unstableResult ?? CommonSpellEffects.RollCheck("Unstable", new ActiveRollSpecification(Checks.FlatDC(0), Checks.FlatDC(15)), user, user);
@@ -2500,7 +2595,7 @@ namespace Inventor
             }
         }
 
-        private static async Task MakeUnstableCheck(CombatAction unstable, Creature user, Creature companion, CheckResult? unstableResult = null)
+        public static async Task MakeUnstableCheck(CombatAction unstable, Creature user, Creature companion, CheckResult? unstableResult = null)
         {
             unstableResult = unstableResult ?? CommonSpellEffects.RollCheck("Unstable", new ActiveRollSpecification(Checks.FlatDC(0), Checks.FlatDC(15)), companion, companion);
 
