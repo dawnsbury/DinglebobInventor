@@ -5,6 +5,7 @@ using Dawnsbury.Core.CharacterBuilder;
 using Dawnsbury.Core.CharacterBuilder.AbilityScores;
 using Dawnsbury.Core.CharacterBuilder.Feats;
 using Dawnsbury.Core.CharacterBuilder.FeatsDb.Common;
+using Dawnsbury.Core.CharacterBuilder.FeatsDb.TrueFeatDb;
 using Dawnsbury.Core.CharacterBuilder.FeatsDb.TrueFeatDb.Archetypes;
 using Dawnsbury.Core.CharacterBuilder.Selections.Options;
 using Dawnsbury.Core.CombatActions;
@@ -1530,20 +1531,33 @@ namespace Inventor
                                 Source = user,
                                 //Tag = shield,
                                 Description = "Your shield returns to you at the start of your turn.",
-                                StartOfYourTurn = async (QEffect effect, Creature creature) =>
+                                StartOfYourEveryTurn = async (QEffect effect, Creature creature) =>
                                 {
                                     if (creature.HasFreeHand)
                                     {
-                                        creature.Battle.CombatLog.Add(new(2, $"{creature.Name}'s shield returns to {creature.Name}'s hand.", "Flying Shield", null));
+                                        creature.Battle.Log($"{creature.Name}'s shield returns to the ground at {creature.Name}'s hand.");
                                         creature.HeldItems.Add(shield);
                                     }
                                     else
                                     {
-                                        creature.Battle.CombatLog.Add(new(2, $"{creature.Name}'s shield returns to the ground at {creature.Name}'s feet.", "Flying Shield", null));
+                                        creature.Battle.Log($"{creature.Name}'s shield returns to the ground at {creature.Name}'s feet.");
                                         creature.Occupies.DropItem(shield);
                                     }
 
                                     creature.RemoveAllQEffects((effectToRemove) => effectToRemove == effect);
+                                },
+                                EndOfCombat = async (QEffect effect, bool _) =>
+                                {
+                                    if (creature.HasFreeHand)
+                                    {
+                                        creature.Battle.Log($"{creature.Name}'s shield returns to the ground at {creature.Name}'s hand.");
+                                        creature.HeldItems.Add(shield);
+                                    }
+                                    else
+                                    {
+                                        creature.Battle.Log($"{creature.Name}'s shield returns to the ground at {creature.Name}'s feet.");
+                                        creature.Occupies.DropItem(shield);
+                                    }
                                 }
                             });
                         });
@@ -1670,7 +1684,7 @@ namespace Inventor
             });
 
             yield return new TrueFeat(soaringArmorFeat, 4, "Whether through a release of jets of flame, propeller blades, sonic bursts, streamlined aerodynamic structure, electromagnetic fields, or some combination of the above, you've managed to free your innovation from the bonds of gravity!", "You gain a fly Speed equal to your land Speed.", [InventorTrait, Trait.ClassFeat])
-            .WithPrerequisite((sheet) => sheet.HasFeat(armorInnovationFeatName), "You have an armor innovation.")
+            .WithPrerequisite((sheet) => sheet.HasFeat(armorInnovationFeatName) || sheet.HasFeat(armorInnovationArchetypeFeatName), "You have an armor innovation.")
             .WithOnCreature(delegate (Creature creature)
             {
                 creature.AddQEffect(QEffect.Flying().WithExpirationNever());
@@ -2076,7 +2090,7 @@ namespace Inventor
 
             yield return constructArchetypeFeat;
 
-            var weaponArchetypeFeat = new Feat(weaponInnovationArchetypeFeatName, "Your innovation is an impossible-looking weapon augmented by numerous unusual mechanisms.", "You become trained in simple and marital weapons.", [], null)
+            var weaponArchetypeFeat = new Feat(weaponInnovationArchetypeFeatName, "Your innovation is an impossible-looking weapon augmented by numerous unusual mechanisms.", "You become trained in simple and martial weapons.", [], null)
                     .WithOnSheet((CalculatedCharacterSheetValues sheet) =>
                     {
                         sheet.SetProficiency(Trait.Simple, Proficiency.Trained);
@@ -2147,7 +2161,7 @@ namespace Inventor
                     {
                         traitToSelectOn = constructTrait;
                     }
-                    else if (sheet.HasFeat(weaponInnovationFeatName))
+                    else if (sheet.HasFeat(weaponInnovationArchetypeFeatName))
                     {
                         traitToSelectOn = weaponTrait;
                     }
@@ -2209,15 +2223,19 @@ namespace Inventor
                             inventor2.Battle.SpawnCreature(creature2, inventor2.OwningFaction, inventor2.Occupies);
                         }
                     },
-                    EndOfYourTurnBeneficialEffect = async (QEffect qfinventor, Creature self) =>
+                    StateCheck = delegate (QEffect sc)
                     {
-                        if (!qfinventor.UsedThisTurn)
+                        //Dawnsbury.Core.CharacterBuilder.FeatsDb.TrueFeatDb.AnimalCompanionFeats
+                        var owner3 = sc.Owner;
+                        var animalCompanion3 = GetConstructCompanion(owner3);
+                        bool flag = owner3.HasEffect(QEffectId.MatureAnimalCompanion);
+
+                        if (animalCompanion3 != null && flag && GetConstructCompanionCommandRestriction(sc, animalCompanion3) == null && animalCompanion3.Actions.CanTakeActions())
                         {
-                            Creature? animalCompanion2 = GetConstructCompanion(qfinventor.Owner);
-                            if (animalCompanion2 != null)
+                            sc.Owner.AddQEffect(new QEffect(ExpirationCondition.Ephemeral)
                             {
-                                await animalCompanion2.Battle.GameLoop.EndOfTurn(animalCompanion2);
-                            }
+                                Id = QEffectId.YouShouldTakeYourTurnEvenUnconsciousOrParalyzed
+                            });
                         }
                     },
                     ProvideActionIntoPossibilitySection = (QEffect commandQEffect, PossibilitySection section) =>
@@ -2312,6 +2330,26 @@ namespace Inventor
             return creature2;
         }
 
+        private static string? GetConstructCompanionCommandRestriction(QEffect qfInventor, Creature constructCompanion)
+        {
+            if (qfInventor.UsedThisTurn)
+            {
+                return "You already commanded your construct companion this turn.";
+            }
+
+            if (constructCompanion.HasEffect(QEffectId.Paralyzed))
+            {
+                return "Your construct companion is paralyzed.";
+            }
+
+            if (constructCompanion.Actions.ActionsLeft == 0 && (constructCompanion.Actions.QuickenedForActions == null || constructCompanion.Actions.UsedQuickenedAction))
+            {
+                return "You construct companion has no actions it could take.";
+            }
+
+            return null;
+        }
+
         private static Creature CreateConstructCompanionBase(IllustrationName illustration, string name, int level)
         {
             var strength = 3;
@@ -2337,14 +2375,17 @@ namespace Inventor
                 .WithProficiency(Trait.Unarmed, Proficiency.Trained).WithEntersInitiativeOrder(entersInitiativeOrder: false).WithProficiency(Trait.UnarmoredDefense, Proficiency.Trained).WithProficiency(Trait.Acrobatics, Proficiency.Trained).WithProficiency(Trait.Athletics, Proficiency.Trained)
                 .AddQEffect(new QEffect
                 {
+                    Id = QEffectId.AnimalCompanionStyleDying,
+                    StateCheckLayer = 1,
                     StateCheck = delegate (QEffect sc)
                     {
                         if (!sc.Owner.HasEffect(QEffectId.Dying) && sc.Owner.Battle.InitiativeOrder.Contains(sc.Owner))
                         {
                             Creature owner = sc.Owner;
-                            int num6 = owner.Battle.InitiativeOrder.IndexOf(owner);
-                            int index = (num6 + 1) % owner.Battle.InitiativeOrder.Count;
+                            int num8 = owner.Battle.InitiativeOrder.IndexOf(owner);
+                            int index = (num8 + 1) % owner.Battle.InitiativeOrder.Count;
                             Creature creature = owner.Battle.InitiativeOrder[index];
+                            owner.Actions.ResetToFull();
                             owner.Actions.HasDelayedYieldingTo = creature;
                             if (owner.Battle.CreatureControllingInitiative == owner)
                             {
@@ -2352,6 +2393,7 @@ namespace Inventor
                             }
 
                             owner.Battle.InitiativeOrder.Remove(sc.Owner);
+                            owner.Battle.GameLoop.NewStateCheckRequired = true;
                         }
                     }
                 });
