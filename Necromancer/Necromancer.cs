@@ -560,7 +560,7 @@ namespace Necromancer
                                 ShortDescription = "Consume one or more thralls within 30 feet of you to heal yourself."
                             }
                             .WithActionCost(2)
-                            .WithEffectOnChosenTargets(async (user, chosenTargets) =>
+                            .WithEffectOnChosenTargets(async (action, user, chosenTargets) =>
                             {
                                 var chosenThralls = chosenTargets.ChosenCreatures;
 
@@ -579,7 +579,7 @@ namespace Necromancer
                                     await KillThrall(thrall);
                                 }
 
-                                await user.HealAsync(DiceFormula.FromText($"{chosenThralls.Count * 10}"), null);
+                                await user.HealAsync(DiceFormula.FromText($"{chosenThralls.Count * 10}"), action);
 
                                 foreach (var effect in user.QEffects.Where((e) => e.Id == QEffectId.Clumsy || e.Id == QEffectId.Enfeebled || e.Id == QEffectId.Frightened || e.Id == QEffectId.Sickened || e.Id == QEffectId.Stupefied))
                                 {
@@ -1032,7 +1032,7 @@ namespace Necromancer
 
             #region Create Thrall
 
-            var createCreateThrallCombatAction = (Creature user, int spellLevel, Guid identifier, bool movable = true) =>
+            var createCreateThrallCombatAction = (Creature user, int spellLevel, Guid identifier, bool movable = true, bool large = false) =>
             {
                 return new CombatAction(user, GetThrallIllustration(user), "Summon Thrall", [NecromancerTrait], "", Target.RangedEmptyTileForSummoning(6))
                 .WithActionCost(0)
@@ -1044,7 +1044,7 @@ namespace Necromancer
                         return;
                     }
 
-                    user.Battle.SpawnCreature(CreateThrall(user, spellLevel, identifier, movable), user.OwningFaction, target.ChosenTile);
+                    user.Battle.SpawnCreature(CreateThrall(user, spellLevel, identifier, movable, large), user.OwningFaction, target.ChosenTile);
                 });
             };
 
@@ -1148,7 +1148,7 @@ namespace Necromancer
                 {
                     var identifier = Guid.NewGuid();
 
-                    var createThrall = createCreateThrallCombatAction(user, user.MaximumSpellRank, identifier, false);
+                    var createThrall = createCreateThrallCombatAction(user, user.MaximumSpellRank, identifier, false, true);
                     createThrall.Target = Target.RangedEmptyTileForSummoning(12);
 
                     if (await user.Battle.GameLoop.FullCast(createThrall) == false)
@@ -1832,11 +1832,16 @@ namespace Necromancer
             });
         }
 
-        public static Creature CreateThrall(Creature user, int spellLevel, Guid? identifier = null, bool movable = true)
+        public static Creature CreateThrall(Creature user, int spellLevel, Guid? identifier = null, bool movable = true, bool large = false)
         {
             var thrall = new Creature(GetThrallIllustration(user), $"{user}'s Thrall",
                 [Trait.Undead, Trait.Mindless, Trait.Summoned, Trait.Minion, ThrallTrait, Trait.Incorporeal], -1, user.Perception, 4, new(Checks.DetermineDefenseDC(null, null, user, Defense.AC).TotalNumber, user.Defenses.GetBaseValue(Defense.Fortitude), user.Defenses.GetBaseValue(Defense.Reflex), user.Defenses.GetBaseValue(Defense.Will)), 1, new(0, 0, 0, 0, 0, 0), new())
             { InitiativeControlledBy = user }.WithEntersInitiativeOrder(false);
+
+            if (large)
+            {
+                thrall.Traits.Add(Trait.Large);
+            }
 
             thrall.AddQEffect(new(ExpirationCondition.Never)
             {

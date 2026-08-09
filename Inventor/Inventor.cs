@@ -518,7 +518,7 @@ namespace Inventor
                         }
 
                         primaryWeapon.Traits.Add(Trait.Backstabber);
-                        primaryWeapon.WeaponProperties = primaryWeapon.WeaponProperties.WithRangeIncrement(primaryWeapon.WeaponProperties.RangeIncrement + 2);
+                        primaryWeapon.WeaponProperties = primaryWeapon.WeaponProperties!.WithRangeIncrement(primaryWeapon.WeaponProperties.RangeIncrement + 2);
                     }
                 });
             });
@@ -842,7 +842,7 @@ namespace Inventor
                         }
 
                         primaryWeapon.Traits.Remove(Trait.Volley30Feet);
-                        primaryWeapon.WeaponProperties = primaryWeapon.WeaponProperties.WithRangeIncrement(primaryWeapon.WeaponProperties.RangeIncrement + 10);
+                        primaryWeapon.WeaponProperties = primaryWeapon.WeaponProperties!.WithRangeIncrement(primaryWeapon.WeaponProperties.RangeIncrement + 10);
                     }
                 });
             });
@@ -872,7 +872,7 @@ namespace Inventor
                                     .WithEffectOnSelf(async delegate (CombatAction transform, Creature user)
                                     {
                                         companion.RemoveAllQEffects((effect) => effect.AdditionalUnarmedStrike != null && effect.AdditionalUnarmedStrike.Name == "cannon");
-                                        companion.WithAdditionalUnarmedStrike(new Item(IllustrationName.Bomb, "cannon", Trait.Unarmed, Trait.Ranged, Trait.Propulsive).WithWeaponProperties(new WeaponProperties($"{user.UnarmedStrike.WeaponProperties.DamageDieCount}d6", DamageKind.Bludgeoning).WithRangeIncrement(12)));
+                                        companion.WithAdditionalUnarmedStrike(new Item(IllustrationName.Bomb, "cannon", Trait.Unarmed, Trait.Ranged, Trait.Propulsive).WithWeaponProperties(new WeaponProperties($"{user.UnarmedStrike.WeaponProperties!.DamageDieCount}d6", DamageKind.Bludgeoning).WithRangeIncrement(12)));
 
                                         user.AddQEffect(new()
                                         {
@@ -893,7 +893,7 @@ namespace Inventor
                                 .WithEffectOnSelf(async delegate (CombatAction transform, Creature user)
                                 {
                                     user.RemoveAllQEffects((effect) => effect.AdditionalUnarmedStrike != null && effect.AdditionalUnarmedStrike.Name == "cannon");
-                                    user.WithAdditionalUnarmedStrike(new Item(IllustrationName.Bomb, "cannon", Trait.Unarmed, Trait.Ranged, Trait.Propulsive).WithWeaponProperties(new WeaponProperties($"{user.UnarmedStrike.WeaponProperties.DamageDieCount}d4", DamageKind.Bludgeoning).WithRangeIncrement(6)));
+                                    user.WithAdditionalUnarmedStrike(new Item(IllustrationName.Bomb, "cannon", Trait.Unarmed, Trait.Ranged, Trait.Propulsive).WithWeaponProperties(new WeaponProperties($"{user.UnarmedStrike.WeaponProperties!.DamageDieCount}d4", DamageKind.Bludgeoning).WithRangeIncrement(6)));
 
                                     user.RemoveAllQEffects((effect) => effect.Id == TurretConfigurationID);
                                 });
@@ -929,17 +929,7 @@ namespace Inventor
                         var user = explosiveLeapQEffect.Owner;
 
                         return ((ActionPossibility)new CombatAction(user, IllustrationName.BurningJet, "Explosive Leap", [Trait.Fire, InventorTrait, Trait.Move, UnstableTrait], "You jump up to 30 feet in any direction without touching the ground.",
-                            new TileTarget((Creature user, Tile tile) =>
-                            {
-                                int? test = user.Occupies?.DistanceTo(tile);
-
-                                if (test is null)
-                                {
-                                    return false;
-                                }
-
-                                return tile.IsGenuinelyFreeTo(user) && test <= 6;
-                            }, null))
+                            Target.TileYouCanSeeAndTeleportTo(6))
                         .WithActionCost(1)
                         .WithSoundEffect(SfxName.RejuvenatingFlames)
                         .WithEffectOnChosenTargets(async delegate (CombatAction explosiveLeap, Creature user, ChosenTargets chosenTargets)
@@ -966,7 +956,7 @@ namespace Inventor
                                 MaximumSquares = 100
                             });
 
-                            await MakeUnstableCheck(explosiveLeap, user, unstableResult);
+                            await MakeUnstableCheck(user, unstableResult);
 
                         })).WithPossibilityGroup("Unstable");
                     }
@@ -1031,7 +1021,7 @@ namespace Inventor
 
                                     if (inventor != null)
                                     {
-                                        await MakeUnstableCheck(explosiveLeap, inventor, user, unstableResult);
+                                        await MakeUnstableCheck(inventor, user, unstableResult);
                                     }
                                     
                                 })).WithPossibilityGroup("Unstable");
@@ -1212,7 +1202,7 @@ namespace Inventor
                         })
                         .WithEffectOnSelf(async delegate (CombatAction unstable, Creature user)
                         {
-                            await MakeUnstableCheck(unstable, user);
+                            await MakeUnstableCheck(user);
                         })).WithPossibilityGroup("Unstable");
                     }
                 });
@@ -1252,7 +1242,7 @@ namespace Inventor
                             })
                             .WithEffectOnSelf(async delegate (CombatAction unstable, Creature user)
                             {
-                                await MakeUnstableCheck(unstable, inventor, user);
+                                await MakeUnstableCheck(inventor, user);
                             })).WithPossibilityGroup("Unstable");
                         }
                     });
@@ -1311,7 +1301,7 @@ namespace Inventor
                         })
                         .WithEffectOnSelf(async delegate (CombatAction unstable, Creature user)
                         {
-                            await MakeUnstableCheck(unstable, user);
+                            await MakeUnstableCheck(user);
                         })).WithPossibilityGroup("Unstable");
                     }
                 });
@@ -1351,7 +1341,7 @@ namespace Inventor
 
                                     if (inventor != null)
                                     {
-                                        await MakeUnstableCheck(unstable, inventor, user);
+                                        await MakeUnstableCheck(inventor, user);
                                     }
                                 })).WithPossibilityGroup("Unstable");
                             }
@@ -1621,7 +1611,7 @@ namespace Inventor
                     weaponCombatAction.Traits.AddRange([Trait.Basic, UnstableTrait]);
                     weaponCombatAction.WithEffectOnSelf(async delegate (CombatAction unstable, Creature user)
                     {
-                        await MakeUnstableCheck(unstable, user);
+                        await MakeUnstableCheck(user);
                     });
                     return weaponCombatAction;
                 };
@@ -1674,7 +1664,7 @@ namespace Inventor
                             weaponCombatAction.Traits.AddRange([Trait.Basic, UnstableTrait]);
                             weaponCombatAction.WithEffectOnSelf(async delegate (CombatAction unstable, Creature user)
                             {
-                                await MakeUnstableCheck(unstable, inventor, user);
+                                await MakeUnstableCheck(inventor, user);
                             });
 
                             return weaponCombatAction;
@@ -2202,7 +2192,7 @@ namespace Inventor
                     {
                         if (inventor2.PersistentUsedUpResources.UsedUpActions.Contains("ConstructCompanionIsDead"))
                         {
-                            inventor2.Occupies.Overhead("no companion", Color.Green, inventor2?.ToString() + "'s construct companion is destroyed. You will repair it during your next long rest or downtime.");
+                            inventor2.Overhead("no companion", Color.Green, inventor2?.ToString() + "'s construct companion is destroyed. You will repair it during your next long rest or downtime.");
                         }
                         else
                         {
@@ -2456,7 +2446,7 @@ namespace Inventor
                     }
                     else
                     {
-                        await MakeUnstableCheck(action, user);
+                        await MakeUnstableCheck(user);
                     }
                 });
         }
@@ -2474,7 +2464,7 @@ namespace Inventor
                 })
                 .WithEffectOnSelf(async (CombatAction unstable, Creature user) =>
                 {
-                    await MakeUnstableCheck(unstable, user);
+                    await MakeUnstableCheck(user);
                 });
         }
 
@@ -2490,7 +2480,7 @@ namespace Inventor
                 })
                 .WithEffectOnSelf(async (CombatAction unstable, Creature user) =>
                 {
-                    await MakeUnstableCheck(unstable, user);
+                    await MakeUnstableCheck(user);
                 });
         }
 
@@ -2506,7 +2496,7 @@ namespace Inventor
                 })
                 .WithEffectOnSelf(async (CombatAction unstable, Creature user) =>
                 {
-                    await MakeUnstableCheck(unstable, inventor, user);
+                    await MakeUnstableCheck(inventor, user);
                 });
         }
 
@@ -2600,20 +2590,20 @@ namespace Inventor
             (CheckResult, string) tuple = Checks.RollFlatCheck(DC);
             CheckResult item = tuple.Item1;
             string item2 = tuple.Item2;
-            string text = qf.Key.Substring("PersistentDamage:".Length).ToLower();
+            string text = qf.Key!.Substring("PersistentDamage:".Length).ToLower();
             string log = qf.Owner?.ToString() + " makes a recovery check against persistent " + text + " damage vs. DC" + DC + " (" + item2 + ")";
             if (item >= CheckResult.Success)
             {
                 qf.ExpiresAt = ExpirationCondition.Immediately;
-                qf.Owner.Occupies.Overhead("recovered", Color.Lime, log);
+                qf.Owner!.Overhead("recovered", Color.Lime, log);
             }
             else
             {
-                qf.Owner.Occupies.Overhead("not recovered", Color.Black, log);
+                qf.Owner!.Overhead("not recovered", Color.Black, log);
             }
         }
 
-        private static async Task MakeUnstableCheck(CombatAction unstable, Creature user, CheckResult? unstableResult = null)
+        private static async Task MakeUnstableCheck(Creature user, CheckResult? unstableResult = null)
         {
             unstableResult = unstableResult ?? CommonSpellEffects.RollCheck("Unstable", new ActiveRollSpecification(Checks.FlatDC(0), Checks.FlatDC(15)), user, user);
 
@@ -2631,13 +2621,13 @@ namespace Inventor
                     damageKind = (DamageKind)variableCore.Tag!;
                 }
 
-                await CommonSpellEffects.DealDirectDamage(unstable, DiceFormula.FromText($"{user.Level}"), user, CheckResult.CriticalFailure, damageKind);
+                await CommonSpellEffects.DealDirectSplashDamage(null, DiceFormula.FromText($"{user.Level}"), user, damageKind);
 
                 AddUsedUnstable(user);
             }
         }
 
-        public static async Task MakeUnstableCheck(CombatAction unstable, Creature user, Creature companion, CheckResult? unstableResult = null)
+        public static async Task MakeUnstableCheck(Creature user, Creature companion, CheckResult? unstableResult = null)
         {
             unstableResult = unstableResult ?? CommonSpellEffects.RollCheck("Unstable", new ActiveRollSpecification(Checks.FlatDC(0), Checks.FlatDC(15)), companion, companion);
 
@@ -2655,7 +2645,7 @@ namespace Inventor
                     damageKind = (DamageKind)variableCore.Tag!;
                 }
 
-                await CommonSpellEffects.DealDirectDamage(unstable, DiceFormula.FromText($"{companion.Level}"), companion, CheckResult.CriticalFailure, damageKind);
+                await CommonSpellEffects.DealDirectSplashDamage(null, DiceFormula.FromText($"{companion.Level}"), companion, damageKind);
 
                 AddUsedUnstable(user);
             }
