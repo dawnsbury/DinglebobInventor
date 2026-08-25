@@ -1954,7 +1954,7 @@ namespace Shifter
                             self2.Occupies.Overhead(self2.DetectionStatus.Undetected ? "undetected" : "detected!", Color.LightBlue, self2?.ToString() + " became " + (self2.DetectionStatus.Undetected ? "undetected." : "detected!"));
                         }
 
-                        Steam.VerifyUndetection(self2.Battle);
+                        //Steam.VerifyUndetection(self2.Battle);
                     });
 
                     var tile = await GetSneakTile(user, user.Speed / 2);
